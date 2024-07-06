@@ -9,7 +9,24 @@ Help user's manage their rice configurations.
 
 ## Install
 
-__TODO__
+You will need the following pieces of software:
+
+1. Git [>= 2.25.0].
+1. Rust [>= 1.74.1].
+
+Clone this repository and use Cargo like so:
+
+```
+# git clone https://github.com/rice-configs/ricer.git
+# cd ricer
+# cargo build --release
+# cargo install
+```
+
+Make sure that your `$PATH` includes `$HOME/.cargo/bin` in order to execute the
+Ricer binary.
+
+Enjoy!
 
 ## Usage
 
