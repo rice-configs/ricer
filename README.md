@@ -44,6 +44,15 @@ Enjoy!
 
 __TODO__
 
+## Acknowledgements
+
+Richard Hartmann's [vcsh][vcsh-repo] inspired Ricer's creation, and provided a
+basic foundation for Ricer's command set and functionality.
+
+The [git2-rs][libgit2-rs] library for offering a more idomatic way of
+integrating Git into Ricer. Originally, Ricer was just going to wrap Git with
+`std::process::Command` all over the place.
+
 ## Contributing
 
 The Ricer coding project is open to the following forms of contribution:
@@ -111,6 +120,7 @@ selected to for countries that legally have no concept of a public domain.
 [git-scm]: https://git-scm.com
 [vcsh-repo]: https://github.com/RichiH/vcsh
 [mr-repo]: https://github.com/RichiH/myrepos
+[libgit2-rs]: https://github.com/rust-lang/git2-rs
 [contrib-guide]: CONTRIBUTING.md
 [reuse-v3-spec]: https://reuse.software/spec-3.0/
 [linux-dco]: https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin
