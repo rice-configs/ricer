@@ -47,6 +47,54 @@ contributing to the Ricer project.
 
 ## Copyright and Licensing
 
-__TODO__
+The Ricer coding project uses a few different licenses to cover different
+portions of the codebase for various reasons. However, Ricer should be
+considered free software that uses the GNU GPL version 2 license with a few
+extensions.
+
+This project uses the [REUSE version 3 specification][reuse-v3-spec] to make it
+easier to determine who owns the copyright and licensing of any given file in
+the codebase with SPDX identifiers. Ricer also employs the [Developer
+Certificate of Origin version 1.1][linux-dco] to ensure that any contributions
+made have the right to be merged into the project, and can be distributed with
+the project under its main license.
+
+### Main License
+
+Copyright (C) 2024 Jason Pena \<<jasonpena@awkless.com>\>
+
+The Ricer program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your option) any
+later version.
+
+This program also uses the GPL Cooperation Commitment version 1.0 to give itself
+the cure and reinstatement clauses offered by the GNU GPL version 3 to avoid
+instant termination of its GPL license for any reported violations.
+
+This program is distributed in the hope that it will be useful, but __WITHOUT
+ANY WARRANTY__; without even the implied warranty of __MERCHANTABILITY__ or
+__FITNESS FOR A PARTICULAR PURPOSE__. See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License and the
+Cooperation Commitment along with Ricer; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+### Documentation License
+
+The Ricer coding project uses the Creative Commons Attribute-ShareAlike 4.0
+International license to cover its public documentation files. Hopefully, this
+license will make it easier to distribute Ricer's documentation over the
+internet.
+
+### Public Domain License
+
+Some portions of the codebase are either too small or too generic to claim
+copyright over. Thus, these portions will be placed into the public domain
+through the Creative Commons CC0 1.0 Unversial license. This license was
+selected to for countries that legally have no concept of a public domain.
 
 [contrib-guide]: CONTRIBUTING.md
+[reuse-v3-spec]: https://reuse.software/spec-3.0/
+[linux-dco]: https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin
