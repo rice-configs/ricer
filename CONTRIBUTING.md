@@ -73,8 +73,48 @@ Signed-off-by: <name> <email>
 
 ## Rules of Licensing and Copyright
 
-__TODO__
+This project abides by the [REUSE 3.0][reuse3] specification to determine the
+licensing and copyright of files in the code base. Thus, all files must have the
+proper SPDX copyright and licensing tags at the top always. Contributors can
+Use the [reuse tool][reuse-tool] to determine if their changes are REUSE 3.0
+compliant.
+
+Ricer uses a number of different licenses to cover different sections of the
+codebase. Regardless, Ricer's main license is the GNU GPL v2+ license with the
+GPL Cooperation Commitment version 1.0. Thus, all major pieces of source code
+will need the following SPDX license identifier tag:
+
+```
+SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
+```
+
+If you add a file that mainly provides documentation, then you will need to use
+the Creative Commons Attribution-ShareAlike 4.0 International license, because
+the GPL only covers source code. Thus, all documentation files will need the
+following SPDX license identifier tag:
+
+```
+SPDX-License-Identifier: CC-BY-SA-4.0
+```
+
+Finally, if you add files that are either too small or too generic to place
+copyright over, or you just want the file to exist in the public domain, then
+use the Creative Commons CC0 1.0 Unviersal license via this SPDX license
+identifier:
+
+```
+SPDX-License-Identifier: CC0-1.0
+```
+
+Do not forget to include the following SPDX copyright identifier at the top of
+any file you create along with the SPDX license identifier:
+
+```
+SPDX-FileCopyrightText: <year> <name> <email>
+```
 
 [rust-lang]: doc.rust-lang.org
 [rust-style]: doc.rust-lang.org/beta/style-guide/index.html
 [linux-dco]: https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin
+[reuse3]: https://reuse.software/spec/
+[reuse-tool]: https://reuse.software/tutorial/
