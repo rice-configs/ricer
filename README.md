@@ -42,7 +42,59 @@ Enjoy!
 
 ## Usage
 
-__TODO__
+Create a new Vim configuration repository through Ricer:
+
+```
+# ricer init vim
+```
+
+Add `.vimrc` into the new Vim repository:
+
+```
+# ricer vim add ~/.vimrc
+```
+
+Commit the newly added file:
+
+```
+# ricer vim commit -m 'Initial commit of my Vim config'
+```
+
+Add a remote to Vim configuration:
+
+```
+# ricer vim remote add origin https://url/to/remote/vim.git
+```
+
+Push changes to the remote:
+
+```
+# ricer vim push -u origin main
+```
+
+Now this Vim configuration can be cloned to a new machine:
+
+```
+# ricer clone https://url/to/remote/vim.git vim
+```
+
+Ricer does not offer the full Git command set due to the limitations of the
+[git2-rs][libgit2-rs] library. Thus, if you need more advanced functionality
+like sparse checkout, submodules, etc, then Ricer can place you directly into a
+target repository to run the Git binary itself like so:
+
+```
+# ricer enter vim
+```
+
+Or you can use the following shortcut as well:
+
+```
+# ricer vim
+```
+
+For more details about using Ricer, then reference the provided manual page for
+the project.
 
 ## Acknowledgements
 
