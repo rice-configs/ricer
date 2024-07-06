@@ -34,8 +34,19 @@ __TODO__
 
 ## Contributing
 
-__TODO__
+The Ricer coding project is open to the following forms of contribution:
+
+1. Improvements or additions to production code.
+1. Improvements or additions to test code.
+1. Improvements or additions to build system.
+1. Improvements or additions to documentation.
+1. Improvements or additions to CI/CD pipelines.
+
+See the [contribution guidelines][contrib-guide] for more information about
+contributing to the Ricer project.
 
 ## Copyright and Licensing
 
 __TODO__
+
+[contrib-guide]: CONTRIBUTING.md
