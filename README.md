@@ -7,6 +7,18 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 Help user's manage their rice configurations.
 
+Ricer is an experimental command-line tool designed for managing and organizing
+[rice][explain-rice] configurations through [Git][git-scm]. Ricer allows the
+user to treat their home directory like a regular Git directory. Each
+configuration the user has will get stuffed into their own "fake-bare"
+repository. The "fake-bare" repository system allows the user to modularize
+their configurations for easier deployment across multiple machines.
+
+If Ricer's behavior seems familiar, then that is because Ricer borrows many
+concepts from [vcsh][vcsh-repo]. In fact, one could argue that Ricer is the Rust
+version of [vcsh][vcsh-repo]. Although Ricer attempts to combine
+[vcsh][vcsh-repo] and [mr][mr-repo] under one neat little program in Rust.
+
 ## Install
 
 You will need the following pieces of software:
@@ -95,6 +107,10 @@ copyright over. Thus, these portions will be placed into the public domain
 through the Creative Commons CC0 1.0 Unversial license. This license was
 selected to for countries that legally have no concept of a public domain.
 
+[explain-ricing]: pesos.github.io/2020/07/14/what-is-ricing.html
+[git-scm]: https://git-scm.com
+[vcsh-repo]: https://github.com/RichiH/vcsh
+[mr-repo]: https://github.com/RichiH/myrepos
 [contrib-guide]: CONTRIBUTING.md
 [reuse-v3-spec]: https://reuse.software/spec-3.0/
 [linux-dco]: https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin
