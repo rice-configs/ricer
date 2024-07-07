@@ -41,4 +41,5 @@
 //! [mr-repo]: https://github.com/RichiH/myrepos
 //! [contrib-guide]: CONTRIBUTING.md
 
-// TODO: Link modules...
+/// CLI implementation.
+pub mod cli;
