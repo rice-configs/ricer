@@ -15,12 +15,12 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 All notable changes to this project will be documented in this file. See
 [contributing guidelines](CONTRIBUTING.md) for commit guidelines.\n
 """
+
 # Template for the changelog body
 # https://keats.github.io/tera/docs/#introduction
 body = """
 ---
 {% if version %}\
-    ## [Unreleased]($REPO/compare/{{ version }}..HEAD)\n
     {% if previous.version %}\
         ## [{{ version | trim_start_matches(pat="v") }}]($REPO/compare/{{ previous.version }}..{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
     {% else %}\
