@@ -5,6 +5,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Ricer
 
+![GitHub Actions Workflow Status][build-status] ![REUSE 3.0 Compliance][reuse-compliance] ![GitHub Tag][version]
+
 Help user's manage their rice configurations.
 
 Ricer is an experimental command-line tool designed for managing and organizing
@@ -168,6 +170,9 @@ copyright over. Thus, these portions will be placed into the public domain
 through the Creative Commons CC0 1.0 Unversial license. This license was
 selected to for countries that legally have no concept of a public domain.
 
+[build-status]: https://img.shields.io/github/actions/workflow/status/rice-configs/ricer/quality_check.yaml?style=for-the-badge&label=Quality%20Check
+[reuse-compliance]: https://img.shields.io/github/actions/workflow/status/rice-configs/ricer/reuse.yaml?style=for-the-badge&label=REUSE%203.0
+[version]: https://img.shields.io/github/v/tag/rice-configs/ricer?style=for-the-badge
 [explain-ricing]: pesos.github.io/2020/07/14/what-is-ricing.html
 [git-scm]: https://git-scm.com
 [vcsh-repo]: https://github.com/RichiH/vcsh
