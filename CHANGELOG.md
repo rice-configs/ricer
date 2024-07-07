@@ -9,12 +9,25 @@ All notable changes to this project will be documented in this file. See
 [contributing guidelines](CONTRIBUTING.md) for commit guidelines.
 
 ---
-## [Unreleased](https://github.com/rice-configs/ricer/compare/0.1.0..HEAD)
-
-## [0.1.0](https://github.com/rice-configs/ricer/releases/tag/0.1.0) - 2024-07-07
+## [0.1.1](https://github.com/rice-configs/ricer/compare/v0.1.0..0.1.1) - 2024-07-07
 
 ### Documentation
 
+- **(readme)** Add status badges - ([d6643fd](https://github.com/rice-configs/ricer/commit/d6643fd344907fd668566716acb495808d013cf1)) - Jason Pena
+
+### Miscellaneous Chores
+
+- **(cargo)** Bump crate version to 0.1.1 - ([39b9e58](https://github.com/rice-configs/ricer/commit/39b9e58072de58ffae81fb2300a0e9cc9b4c6925)) - Jason Pena
+- **(changelog)** Document new changes in 0.1.1 - ([fc3698f](https://github.com/rice-configs/ricer/commit/fc3698f8a36c6bc96bcd2525e67ae9acb5f0b2b3)) - Jason Pena
+- **(cliff)** [**breaking**] Remove Unreleased link - ([4599eba](https://github.com/rice-configs/ricer/commit/4599eba258f867d11ff44ef8a9a85d31e4793e11)) - Jason Pena
+- **(rustfmt)** Configure rustfmt - ([8cee725](https://github.com/rice-configs/ricer/commit/8cee72586d926427db61bd970f5447cb7e78eaa6)) - Jason Pena
+
+---
+## [0.1.0](https://github.com/rice-configs/ricer/releases/tag/v0.1.0) - 2024-07-07
+
+### Documentation
+
+- **(changelog)** Document version 0.1.0 - ([6c731a6](https://github.com/rice-configs/ricer/commit/6c731a67ba7eaeee83c7c41bb258b00869be0043)) - Jason Pena
 - **(coc)** Use Contributor Covenant as main COC - ([8ae9e54](https://github.com/rice-configs/ricer/commit/8ae9e540b2acaa395efc8ba576f97a58fdc02690)) - Jason Pena
 - **(contrib)** Setup skeleton of `CONTRIBUTING.md` - ([8a50476](https://github.com/rice-configs/ricer/commit/8a50476ceeac411fe03f19734ccbabf48dc581db)) - Jason Pena
 - **(contrib)** State expected forms of contribution - ([33c1027](https://github.com/rice-configs/ricer/commit/33c10278d5c3ec11be67e9c66531348a3e368145)) - Jason Pena
