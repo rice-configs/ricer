@@ -30,7 +30,47 @@ pub struct Cli {
 }
 
 impl Cli {
+    /// Parse and execute command set.
+    ///
+    /// Constructs new instance of Ricer's CLI, then parses and executes the
+    /// command-line arguments the user passes in. If no errors occur, then this
+    /// method provides any output that needs to be written to stdout.
+    /// Otherwise, this method provides any output that details what went wrong
+    /// for stderr.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. User provides correct commands and arguments to execute.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Execute command with any arguments user passed.
+    /// 1. Initialize logger to report what the Ricer binary is doing depending
+    ///    on the verbosity level set by the user.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Do not let `main` panic.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ricer::cli::Cli
+    ///
+    /// let out = Cli::new_run().expect("Failed to run Ricer");
+    /// println!("{}", out);
+    /// ```
     pub fn new_run() -> Result<String> {
-        todo!();
+        let args = Cli::parse();
+        env_logger::Builder::new()
+            .format_timestamp(None)
+            .filter_level(args.verbose.log_level_filter())
+            .init();
+
+        let out = match args.cmd {
+            _ => todo!()
+        };
+
+        Ok(out)
     }
 }
