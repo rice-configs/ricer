@@ -10,6 +10,7 @@ edition = "2021"
 license = "GPL-2.0-or-later WITH GPL-CC-1.0"
 version = "0.2.0"
 rust-version = "1.74.1"
+build = "build.rs"
 
 [lib]
 name = "ricer"
@@ -24,14 +25,20 @@ doctest = false
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 clap-verbosity-flag = "2.2"
+const_format = "0.2"
 env_logger = "0.11"
 envy = "0.4"
+git2 = "0.19"
+indoc = "2"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 shellexpand = "3.1"
+shadow-rs = "0.29"
 thiserror = "1.0"
 toml = "0.5"
-git2 = "0.19"
+
+[build-dependencies]
+shadow-rs = "0.29"
 
 [dev-dependencies]
 assert_cmd = "2.0"
