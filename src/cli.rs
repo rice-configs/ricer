@@ -68,7 +68,7 @@ impl Cli {
             .init();
 
         let out = match args.cmd {
-            _ => todo!()
+            _ => todo!(),
         };
 
         Ok(out)
