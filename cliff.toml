@@ -19,13 +19,14 @@ All notable changes to this project will be documented in this file. See
 # Template for the changelog body
 # https://keats.github.io/tera/docs/#introduction
 body = """
----
 {% if version %}\
     {% if previous.version %}\
         ## [{{ version | trim_start_matches(pat="v") }}]($REPO/compare/{{ previous.version }}..{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
     {% else %}\
         ## [{{ version | trim_start_matches(pat="v") }}]($REPO/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
     {% endif %}\
+{% else %}
+    ## Unreleased
 {% endif %}\
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | striptags | trim | upper_first }}
@@ -80,11 +81,12 @@ commit_parsers = [
     { message = "^doc", group = "Documentation" },
     { message = "^perf", group = "Performance" },
     { message = "^ref", group = "Refactoring" },
-    { message = "^style", group = "Style" },
+    { message = "^ref\\(clippy\\):", skip = true }, # Users will not care about refactors from clippy.
+    { message = "^style", skip = true }, # Users do not care about style changes.
     { message = "^rev", group = "Revert" },
     { message = "^test", group = "Tests" },
-    { message = "^chore\\(version\\):", skip = true },
     { message = "^chore", group = "Miscellaneous Chores" },
+    { message = "^chore\\(version\\):", skip = true },
     { body = ".*security", group = "Security" },
 ]
 
