@@ -61,8 +61,14 @@ Try keep the subject, body, and trailer of your commits below 80 characters. Try
 to keep commit history linear. Make sure that large changes get represented as a
 series of commits rather than one massive commit.
 
-Make sure that your commits are clear and descriptive, because they will be used
-in changelog of the project.
+Make sure that your commits are clear and descriptive, because they might be
+used in changelog of the project. If you make refactors based on the results
+provided by clippy, then be sure to use the _clippy_ scope when commiting those
+refactors. By using the _clippy_ scope, you ensure that those commits do not get
+added. User's will only really care about refactors that change the way Ricer's
+interface or commands work, which is always a breaking change anyway.  Also, if
+you use the _style_ tag for commits, then they will be skipped too, because
+user's do not care about how the code looks!
 
 The Ricer project uses the [Developer Certificate of Origin version
 1.1][linux-dco]. All commits need to have the following trailer:
@@ -82,32 +88,21 @@ compliant.
 Ricer uses a number of different licenses to cover different sections of the
 codebase. Regardless, Ricer's main license is the GNU GPL v2+ license with the
 GPL Cooperation Commitment version 1.0. Thus, all major pieces of source code
-will need the following SPDX license identifier tag:
-
-```
-SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
-```
+will need the following SPDX license identifier tag: `GPL-2.0-or-later WITH
+GPL-CC-1.0`.
 
 If you add a file that mainly provides documentation, then you will need to use
 the Creative Commons Attribution-ShareAlike 4.0 International license, because
 the GPL only covers source code. Thus, all documentation files will need the
-following SPDX license identifier tag:
-
-```
-SPDX-License-Identifier: CC-BY-SA-4.0
-```
+following SPDX license identifier tag: `CC-BY-SA-4.0`.
 
 Finally, if you add files that are either too small or too generic to place
 copyright over, or you just want the file to exist in the public domain, then
 use the Creative Commons CC0 1.0 Unviersal license via this SPDX license
-identifier:
-
-```
-SPDX-License-Identifier: CC0-1.0
-```
+identifier: `CC0-1.0`
 
 Do not forget to include the following SPDX copyright identifier at the top of
-any file you create along with the SPDX license identifier:
+any file you create along with the SPDX copyright identifier:
 
 ```
 SPDX-FileCopyrightText: <year> <name> <email>
