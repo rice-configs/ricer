@@ -41,5 +41,8 @@
 //! [mr-repo]: https://github.com/RichiH/myrepos
 //! [contrib-guide]: CONTRIBUTING.md
 
+use shadow_rs::shadow;
+shadow!(build);
+
 /// CLI implementation.
 pub mod cli;
