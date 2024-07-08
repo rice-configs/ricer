@@ -79,6 +79,7 @@ commit_parsers = [
     { message = "^feat", group = "Features" },
     { message = "^fix", group = "Bug Fixes" },
     { message = "^doc", group = "Documentation" },
+    { message = "^doc\\(changelog\\):", skip = true },
     { message = "^perf", group = "Performance" },
     { message = "^ref", group = "Refactoring" },
     { message = "^ref\\(clippy\\):", skip = true }, # Users will not care about refactors from clippy.
