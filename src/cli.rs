@@ -77,7 +77,7 @@ pub enum CommandSet {
     Clone(CloneOpts),
 
     /// Delete existing repository(s).
-    Delete,
+    Delete(DeleteOpts),
 
     /// Rename existing repository.
     Rename,
@@ -169,4 +169,10 @@ pub struct CloneOpts {
     /// Clone from a branch.
     #[arg(short, long)]
     pub branch: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct DeleteOpts {
+    /// Target repository to delete.
+    pub repo: String,
 }
