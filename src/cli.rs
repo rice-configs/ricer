@@ -80,7 +80,7 @@ pub enum CommandSet {
     Delete(DeleteOpts),
 
     /// Rename existing repository.
-    Rename,
+    Rename(RenameOpts),
 
     /// Show current status of repository(s).
     Status,
@@ -175,4 +175,13 @@ pub struct CloneOpts {
 pub struct DeleteOpts {
     /// Target repository to delete.
     pub repo: String,
+}
+
+#[derive(Args, Debug)]
+pub struct RenameOpts {
+    /// Target repository to rename.
+    pub old_name: String,
+
+    /// New new to give target repository.
+    pub new_name: String,
 }
