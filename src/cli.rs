@@ -85,8 +85,8 @@ pub enum CommandSet {
     /// Show current status of repository(s).
     Status(StatusOpts),
 
-    /// List current set of repositorys.
-    List,
+    /// List current set of repositories.
+    List(ListOpts),
 
     /// Enter a repository for direct modification.
     Enter,
@@ -190,4 +190,15 @@ pub struct RenameOpts {
 pub struct StatusOpts {
     /// Give a short status report.
     pub terse: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct ListOpts {
+    /// Show all tracked files in repositories.
+    #[arg(short, long)]
+    pub tracked: bool,
+
+    /// Show all untracked files in repositories.
+    #[arg(short, long)]
+    pub untracked: bool,
 }
