@@ -71,7 +71,7 @@ pub enum CommandSet {
     Pull(PullOpts),
 
     /// Initialize a new repository.
-    Init,
+    Init(InitOpts),
 
     /// Clone existing repository from a remote.
     Clone,
@@ -142,4 +142,18 @@ pub struct PullOpts {
 
     /// Target branch to pull from.
     pub branch: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct InitOpts {
+    /// Name of repository to initialize.
+    pub name: String,
+
+    /// Set initial remote to <ORIGIN>.
+    #[arg(short = 'r', long, value_name = "ORIGIN")]
+    pub initial_remote: Option<String>,
+
+    /// Set initial branch to <BRANCH>.
+    #[arg(short = 'b', long, value_name = "BRANCH")]
+    pub initial_branch: Option<String>,
 }
