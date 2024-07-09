@@ -89,7 +89,7 @@ pub enum CommandSet {
     List(ListOpts),
 
     /// Enter a repository for direct modification.
-    Enter,
+    Enter(EnterOpts),
 }
 
 #[derive(Args, Debug)]
@@ -201,4 +201,10 @@ pub struct ListOpts {
     /// Show all untracked files in repositories.
     #[arg(short, long)]
     pub untracked: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct EnterOpts {
+    /// Target repository to enter.
+    pub repo: String,
 }
