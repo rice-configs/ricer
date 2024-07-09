@@ -34,7 +34,7 @@ impl RicerCli {
 #[command(next_help_heading = "Command Options")]
 pub struct CommandOpts {
     /// Hook execution option.
-    #[arg(default_value_t = RunHooksOpts::All, long, short, value_enum)]
+    #[arg(global = true, default_value_t = RunHooksOpts::All, long, short, value_enum)]
     pub run_hooks: RunHooksOpts,
 
     /// Target repository to use following command on.
@@ -59,7 +59,7 @@ pub enum RunHooksOpts {
 #[derive(Debug, Subcommand)]
 pub enum CommandSet {
     /// Add files to repository(s).
-    Add,
+    Add(AddOpts),
 
     /// Commit changes to repository(s).
     Commit,
@@ -90,4 +90,18 @@ pub enum CommandSet {
 
     /// Enter a repository for direct modification.
     Enter,
+}
+
+#[derive(Args, Debug)]
+pub struct AddOpts {
+    /// Files to add content from.
+    pub path_spec: Vec<String>,
+
+    /// Do not add the file(s), just show if they exist and/or will be ignored.
+    #[arg(long, short = 'n')]
+    pub dry_run: bool,
+
+    /// Stages modified and deleted files only, not new files.
+    #[arg(long, short)]
+    pub update: bool,
 }
