@@ -2,75 +2,92 @@
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, ValueEnum, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 
-/// Current command set of Ricer.
-#[derive(Debug, Subcommand)]
-pub enum CommandSet {
-    /// Initialize a new "fake-bare" Git repository.
-    Init,
-}
-
-/// Command-line interface.
-///
-/// Parses and executes the command-line arguments passed to the Ricer binary by
-/// the user. Provides a git-like interface, with specialized commands to make
-/// it easier to manage and organize rice configurations. See [`CommandSet`] for
-/// full command set that Ricer's interface offers.
 #[derive(Debug, Parser)]
-pub struct Cli {
-    // Control log level of binary...
-    #[command(flatten)]
-    verbose: Verbosity<InfoLevel>,
+#[command(about, long_about = None, version)]
+pub struct RicerCli {
+    #[command(flatten, next_help_heading = "Logging Options")]
+    pub log_opts: Verbosity<InfoLevel>,
 
-    // Link command set...
+    #[command(flatten)]
+    pub cmd_opts: CommandOpts,
+
     #[command(subcommand)]
-    cmd: CommandSet,
+    pub cmd_set: CommandSet,
 }
 
-impl Cli {
-    /// Parse and execute command set.
-    ///
-    /// Constructs new instance of Ricer's CLI, then parses and executes the
-    /// command-line arguments the user passes in. If no errors occur, then this
-    /// method provides any output that needs to be written to stdout.
-    /// Otherwise, this method provides any output that details what went wrong
-    /// for stderr.
-    ///
-    /// # Preconditions
-    ///
-    /// 1. User provides correct commands and arguments to execute.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Execute command with any arguments user passed.
-    /// 1. Initialize logger to report what the Ricer binary is doing depending
-    ///    on the verbosity level set by the user.
-    ///
-    /// # Invariants
-    ///
-    /// 1. Do not let `main` panic.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use ricer::cli::Cli
-    ///
-    /// let out = Cli::new_run().expect("Failed to run Ricer");
-    /// println!("{}", out);
-    /// ```
-    pub fn new_run() -> Result<String> {
-        let args = Cli::parse();
+impl RicerCli {
+    pub fn new_run() -> Result<()> {
+        let opts = RicerCli::parse();
         env_logger::Builder::new()
             .format_timestamp(None)
-            .filter_level(args.verbose.log_level_filter())
+            .filter_level(opts.log_opts.log_level_filter())
             .init();
 
-        let out = match args.cmd {
-            CommandSet::Init => "todo".to_string(),
-        };
-
-        Ok(out)
+        Ok(())
     }
+}
+
+#[derive(Debug, Args)]
+#[command(next_help_heading = "Command Options")]
+pub struct CommandOpts {
+    /// Hook execution option.
+    #[arg(default_value_t = RunHooksOpts::All, long, short, value_enum)]
+    pub run_hooks: RunHooksOpts,
+
+    /// Target repository to use following command on.
+    pub repo: Option<String>,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
+pub enum RunHooksOpts {
+    /// Run global and repository hooks.
+    All,
+
+    /// Run global hooks only.
+    GlobalOnly,
+
+    /// Run repository hooks only.
+    RepoOnly,
+
+    /// Do not run any hooks.
+    Never,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum CommandSet {
+    /// Add files to repository(s).
+    Add,
+
+    /// Commit changes to repository(s).
+    Commit,
+
+    /// Push changes to remote(s).
+    Push,
+
+    /// Pull changes from remote(s).
+    Pull,
+
+    /// Initialize a new repository.
+    Init,
+
+    /// Clone existing repository from a remote.
+    Clone,
+
+    /// Delete existing repository(s).
+    Delete,
+
+    /// Rename existing repository.
+    Rename,
+
+    /// Show current status of repository(s).
+    Status,
+
+    /// List current set of repositorys.
+    List,
+
+    /// Enter a repository for direct modification.
+    Enter,
 }
