@@ -83,7 +83,7 @@ pub enum CommandSet {
     Rename(RenameOpts),
 
     /// Show current status of repository(s).
-    Status,
+    Status(StatusOpts),
 
     /// List current set of repositorys.
     List,
@@ -184,4 +184,10 @@ pub struct RenameOpts {
 
     /// New new to give target repository.
     pub new_name: String,
+}
+
+#[derive(Args, Debug)]
+pub struct StatusOpts {
+    /// Give a short status report.
+    pub terse: bool,
 }
