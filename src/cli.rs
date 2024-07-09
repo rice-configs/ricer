@@ -74,7 +74,7 @@ pub enum CommandSet {
     Init(InitOpts),
 
     /// Clone existing repository from a remote.
-    Clone,
+    Clone(CloneOpts),
 
     /// Delete existing repository(s).
     Delete,
@@ -156,4 +156,17 @@ pub struct InitOpts {
     /// Set initial branch to <BRANCH>.
     #[arg(short = 'b', long, value_name = "BRANCH")]
     pub initial_branch: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct CloneOpts {
+    /// Remote to clone from.
+    pub remote: String,
+
+    /// Set name of cloned repository.
+    pub repo: Option<String>,
+
+    /// Clone from a branch.
+    #[arg(short, long)]
+    pub branch: Option<String>,
 }
