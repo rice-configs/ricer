@@ -34,7 +34,7 @@ impl RicerCli {
 #[command(next_help_heading = "Command Options")]
 pub struct CommandOpts {
     /// Hook execution option.
-    #[arg(global = true, default_value_t = RunHooksOpts::All, long, short, value_enum)]
+    #[arg(default_value_t = RunHooksOpts::All, long, short, value_enum)]
     pub run_hooks: RunHooksOpts,
 
     /// Target repository to use following command on.
@@ -62,7 +62,7 @@ pub enum CommandSet {
     Add(AddOpts),
 
     /// Commit changes to repository(s).
-    Commit,
+    Commit(CommitOpts),
 
     /// Push changes to remote(s).
     Push,
@@ -104,4 +104,24 @@ pub struct AddOpts {
     /// Stages modified and deleted files only, not new files.
     #[arg(long, short)]
     pub update: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct CommitOpts {
+    /// Amend or reword current commit.
+    #[arg(long, short, value_enum)]
+    pub fixup: Option<FixupOpts>,
+
+    /// Use <MSG> as the commit message.
+    #[arg(long, short, value_name = "MSG")]
+    pub message: Option<String>,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
+pub enum FixupOpts {
+    /// Ammend the changes made by the current commit.
+    Amend,
+
+    /// Reword the current commit.
+    Reword,
 }
