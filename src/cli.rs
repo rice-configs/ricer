@@ -65,7 +65,7 @@ pub enum CommandSet {
     Commit(CommitOpts),
 
     /// Push changes to remote(s).
-    Push,
+    Push(PushOpts),
 
     /// Pull changes from remote(s).
     Pull,
@@ -124,4 +124,13 @@ pub enum FixupOpts {
 
     /// Reword the current commit.
     Reword,
+}
+
+#[derive(Args, Debug)]
+pub struct PushOpts {
+    /// Target remote to push too.
+    pub remote: Option<String>,
+
+    /// Target branch to push too.
+    pub branch: Option<String>,
 }
