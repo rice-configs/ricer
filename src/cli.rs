@@ -68,7 +68,7 @@ pub enum CommandSet {
     Push(PushOpts),
 
     /// Pull changes from remote(s).
-    Pull,
+    Pull(PullOpts),
 
     /// Initialize a new repository.
     Init,
@@ -132,5 +132,14 @@ pub struct PushOpts {
     pub remote: Option<String>,
 
     /// Target branch to push too.
+    pub branch: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct PullOpts {
+    /// Target remote to pull from.
+    pub remote: Option<String>,
+
+    /// Target branch to pull from.
     pub branch: Option<String>,
 }
