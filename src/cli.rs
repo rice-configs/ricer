@@ -119,16 +119,35 @@ impl RicerCli {
 #[derive(Debug, Args)]
 #[command(next_help_heading = "Command Options")]
 pub struct CommandOpts {
-    /// Hook execution option.
-    #[arg(default_value_t = RunHooksOpts::Prompt, long, short, value_enum)]
-    pub run_hook: RunHookOpts,
+    /// Tell Ricer how you want a command hook to be executed.
+    #[arg(
+        default_value_t = RunHookOpts::Prompt,
+        long, short = 'c',
+        value_enum,
+        value_name = "ACTION"
+    )]
+    pub run_cmd_hook: RunHookOpts,
+
+    /// Tell Ricer how you want a repository hook to be executed.
+    #[arg(
+        default_value_t = RunHookOpts::Prompt,
+        long,
+        short = 'r',
+        value_enum,
+        value_name = "ACTION"
+    )]
+    pub run_repo_hook: RunHookOpts,
 }
 
 /// Hook execution options.
 ///
-/// Hooks are specific to a Ricer command, and execute _before_ (pre) and/or
-/// _after_ (post) a given Ricer command. These hooks are user defined in
-/// `$XDG_CONFIG_HOME/ricer/hooks/hooks.toml`.
+/// Hooks pose as a potential security risk to a user. The user is expected to
+/// know what __any__ hook is doing _before_ executing it, because Ricer does
+/// not provide any way to verify if it is safe to run. However, Ricer does try
+/// to help by offering options in executing a hook. The default behavior is to
+/// show the user the contents of a given hook and prompt them about executing
+/// it. Otherwise, they can choose never to run a hook or always execute a hook
+/// with no prompting.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
 pub enum RunHookOpts {
     /// Run the hook no questions asked.
@@ -137,7 +156,7 @@ pub enum RunHookOpts {
     /// Show the user the contents of the hook and prompt them to execute it.
     Prompt,
 
-    /// Do not the hook.
+    /// Do not the execute the hook.
     Never,
 }
 
