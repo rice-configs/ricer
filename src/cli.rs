@@ -6,20 +6,31 @@ use clap_verbosity_flag::{InfoLevel, Verbosity};
 use std::ffi::OsString;
 
 #[derive(Debug, Parser)]
-#[command(about, long_about = None, version)]
+#[command(
+    about,
+    long_about = None,
+    subcommand_help_heading = "Ricer Command Set",
+    version,
+    term_width = 80
+)]
 pub struct RicerCli {
+    /// Options for logging verbosity.
     #[command(flatten, next_help_heading = "Logging Options")]
     pub log_opts: Verbosity<InfoLevel>,
 
+    /// Options that are shareable across Ricer commands.
     #[command(flatten)]
     pub cmd_opts: CommandOpts,
 
+    /// Ricer command set.
     #[command(subcommand)]
     pub cmd_set: CommandSet,
 }
 
 impl RicerCli {
     /// Parse command line arguments.
+    ///
+    /// Panics on error and issues its own error code.
     ///
     /// # Preconditions
     ///
@@ -37,6 +48,11 @@ impl RicerCli {
     ///
     /// let opts = RicerCli::parse_args(std::env::args_os());
     /// ```
+    ///
+    /// # See
+    ///
+    /// 1. <https://docs.rs/clap/latest/clap/trait.Parser.html#method.parse_from>
+    /// 2. <https://docs.rs/clap/latest/clap/error/struct.Error.html#method.exit>
     pub fn parse_args<I, T>(args: I) -> Self
     where
         I: IntoIterator<Item = T>,
@@ -52,9 +68,6 @@ pub struct CommandOpts {
     /// Hook execution option.
     #[arg(default_value_t = RunHooksOpts::All, long, short, value_enum)]
     pub run_hooks: RunHooksOpts,
-
-    /// Target repository to use following command on.
-    pub repo: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
@@ -74,16 +87,13 @@ pub enum RunHooksOpts {
 
 #[derive(Debug, Subcommand)]
 pub enum CommandSet {
-    /// Add files to repository(s).
-    Add(AddOpts),
-
-    /// Commit changes to repository(s).
+    /// Commit changes to all repository.
     Commit(CommitOpts),
 
-    /// Push changes to remote(s).
+    /// Push changes to each repository remote.
     Push(PushOpts),
 
-    /// Pull changes from remote(s).
+    /// Pull changes from each repository remote.
     Pull(PullOpts),
 
     /// Initialize a new repository.
@@ -106,20 +116,10 @@ pub enum CommandSet {
 
     /// Enter a repository for direct modification.
     Enter(EnterOpts),
-}
 
-#[derive(Args, Debug)]
-pub struct AddOpts {
-    /// Files to add content from.
-    pub path_spec: Vec<String>,
-
-    /// Do not add the file(s), just show if they exist and/or will be ignored.
-    #[arg(long, short = 'n')]
-    pub dry_run: bool,
-
-    /// Stages modified and deleted files only, not new files.
-    #[arg(long, short)]
-    pub update: bool,
+    /// Run user's Git binary on target repository.
+    #[command(external_subcommand)]
+    UseGitBinOnRepo(Vec<OsString>),
 }
 
 #[derive(Args, Debug)]
@@ -128,7 +128,7 @@ pub struct CommitOpts {
     #[arg(long, short, value_enum)]
     pub fixup: Option<FixupOpts>,
 
-    /// Use <MSG> as the commit message.
+    /// Use MSG as the commit message.
     #[arg(long, short, value_name = "MSG")]
     pub message: Option<String>,
 }
@@ -165,11 +165,11 @@ pub struct InitOpts {
     /// Name of repository to initialize.
     pub name: String,
 
-    /// Set initial remote to <ORIGIN>.
+    /// Set initial remote to ORIGIN.
     #[arg(short = 'r', long, value_name = "ORIGIN")]
     pub initial_remote: Option<String>,
 
-    /// Set initial branch to <BRANCH>.
+    /// Set initial branch to BRANCH.
     #[arg(short = 'b', long, value_name = "BRANCH")]
     pub initial_branch: Option<String>,
 }
