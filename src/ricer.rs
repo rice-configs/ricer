@@ -11,6 +11,7 @@ use log::error;
 use std::ffi::OsString;
 
 use ricer_core::cli::RicerCli;
+use ricer_core::context::Context;
 
 /// Starting point of Ricer binary.
 ///
@@ -53,6 +54,9 @@ where
         .format_timestamp(None)
         .filter_level(opts.log_opts.log_level_filter())
         .init();
+
+    let ctx = Context::try_from(opts)?;
+    println!("{:?}", ctx);
 
     // TODO: match and execute command in Ricer's command set...
 
