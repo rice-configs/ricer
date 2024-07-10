@@ -44,5 +44,4 @@
 use shadow_rs::shadow;
 shadow!(build);
 
-/// CLI implementation.
 pub mod cli;
