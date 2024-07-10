@@ -9,16 +9,22 @@
 //! command set allowing for free modifications to Ricer's CLI without the need
 //! to modify the existing internal interface for the command set.
 
+/// Context state for commit command.
+pub mod commit;
+
 use crate::cli::{CommandSet, RicerCli};
+use commit::CommitContext;
 
 /// Context states for each Ricer command.
 #[derive(Debug)]
 pub enum Context {
+    Commit(CommitContext),
 }
 
 impl From<RicerCli> for Context {
     fn from(opts: RicerCli) -> Self {
         let ctx = match opts.cmd_set {
+            CommandSet::Commit(_) => Self::Commit(CommitContext::from(opts)),
             _ => todo!(),
         };
 
