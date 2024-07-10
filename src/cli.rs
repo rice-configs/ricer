@@ -1,6 +1,47 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
+//! Ricer CLI implementation.
+//!
+//! Ricer's CLI is mainly designed to allow the user to manage and organize a
+//! collection of Git repositories through a Git-like interface. The idea is
+//! to have the user modularize their rice/dotfile configurations into
+//! individual repositories that are deployed into their home directory through
+//! Ricer's CLI. The general design and usage of the CLI boils down to:
+//!
+//! ```markdown
+//! # ricer [OPTIONS] <COMMAND> [CMD_ARGS]
+//! ```
+//!
+//! Where `[OPTIONS]` are top-level options that are shareable with a Ricer
+//! command, `<COMMAND>` is the name of the Ricer command, and `[CMD_ARGS]` are
+//! the Ricer command's corresponding arguments to execute with.
+//!
+//! However, Ricer's existing CLI command set only implements a small modified
+//! portion of the Git command set. If the user needs to use the full Git
+//! command set for a target repository, then they need to use one of two
+//! commands offered by Ricer: enter, or external subcommand shortcut.
+//!
+//! The enter command allows the user to enter a target repository through a
+//! sub-shell so they can use the Git binary directly and exit the sub-shell
+//! when done.
+//!
+//! The external subcommand shortcut takes the following form in the CLI:
+//!
+//! ```markdown
+//! # ricer <REPO> <GIT_CMD>
+//! ```
+//!
+//! Where `<REPO>` is the name of the target repository, and `<GIT_CMD>` is a
+//! regular Git command to run on the target repository. This external
+//! subcommand shortcut allows the user to make modifications to their
+//! repositories as an alternative to the enter command.
+//!
+//! Currently, I have not figured out a way to get clap to document the
+//! external subcommand shortcut automatically. My hacky solution is to use the
+//! `after_help` and `after_long_help` methods to slap on an explanation of the
+//! external subcommand shortcut to the user.
+
 use crate::build;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
@@ -8,10 +49,17 @@ use const_format::formatcp;
 use indoc::indoc;
 use std::ffi::OsString;
 
+/// Ricer CLI structure.
+///
+/// Top-level structure that clap will deserialize command-line arguments into.
+/// Obtain a valid parse through [`parse_args`].
+///
+/// [`parse_args`]: #method.parse_args
 #[derive(Debug, Parser)]
 #[command(
     about,
     after_help = EXTERNAL_SUBCOMMAND_INFORMATION,
+    after_long_help = EXTERNAL_SUBCOMMAND_INFORMATION,
     long_about = None,
     subcommand_help_heading = "Ricer Command Set",
     version,
@@ -67,35 +115,43 @@ impl RicerCli {
     }
 }
 
+/// Shareable top-level options used by all Ricer commands.
 #[derive(Debug, Args)]
 #[command(next_help_heading = "Command Options")]
 pub struct CommandOpts {
     /// Hook execution option.
-    #[arg(default_value_t = RunHooksOpts::All, long, short, value_enum)]
-    pub run_hooks: RunHooksOpts,
+    #[arg(default_value_t = RunHooksOpts::Prompt, long, short, value_enum)]
+    pub run_hook: RunHookOpts,
 }
 
+/// Hook execution options.
+///
+/// Hooks are specific to a Ricer command, and execute _before_ (pre) and/or
+/// _after_ (post) a given Ricer command. These hooks are user defined in
+/// `$XDG_CONFIG_HOME/ricer/hooks/hooks.toml`.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
-pub enum RunHooksOpts {
-    /// Run global and repository hooks.
-    All,
+pub enum RunHookOpts {
+    /// Run the hook no questions asked.
+    Always,
 
-    /// Run global hooks only.
-    GlobalOnly,
+    /// Show the user the contents of the hook and prompt them to execute it.
+    Prompt,
 
-    /// Run repository hooks only.
-    RepoOnly,
-
-    /// Do not run any hooks.
+    /// Do not the hook.
     Never,
 }
 
+/// Current Ricer command set.
+///
+/// Git-like command set that provides a limited set of Git functionality. User
+/// will either need to use the enter command or the extended subcommand
+/// shortcut to gain access to full Git command set through Ricer.
 #[derive(Debug, Subcommand)]
 pub enum CommandSet {
-    /// Commit changes to all repository.
+    /// Commit changes to all repositories.
     Commit(CommitOpts),
 
-    /// Push changes to each repository remote.
+    /// Push changes into each repository remote.
     Push(PushOpts),
 
     /// Pull changes from each repository remote.
@@ -107,13 +163,13 @@ pub enum CommandSet {
     /// Clone existing repository from a remote.
     Clone(CloneOpts),
 
-    /// Delete existing repository(s).
+    /// Delete existing repository.
     Delete(DeleteOpts),
 
     /// Rename existing repository.
     Rename(RenameOpts),
 
-    /// Show current status of repository(s).
+    /// Show current status of all repositories.
     Status(StatusOpts),
 
     /// List current set of repositories.
@@ -127,6 +183,7 @@ pub enum CommandSet {
     UseGitBinOnRepo(Vec<OsString>),
 }
 
+/// Options for commit command.
 #[derive(Args, Debug)]
 pub struct CommitOpts {
     /// Amend or reword current commit.
@@ -138,6 +195,7 @@ pub struct CommitOpts {
     pub message: Option<String>,
 }
 
+/// Fixup flag options for commit command.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
 pub enum FixupOpts {
     /// Ammend the changes made by the current commit.
@@ -147,6 +205,7 @@ pub enum FixupOpts {
     Reword,
 }
 
+/// Options for push command.
 #[derive(Args, Debug)]
 pub struct PushOpts {
     /// Target remote to push too.
@@ -156,6 +215,7 @@ pub struct PushOpts {
     pub branch: Option<String>,
 }
 
+/// Options for pull command.
 #[derive(Args, Debug)]
 pub struct PullOpts {
     /// Target remote to pull from.
@@ -165,6 +225,7 @@ pub struct PullOpts {
     pub branch: Option<String>,
 }
 
+/// Options for init command.
 #[derive(Args, Debug)]
 pub struct InitOpts {
     /// Name of repository to initialize.
@@ -179,6 +240,7 @@ pub struct InitOpts {
     pub initial_branch: Option<String>,
 }
 
+/// Options for clone command.
 #[derive(Args, Debug)]
 pub struct CloneOpts {
     /// Remote to clone from.
@@ -192,12 +254,14 @@ pub struct CloneOpts {
     pub branch: Option<String>,
 }
 
+/// Options for delete command.
 #[derive(Args, Debug)]
 pub struct DeleteOpts {
     /// Target repository to delete.
     pub repo: String,
 }
 
+/// Options for rename command.
 #[derive(Args, Debug)]
 pub struct RenameOpts {
     /// Target repository to rename.
@@ -207,12 +271,14 @@ pub struct RenameOpts {
     pub new_name: String,
 }
 
+/// Options for status command.
 #[derive(Args, Debug)]
 pub struct StatusOpts {
     /// Give a short status report.
     pub terse: bool,
 }
 
+/// Options for list command.
 #[derive(Args, Debug)]
 pub struct ListOpts {
     /// Show all tracked files in repositories.
@@ -224,6 +290,7 @@ pub struct ListOpts {
     pub untracked: bool,
 }
 
+/// Options for enter command.
 #[derive(Args, Debug)]
 pub struct EnterOpts {
     /// Target repository to enter.
