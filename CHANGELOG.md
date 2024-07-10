@@ -8,8 +8,60 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 All notable changes to this project will be documented in this file. See
 [contributing guidelines](CONTRIBUTING.md) for commit guidelines.
 
----
-## [0.1.1](https://github.com/rice-configs/ricer/compare/v0.1.0..0.1.1) - 2024-07-07
+## [0.2.0](https://github.com/rice-configs/ricer/compare/v0.1.1..0.2.0) - 2024-07-10
+
+### Documentation
+
+- **(contrib)** Detail what commits will be included in changelog - ([ea83245](https://github.com/rice-configs/ricer/commit/ea8324559957f9415d85ec64b11a029df0e40172)) - Jason Pena
+- **(lib)** Document Ricer crate - ([02edaee](https://github.com/rice-configs/ricer/commit/02edaee5db3ca64e4d371b12a0f14795c71604fc)) - Jason Pena
+- **(lib)** Module `ricer::cli` documents itself now - ([dd435fb](https://github.com/rice-configs/ricer/commit/dd435fb5d0a6418896aef8f4994232911a63aa37)) - Jason Pena
+- **(ricer::cli)** Improve documentation of module - ([ea4d169](https://github.com/rice-configs/ricer/commit/ea4d169de6dd5de7cb878499623347a726d1d975)) - Jason Pena
+
+### Features
+
+- **(bin)** [**breaking**] Make `main` handle command execute - ([39fa17f](https://github.com/rice-configs/ricer/commit/39fa17f45d2e166a22a414160933005e97ea3668)) - Jason Pena
+- **(lib)** Connect ricer::cli module to API - ([5ed867b](https://github.com/rice-configs/ricer/commit/5ed867bac19f513e5878d82a9b6f66edd2986f87)) - Jason Pena
+- **(main)** [**breaking**] Setup `main` to use `rally::cli::Cli` - ([90cf6e4](https://github.com/rice-configs/ricer/commit/90cf6e43a356d19f04cadfa31404fc20fb3a8127)) - Jason Pena
+- **(ricer::cli)** Setup basic skeleton of Ricer's cli - ([f2dc3f4](https://github.com/rice-configs/ricer/commit/f2dc3f41b945849cb4d6e4b3f6674c584ce38489)) - Jason Pena
+- **(ricer::cli)** Implement `Cli::new_run` - ([39f3ee5](https://github.com/rice-configs/ricer/commit/39f3ee51e02515d9e726552bd9659f3f6a808c53)) - Jason Pena
+- **(ricer::cli)** [**breaking**] Add skeleton of full command set and options - ([589d3c4](https://github.com/rice-configs/ricer/commit/589d3c4d312599336af0c9de0f638d8b49806c64)) - Jason Pena
+- **(ricer::cli)** Add options for `Add` command - ([868067c](https://github.com/rice-configs/ricer/commit/868067c2d629c6b4c88c08122f4289cbfe7aa195)) - Jason Pena
+- **(ricer::cli)** Setup options for commit command - ([25e6ff8](https://github.com/rice-configs/ricer/commit/25e6ff821d2d0c3cafbea8cd82424dc0ab877707)) - Jason Pena
+- **(ricer::cli)** Setup options for push command - ([fa6fd28](https://github.com/rice-configs/ricer/commit/fa6fd28ae72304402bf19711d188378eca10aa95)) - Jason Pena
+- **(ricer::cli)** Setup options for pull command - ([4a68273](https://github.com/rice-configs/ricer/commit/4a6827371054340e44faf7f5da8fbc3739076283)) - Jason Pena
+- **(ricer::cli)** Setup options for init command - ([9983c4f](https://github.com/rice-configs/ricer/commit/9983c4f946e773c962f435444bea2d67ccaa9ed9)) - Jason Pena
+- **(ricer::cli)** Setup options for clone command - ([7f6c75a](https://github.com/rice-configs/ricer/commit/7f6c75af04ce102c06b00e57a000537ec41dcd8f)) - Jason Pena
+- **(ricer::cli)** Setup options for delete command - ([dcb3ad7](https://github.com/rice-configs/ricer/commit/dcb3ad7a15bd95b64b40c8f28ad983e1e72554ae)) - Jason Pena
+- **(ricer::cli)** Setup options for rename command - ([ff1e73e](https://github.com/rice-configs/ricer/commit/ff1e73e8d430cb599f6607c00015e2f1b89a4e38)) - Jason Pena
+- **(ricer::cli)** Setup options of status command - ([4bd9826](https://github.com/rice-configs/ricer/commit/4bd9826db9a0721e67f1554da19ff411af6c4bd9)) - Jason Pena
+- **(ricer::cli)** Setup options for list command - ([018443a](https://github.com/rice-configs/ricer/commit/018443ace78dc36315c9990d0da32886880d8b54)) - Jason Pena
+- **(ricer::cli)** Setup options for enter command - ([a2fb977](https://github.com/rice-configs/ricer/commit/a2fb9774848dd56e0a415b4f7c5713439994283c)) - Jason Pena
+- **(ricer::cli)** [**breaking**] Use external command for using Git binary on a repository - ([380d56b](https://github.com/rice-configs/ricer/commit/380d56b2af0d2680873020108398b646a9130d6c)) - Jason Pena
+- **(ricer::cli)** Add GPL boilerplate for long version info - ([2e80074](https://github.com/rice-configs/ricer/commit/2e8007434be69afc58fe121f419be105d988fa33)) - Jason Pena
+- **(ricer::cli)** Make help document external subcommand usage - ([cb857ee](https://github.com/rice-configs/ricer/commit/cb857ee28b29941cd7ee407262da80fc7a093759)) - Jason Pena
+
+### Miscellaneous Chores
+
+- **(cargo)** [**breaking**] Bump crate version to 0.2.0 - ([e4c4f85](https://github.com/rice-configs/ricer/commit/e4c4f85d4707b8f4cdeb9b2a6985da2ab73d9775)) - Jason Pena
+- **(cargo)** [**breaking**] Add indoc, shadow-rs, and const_format dependencies - ([502dc78](https://github.com/rice-configs/ricer/commit/502dc78ab724a21db46f671461102bae297f784a)) - Jason Pena
+- **(cargo)** [**breaking**] Setup shadow-rs to obtain project info - ([ccafa20](https://github.com/rice-configs/ricer/commit/ccafa20012e9df757ad48a70ff4fdba0496c9170)) - Jason Pena
+- **(cargo)** [**breaking**] Replace envy and shellexpand with directories - ([34567be](https://github.com/rice-configs/ricer/commit/34567beb40c0f49ee83bb804d46269340bc2e079)) - Jason Pena
+- **(cargo)** [**breaking**] Give library and binary separate names - ([9bab23e](https://github.com/rice-configs/ricer/commit/9bab23e1f98b44969a8eba7647b3d10a75c17a07)) - Jason Pena
+- **(ci/cd)** Generate documentation for Ricer binary - ([e50451c](https://github.com/rice-configs/ricer/commit/e50451c7725c85d64b5dd5b43c2a8ecea5ec19f0)) - Jason Pena
+- **(cliff)** Ignore style commits and clippy scope commits - ([a0b93f0](https://github.com/rice-configs/ricer/commit/a0b93f08f56161c5669ad1802a00db56cb2c4eb9)) - Jason Pena
+- **(cliff)** Skip changelog updates - ([1d55b1b](https://github.com/rice-configs/ricer/commit/1d55b1bb46689fadd0ee3c24ae896097085b8af4)) - Jason Pena
+
+### Refactoring
+
+- **(ricer::cli)** Thanks clippy - ([5efc296](https://github.com/rice-configs/ricer/commit/5efc2969367d7df70903e704ea4b665cfa01769d)) - Jason Pena
+- **(ricer::cli)** [**breaking**] Remove `RicerCli::new_run` in favor for `RicerCli::parse_args` - ([2c92284](https://github.com/rice-configs/ricer/commit/2c922844000e17bafa35954ec5884a7f6358f6e0)) - Jason Pena
+- **(ricer::cli)** [**breaking**] Separate hook execution into individual options - ([412a18d](https://github.com/rice-configs/ricer/commit/412a18db91e864f5394bcae89ce3f7be59e5af65)) - Jason Pena
+
+### Tests
+
+- **(ricer::cli)** Verify that CLI works as expected - ([a178c30](https://github.com/rice-configs/ricer/commit/a178c300f916520109e3c9fda948abd5ef00e4bb)) - Jason Pena
+
+## [0.1.1](https://github.com/rice-configs/ricer/compare/v0.1.0..v0.1.1) - 2024-07-07
 
 ### Documentation
 
@@ -18,11 +70,10 @@ All notable changes to this project will be documented in this file. See
 ### Miscellaneous Chores
 
 - **(cargo)** Bump crate version to 0.1.1 - ([39b9e58](https://github.com/rice-configs/ricer/commit/39b9e58072de58ffae81fb2300a0e9cc9b4c6925)) - Jason Pena
-- **(changelog)** Document new changes in 0.1.1 - ([fc3698f](https://github.com/rice-configs/ricer/commit/fc3698f8a36c6bc96bcd2525e67ae9acb5f0b2b3)) - Jason Pena
+- **(changelog)** Document new changes in 0.1.1 - ([fa3f5a2](https://github.com/rice-configs/ricer/commit/fa3f5a25db488395b9237fd64b72585763275b88)) - Jason Pena
 - **(cliff)** [**breaking**] Remove Unreleased link - ([4599eba](https://github.com/rice-configs/ricer/commit/4599eba258f867d11ff44ef8a9a85d31e4793e11)) - Jason Pena
 - **(rustfmt)** Configure rustfmt - ([8cee725](https://github.com/rice-configs/ricer/commit/8cee72586d926427db61bd970f5447cb7e78eaa6)) - Jason Pena
 
----
 ## [0.1.0](https://github.com/rice-configs/ricer/releases/tag/v0.1.0) - 2024-07-07
 
 ### Documentation
