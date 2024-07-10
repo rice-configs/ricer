@@ -11,6 +11,7 @@ use std::ffi::OsString;
 #[derive(Debug, Parser)]
 #[command(
     about,
+    after_help = EXTERNAL_SUBCOMMAND_INFORMATION,
     long_about = None,
     subcommand_help_heading = "Ricer Command Set",
     version,
@@ -253,3 +254,9 @@ const GPL_BOILERPLATE: &str = indoc! {"
 };
 
 const VERSION_INFORMATION: &str = formatcp!("{}\n\n{GPL_BOILERPLATE}", build::CLAP_LONG_VERSION);
+
+const EXTERNAL_SUBCOMMAND_INFORMATION: &str = indoc! {"
+    External Subcommand Info:
+      <REPO> <GIT_CMD>  Shortcut to execute a Git command directly on a target repository.
+    "
+};
