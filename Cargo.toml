@@ -13,7 +13,7 @@ rust-version = "1.74.1"
 build = "build.rs"
 
 [lib]
-name = "ricer"
+name = "ricer_core"
 doctest = false
 
 [[bin]]
