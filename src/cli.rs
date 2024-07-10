@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
-use anyhow::Result;
-use clap::{Args, Parser, ValueEnum, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
+use std::ffi::OsString;
 
 #[derive(Debug, Parser)]
 #[command(about, long_about = None, version)]
@@ -19,14 +19,30 @@ pub struct RicerCli {
 }
 
 impl RicerCli {
-    pub fn new_run() -> Result<()> {
-        let opts = RicerCli::parse();
-        env_logger::Builder::new()
-            .format_timestamp(None)
-            .filter_level(opts.log_opts.log_level_filter())
-            .init();
-
-        Ok(())
+    /// Parse command line arguments.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Arguments are iterable.
+    /// 2. Arguments are convertible _into_ [`OsString`].
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Deserialize arguments into [`RicerCli`].
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::cli::RicerCli;
+    ///
+    /// let opts = RicerCli::parse_args(std::env::args_os());
+    /// ```
+    pub fn parse_args<I, T>(args: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        RicerCli::parse_from(args)
     }
 }
 
