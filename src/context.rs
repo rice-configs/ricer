@@ -13,7 +13,7 @@ pub mod clone;
 pub mod commit;
 pub mod delete;
 pub mod enter;
-pub mod git_on_repo;
+pub mod repo_git;
 pub mod init;
 pub mod list;
 pub mod pull;
@@ -26,7 +26,7 @@ use clone::CloneContext;
 use commit::CommitContext;
 use delete::DeleteContext;
 use enter::EnterContext;
-use git_on_repo::UseGitBinOnRepoContext;
+use repo_git::RepoGitContext;
 use init::InitContext;
 use list::ListContext;
 use pull::PullContext;
@@ -47,7 +47,7 @@ pub enum Context {
     Status(StatusContext),
     List(ListContext),
     Enter(EnterContext),
-    UseGitBinOnRepo(UseGitBinOnRepoContext),
+    RepoGit(RepoGitContext),
 }
 
 impl From<RicerCli> for Context {
@@ -63,9 +63,7 @@ impl From<RicerCli> for Context {
             CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
             CommandSet::List(_) => Self::List(ListContext::from(opts)),
             CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
-            CommandSet::UseGitBinOnRepo(_) => {
-                Self::UseGitBinOnRepo(UseGitBinOnRepoContext::from(opts))
-            }
+            CommandSet::RepoGit(_) => Self::RepoGit(RepoGitContext::from(opts))
         }
     }
 }

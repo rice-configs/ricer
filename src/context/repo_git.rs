@@ -6,7 +6,7 @@ use std::ffi::OsString;
 
 /// Context for external subcommand shortcut.
 #[derive(Debug)]
-pub struct UseGitBinOnRepoContext {
+pub struct RepoGitContext {
     /// Target repository to run Git binary on.
     pub repo: OsString,
 
@@ -14,11 +14,11 @@ pub struct UseGitBinOnRepoContext {
     pub git_args: Vec<OsString>,
 }
 
-impl From<RicerCli> for UseGitBinOnRepoContext {
+impl From<RicerCli> for RepoGitContext {
     fn from(opts: RicerCli) -> Self {
         let RicerCli { cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
-            CommandSet::UseGitBinOnRepo(opts) => opts,
+            CommandSet::RepoGit(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'enter'!"),
         };
 
