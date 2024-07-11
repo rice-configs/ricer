@@ -3,11 +3,25 @@
 
 //! Command context state layer.
 //!
-//! A simple layer of abstraction that flattens the [`RicerCli`] structure into
-//! individual structures that house the required context state for a given
-//! Ricer command. The main overall goal is to decouple Ricer's CLI from the
-//! command set allowing for free modifications to Ricer's CLI without the need
-//! to modify the existing internal interface for the command set.
+//! A _context_ in Ricer, is a definitive and flattened set of options required
+//! for a Ricer command to function.
+//!
+//! The various `[...]Opts` structures contained in [`RicerCli`] provide an
+//! interface for the user. These structures provide a tree structure that can
+//! be annoying to use internally for Ricer. Thus, the context layer converts
+//! the various options offered by [`RicerCli`] into a flattened structure with
+//! at most one level of indirection.
+//!
+//! Another benefit of the context layer, is the decoupling of Ricer commands
+//! from the CLI. Thus, we can make modifications to the CLI freely without
+//! worring about affecting any of the command set implementations.
+//!
+//! # Thanks
+//!
+//! The idea for a context layer came for the cargo-msrv project. See
+//! <https://github.com/foresterre/cargo-msrv/blob/main/src/context.rs#L39C1-L56C10>.
+//!
+//! [`RicerCli`]: crate::cli::RicerCli
 
 pub mod clone;
 pub mod commit;
