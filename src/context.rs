@@ -12,11 +12,13 @@
 pub mod commit;
 pub mod push;
 pub mod pull;
+pub mod init;
 
 use crate::cli::{CommandSet, RicerCli};
 use commit::CommitContext;
 use push::PushContext;
 use pull::PullContext;
+use init::InitContext;
 
 /// Context states for each Ricer command.
 #[derive(Debug)]
@@ -24,6 +26,7 @@ pub enum Context {
     Commit(CommitContext),
     Push(PushContext),
     Pull(PullContext),
+    Init(InitContext),
 }
 
 impl From<RicerCli> for Context {
@@ -32,6 +35,7 @@ impl From<RicerCli> for Context {
             CommandSet::Commit(_) => Self::Commit(CommitContext::from(opts)),
             CommandSet::Push(_) => Self::Push(PushContext::from(opts)),
             CommandSet::Pull(_) => Self::Pull(PullContext::from(opts)),
+            CommandSet::Init(_) => Self::Init(InitContext::from(opts)),
             _ => todo!(),
         };
 
