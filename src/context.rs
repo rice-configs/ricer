@@ -19,6 +19,7 @@ pub mod rename;
 pub mod status;
 pub mod list;
 pub mod enter;
+pub mod git_on_repo;
 
 use crate::cli::{CommandSet, RicerCli};
 use commit::CommitContext;
@@ -31,6 +32,7 @@ use rename::RenameContext;
 use status::StatusContext;
 use list::ListContext;
 use enter::EnterContext;
+use git_on_repo::UseGitBinOnRepoContext;
 
 /// Context states for each Ricer command.
 #[derive(Debug)]
@@ -45,6 +47,7 @@ pub enum Context {
     Status(StatusContext),
     List(ListContext),
     Enter(EnterContext),
+    UseGitBinOnRepo(UseGitBinOnRepoContext),
 }
 
 impl From<RicerCli> for Context {
@@ -60,7 +63,7 @@ impl From<RicerCli> for Context {
             CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
             CommandSet::List(_) => Self::List(ListContext::from(opts)),
             CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
-            _ => todo!(),
+            CommandSet::UseGitBinOnRepo(_) => Self::UseGitBinOnRepo(UseGitBinOnRepoContext::from(opts)),
         };
 
         ctx
