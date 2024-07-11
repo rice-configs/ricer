@@ -199,7 +199,7 @@ pub enum CommandSet {
 
     /// Run user's Git binary on target repository.
     #[command(external_subcommand)]
-    UseGitBinOnRepo(Vec<OsString>),
+    RepoGit(Vec<OsString>),
 }
 
 /// Options for commit command.
