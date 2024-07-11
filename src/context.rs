@@ -11,16 +11,19 @@
 
 pub mod commit;
 pub mod push;
+pub mod pull;
 
 use crate::cli::{CommandSet, RicerCli};
 use commit::CommitContext;
 use push::PushContext;
+use pull::PullContext;
 
 /// Context states for each Ricer command.
 #[derive(Debug)]
 pub enum Context {
     Commit(CommitContext),
     Push(PushContext),
+    Pull(PullContext),
 }
 
 impl From<RicerCli> for Context {
@@ -28,6 +31,7 @@ impl From<RicerCli> for Context {
         let ctx = match opts.cmd_set {
             CommandSet::Commit(_) => Self::Commit(CommitContext::from(opts)),
             CommandSet::Push(_) => Self::Push(PushContext::from(opts)),
+            CommandSet::Pull(_) => Self::Pull(PullContext::from(opts)),
             _ => todo!(),
         };
 
