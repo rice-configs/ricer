@@ -18,6 +18,7 @@ pub mod delete;
 pub mod rename;
 pub mod status;
 pub mod list;
+pub mod enter;
 
 use crate::cli::{CommandSet, RicerCli};
 use commit::CommitContext;
@@ -29,6 +30,7 @@ use delete::DeleteContext;
 use rename::RenameContext;
 use status::StatusContext;
 use list::ListContext;
+use enter::EnterContext;
 
 /// Context states for each Ricer command.
 #[derive(Debug)]
@@ -42,6 +44,7 @@ pub enum Context {
     Rename(RenameContext),
     Status(StatusContext),
     List(ListContext),
+    Enter(EnterContext),
 }
 
 impl From<RicerCli> for Context {
@@ -56,6 +59,7 @@ impl From<RicerCli> for Context {
             CommandSet::Rename(_) => Self::Rename(RenameContext::from(opts)),
             CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
             CommandSet::List(_) => Self::List(ListContext::from(opts)),
+            CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
             _ => todo!(),
         };
 
