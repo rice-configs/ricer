@@ -16,6 +16,7 @@ pub mod init;
 pub mod clone;
 pub mod delete;
 pub mod rename;
+pub mod status;
 
 use crate::cli::{CommandSet, RicerCli};
 use commit::CommitContext;
@@ -25,6 +26,7 @@ use init::InitContext;
 use clone::CloneContext;
 use delete::DeleteContext;
 use rename::RenameContext;
+use status::StatusContext;
 
 /// Context states for each Ricer command.
 #[derive(Debug)]
@@ -36,6 +38,7 @@ pub enum Context {
     Clone(CloneContext),
     Delete(DeleteContext),
     Rename(RenameContext),
+    Status(StatusContext),
 }
 
 impl From<RicerCli> for Context {
@@ -48,6 +51,7 @@ impl From<RicerCli> for Context {
             CommandSet::Clone(_) => Self::Clone(CloneContext::from(opts)),
             CommandSet::Delete(_) => Self::Delete(DeleteContext::from(opts)),
             CommandSet::Rename(_) => Self::Rename(RenameContext::from(opts)),
+            CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
             _ => todo!(),
         };
 
