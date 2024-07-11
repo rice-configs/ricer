@@ -21,7 +21,7 @@ pub struct PullContext {
 
 impl From<RicerCli> for PullContext {
     fn from(opts: RicerCli) -> Self {
-        let RicerCli {cmd_opts, cmd_set, ..} = opts;
+        let RicerCli { cmd_opts, cmd_set, .. } = opts;
 
         let cmd_set = match cmd_set {
             CommandSet::Pull(opts) => opts,

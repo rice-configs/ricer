@@ -56,10 +56,7 @@ impl From<RicerCli> for CommitContext {
         };
 
         // Literally impossible, but paranoia is a hell of a drug...
-        debug_assert!(
-            !(amend == true && reword == true),
-            "Members 'amend' and 'reword' cannot both be true"
-        );
+        debug_assert!(!(amend && reword), "Members 'amend' and 'reword' cannot both be true");
 
         Self {
             amend,

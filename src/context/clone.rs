@@ -24,7 +24,7 @@ pub struct CloneContext {
 
 impl From<RicerCli> for CloneContext {
     fn from(opts: RicerCli) -> Self {
-        let RicerCli { cmd_opts, cmd_set, ..} = opts;
+        let RicerCli { cmd_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Clone(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'init'!"),
