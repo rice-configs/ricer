@@ -24,7 +24,7 @@ pub struct InitContext {
 
 impl From<RicerCli> for InitContext {
     fn from(opts: RicerCli) -> Self {
-        let RicerCli {cmd_opts, cmd_set, ..} = opts;
+        let RicerCli { cmd_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Init(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'push'!"),

@@ -18,7 +18,7 @@ pub struct StatusContext {
 
 impl From<RicerCli> for StatusContext {
     fn from(opts: RicerCli) -> Self {
-        let RicerCli {cmd_opts, cmd_set, ..} = opts;
+        let RicerCli { cmd_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Status(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'status'!"),

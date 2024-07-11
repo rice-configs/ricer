@@ -21,7 +21,7 @@ pub struct PushContext {
 
 impl From<RicerCli> for PushContext {
     fn from(opts: RicerCli) -> Self {
-        let RicerCli {cmd_opts, cmd_set, ..} = opts;
+        let RicerCli { cmd_opts, cmd_set, .. } = opts;
 
         let cmd_set = match cmd_set {
             CommandSet::Push(opts) => opts,

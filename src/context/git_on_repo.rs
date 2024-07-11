@@ -16,15 +16,12 @@ pub struct UseGitBinOnRepoContext {
 
 impl From<RicerCli> for UseGitBinOnRepoContext {
     fn from(opts: RicerCli) -> Self {
-        let RicerCli {cmd_set, ..} = opts;
+        let RicerCli { cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::UseGitBinOnRepo(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'enter'!"),
         };
 
-        Self {
-            repo: cmd_set[0].clone(),
-            git_args: cmd_set[1..].to_vec(),
-        } 
+        Self { repo: cmd_set[0].clone(), git_args: cmd_set[1..].to_vec() }
     }
 }

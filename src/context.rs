@@ -9,30 +9,30 @@
 //! command set allowing for free modifications to Ricer's CLI without the need
 //! to modify the existing internal interface for the command set.
 
-pub mod commit;
-pub mod push;
-pub mod pull;
-pub mod init;
 pub mod clone;
+pub mod commit;
 pub mod delete;
-pub mod rename;
-pub mod status;
-pub mod list;
 pub mod enter;
 pub mod git_on_repo;
+pub mod init;
+pub mod list;
+pub mod pull;
+pub mod push;
+pub mod rename;
+pub mod status;
 
 use crate::cli::{CommandSet, RicerCli};
-use commit::CommitContext;
-use push::PushContext;
-use pull::PullContext;
-use init::InitContext;
 use clone::CloneContext;
+use commit::CommitContext;
 use delete::DeleteContext;
-use rename::RenameContext;
-use status::StatusContext;
-use list::ListContext;
 use enter::EnterContext;
 use git_on_repo::UseGitBinOnRepoContext;
+use init::InitContext;
+use list::ListContext;
+use pull::PullContext;
+use push::PushContext;
+use rename::RenameContext;
+use status::StatusContext;
 
 /// Context states for each Ricer command.
 #[derive(Debug)]
@@ -52,7 +52,7 @@ pub enum Context {
 
 impl From<RicerCli> for Context {
     fn from(opts: RicerCli) -> Self {
-        let ctx = match opts.cmd_set {
+        match opts.cmd_set {
             CommandSet::Commit(_) => Self::Commit(CommitContext::from(opts)),
             CommandSet::Push(_) => Self::Push(PushContext::from(opts)),
             CommandSet::Pull(_) => Self::Pull(PullContext::from(opts)),
@@ -63,9 +63,9 @@ impl From<RicerCli> for Context {
             CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
             CommandSet::List(_) => Self::List(ListContext::from(opts)),
             CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
-            CommandSet::UseGitBinOnRepo(_) => Self::UseGitBinOnRepo(UseGitBinOnRepoContext::from(opts)),
-        };
-
-        ctx
+            CommandSet::UseGitBinOnRepo(_) => {
+                Self::UseGitBinOnRepo(UseGitBinOnRepoContext::from(opts))
+            }
+        }
     }
 }
