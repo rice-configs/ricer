@@ -98,7 +98,7 @@ impl From<SharedOptions> for SharedContext {
 
 /// Hook execution options.
 ///
-/// Hooks pose as a potential security risk to a user. The user is expected to
+/// Hooks pose a potential security risk to the user. The user is expected to
 /// know what __any__ hook is doing _before_ executing it, because Ricer does
 /// not provide any way to verify if it is safe to run. However, Ricer does try
 /// to help by offering options in executing a hook. The default behavior is to
