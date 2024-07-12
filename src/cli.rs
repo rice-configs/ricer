@@ -75,7 +75,7 @@ pub struct RicerCli {
 
     /// Options that are shareable across Ricer commands.
     #[command(flatten)]
-    pub shared_opts: SharedOpts,
+    pub shared_opts: SharedOptions,
 
     /// Ricer command set.
     #[command(subcommand)]
@@ -120,7 +120,7 @@ impl RicerCli {
 /// Shareable top-level options used by all Ricer commands.
 #[derive(Debug, Args)]
 #[command(next_help_heading = "Command Options")]
-pub struct SharedOpts {
+pub struct SharedOptions {
     /// Tell Ricer how you want hooks to be executed.
     #[arg(default_value_t = HookAction::Prompt, value_enum, value_name = "ACTION")]
     pub run_hook: HookAction,
@@ -134,34 +134,34 @@ pub struct SharedOpts {
 #[derive(Debug, Subcommand)]
 pub enum CommandSet {
     /// Commit changes to all repositories.
-    Commit(CommitOpts),
+    Commit(CommitOptions),
 
     /// Push changes into each repository remote.
-    Push(PushOpts),
+    Push(PushOptions),
 
     /// Pull changes from each repository remote.
-    Pull(PullOpts),
+    Pull(PullOptions),
 
     /// Initialize a new repository.
-    Init(InitOpts),
+    Init(InitOptions),
 
     /// Clone existing repository from a remote.
-    Clone(CloneOpts),
+    Clone(CloneOptions),
 
     /// Delete existing repository.
-    Delete(DeleteOpts),
+    Delete(DeleteOptions),
 
     /// Rename existing repository.
-    Rename(RenameOpts),
+    Rename(RenameOptions),
 
     /// Show current status of all repositories.
-    Status(StatusOpts),
+    Status(StatusOptions),
 
     /// List current set of repositories.
-    List(ListOpts),
+    List(ListOptions),
 
     /// Enter a repository for direct modification.
-    Enter(EnterOpts),
+    Enter(EnterOptions),
 
     /// Run user's Git binary on target repository.
     #[command(external_subcommand)]
@@ -170,7 +170,7 @@ pub enum CommandSet {
 
 /// Options for commit command.
 #[derive(Args, Debug)]
-pub struct CommitOpts {
+pub struct CommitOptions {
     /// Amend or reword current commit.
     #[arg(long, short, value_name = "ACTION", value_enum)]
     pub fixup: Option<FixupAction>,
@@ -182,7 +182,7 @@ pub struct CommitOpts {
 
 /// Options for push command.
 #[derive(Args, Debug)]
-pub struct PushOpts {
+pub struct PushOptions {
     /// Target remote to push too.
     pub remote: Option<String>,
 
@@ -192,7 +192,7 @@ pub struct PushOpts {
 
 /// Options for pull command.
 #[derive(Args, Debug)]
-pub struct PullOpts {
+pub struct PullOptions {
     /// Target remote to pull from.
     pub remote: Option<String>,
 
@@ -202,7 +202,7 @@ pub struct PullOpts {
 
 /// Options for init command.
 #[derive(Args, Debug)]
-pub struct InitOpts {
+pub struct InitOptions {
     /// Name of repository to initialize.
     pub name: String,
 
@@ -217,7 +217,7 @@ pub struct InitOpts {
 
 /// Options for clone command.
 #[derive(Args, Debug)]
-pub struct CloneOpts {
+pub struct CloneOptions {
     /// Remote to clone from.
     pub remote: String,
 
@@ -231,14 +231,14 @@ pub struct CloneOpts {
 
 /// Options for delete command.
 #[derive(Args, Debug)]
-pub struct DeleteOpts {
+pub struct DeleteOptions {
     /// Target repository to delete.
     pub repo: String,
 }
 
 /// Options for rename command.
 #[derive(Args, Debug)]
-pub struct RenameOpts {
+pub struct RenameOptions {
     /// Target repository to rename.
     pub old_name: String,
 
@@ -248,7 +248,7 @@ pub struct RenameOpts {
 
 /// Options for status command.
 #[derive(Args, Debug)]
-pub struct StatusOpts {
+pub struct StatusOptions {
     /// Give a short status report.
     #[arg(long, short)]
     pub terse: bool,
@@ -256,7 +256,7 @@ pub struct StatusOpts {
 
 /// Options for list command.
 #[derive(Args, Debug)]
-pub struct ListOpts {
+pub struct ListOptions {
     /// Show all tracked files in repositories.
     #[arg(short, long)]
     pub tracked: bool,
@@ -268,7 +268,7 @@ pub struct ListOpts {
 
 /// Options for enter command.
 #[derive(Args, Debug)]
-pub struct EnterOpts {
+pub struct EnterOptions {
     /// Target repository to enter.
     pub repo: String,
 }
@@ -299,7 +299,7 @@ const GPL_BOILERPLATE: &str = indoc! {"
 const VERSION_INFORMATION: &str = formatcp!("{}\n\n{GPL_BOILERPLATE}", build::CLAP_LONG_VERSION);
 
 const EXTERNAL_SUBCOMMAND_INFORMATION: &str = indoc! {"
-    External Subcommand Info:
+    Command Shortcuts:
       <REPO> <GIT_CMD>  Shortcut to execute a Git command directly on a target repository.
     "
 };
