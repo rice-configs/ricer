@@ -43,7 +43,9 @@
 //! external subcommand shortcut to the user.
 
 use crate::build;
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use crate::context::HookAction;
+use crate::context::commit::FixupAction;
+use clap::{Args, Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use const_format::formatcp;
 use indoc::indoc;
@@ -73,7 +75,7 @@ pub struct RicerCli {
 
     /// Options that are shareable across Ricer commands.
     #[command(flatten)]
-    pub cmd_opts: CommandOpts,
+    pub shared_opts: SharedOpts,
 
     /// Ricer command set.
     #[command(subcommand)]
@@ -118,47 +120,12 @@ impl RicerCli {
 /// Shareable top-level options used by all Ricer commands.
 #[derive(Debug, Args)]
 #[command(next_help_heading = "Command Options")]
-pub struct CommandOpts {
-    /// Tell Ricer how you want a command hook to be executed.
-    #[arg(
-        default_value_t = RunHookOpts::Prompt,
-        long, short = 'c',
-        value_enum,
-        value_name = "ACTION"
-    )]
-    pub run_cmd_hook: RunHookOpts,
-
-    /// Tell Ricer how you want a repository hook to be executed.
-    #[arg(
-        default_value_t = RunHookOpts::Prompt,
-        long,
-        short = 'r',
-        value_enum,
-        value_name = "ACTION"
-    )]
-    pub run_repo_hook: RunHookOpts,
+pub struct SharedOpts {
+    /// Tell Ricer how you want hooks to be executed.
+    #[arg(default_value_t = HookAction::Prompt, value_enum, value_name = "ACTION")]
+    pub run_hook: HookAction,
 }
 
-/// Hook execution options.
-///
-/// Hooks pose as a potential security risk to a user. The user is expected to
-/// know what __any__ hook is doing _before_ executing it, because Ricer does
-/// not provide any way to verify if it is safe to run. However, Ricer does try
-/// to help by offering options in executing a hook. The default behavior is to
-/// show the user the contents of a given hook and prompt them about executing
-/// it. Otherwise, they can choose never to run a hook or always execute a hook
-/// with no prompting.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
-pub enum RunHookOpts {
-    /// Run the hook no questions asked.
-    Always,
-
-    /// Show the user the contents of the hook and prompt them to execute it.
-    Prompt,
-
-    /// Do not the execute the hook.
-    Never,
-}
 
 /// Current Ricer command set.
 ///
@@ -206,22 +173,12 @@ pub enum CommandSet {
 #[derive(Args, Debug)]
 pub struct CommitOpts {
     /// Amend or reword current commit.
-    #[arg(long, short, value_enum)]
-    pub fixup: Option<FixupOpts>,
+    #[arg(long, short, value_name = "ACTION", value_enum)]
+    pub fixup: Option<FixupAction>,
 
     /// Use MSG as the commit message.
     #[arg(long, short, value_name = "MSG")]
     pub message: Option<String>,
-}
-
-/// Fixup flag options for commit command.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
-pub enum FixupOpts {
-    /// Ammend the changes made by the current commit.
-    Amend,
-
-    /// Reword the current commit.
-    Reword,
 }
 
 /// Options for push command.

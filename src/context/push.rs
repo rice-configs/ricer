@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
-use crate::cli::{CommandSet, RicerCli, RunHookOpts};
+use crate::cli::{CommandSet, RicerCli};
+use crate::context::SharedContext;
 
 /// Context state for push command.
 #[derive(Debug)]
@@ -12,17 +13,13 @@ pub struct PushContext {
     /// Target branch to push too.
     pub branch: Option<String>,
 
-    /// Action to take when executing a hook specific to this command.
-    pub run_cmd_hook: RunHookOpts,
-
-    /// Action to take when executing a repository hook.
-    pub run_repo_hook: RunHookOpts,
+    /// Shared features.
+    pub shared: SharedContext,
 }
 
 impl From<RicerCli> for PushContext {
     fn from(opts: RicerCli) -> Self {
-        let RicerCli { cmd_opts, cmd_set, .. } = opts;
-
+        let RicerCli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Push(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'push'!"),
@@ -31,8 +28,7 @@ impl From<RicerCli> for PushContext {
         Self {
             remote: cmd_set.remote,
             branch: cmd_set.branch,
-            run_cmd_hook: cmd_opts.run_cmd_hook,
-            run_repo_hook: cmd_opts.run_repo_hook,
+            shared: shared_opts.into(),
         }
     }
 }

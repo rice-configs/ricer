@@ -35,7 +35,8 @@ pub mod push;
 pub mod rename;
 pub mod status;
 
-use crate::cli::{CommandSet, RicerCli};
+use crate::cli::{CommandSet, SharedOpts, RicerCli};
+use clap::ValueEnum;
 use clone::CloneContext;
 use commit::CommitContext;
 use delete::DeleteContext;
@@ -80,4 +81,38 @@ impl From<RicerCli> for Context {
             CommandSet::RepoGit(_) => Self::RepoGit(RepoGitContext::from(opts))
         }
     }
+}
+
+/// Context that is shared across all command contexts.
+#[derive(Debug)]
+pub struct SharedContext {
+    /// Hook execution action choice.
+    pub hook_action: HookAction,
+}
+
+impl From<SharedOpts> for SharedContext {
+    fn from(opts: SharedOpts) -> Self {
+        Self { hook_action: opts.run_hook }
+    }
+}
+
+/// Hook execution options.
+///
+/// Hooks pose as a potential security risk to a user. The user is expected to
+/// know what __any__ hook is doing _before_ executing it, because Ricer does
+/// not provide any way to verify if it is safe to run. However, Ricer does try
+/// to help by offering options in executing a hook. The default behavior is to
+/// show the user the contents of a given hook and prompt them about executing
+/// it. Otherwise, they can choose never to run a hook or always execute a hook
+/// with no prompting.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
+pub enum HookAction {
+    /// Run the hook no questions asked.
+    Always,
+
+    /// Show the user the contents of the hook and prompt them to execute it.
+    Prompt,
+
+    /// Do not execute the hook.
+    Never,
 }
