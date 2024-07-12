@@ -6,7 +6,7 @@
 //! A _context_ in Ricer, is a definitive and flattened set of options required
 //! for a Ricer command to function.
 //!
-//! The various `[...]Opts` structures contained in [`RicerCli`] provide an
+//! The various `[...]Options` structures contained in [`RicerCli`] provide an
 //! interface for the user. These structures provide a tree structure that can
 //! be annoying to use internally for Ricer. Thus, the context layer converts
 //! the various options offered by [`RicerCli`] into a flattened structure with
@@ -35,7 +35,7 @@ pub mod rename;
 pub mod repo_git;
 pub mod status;
 
-use crate::cli::{CommandSet, RicerCli, SharedOpts};
+use crate::cli::{CommandSet, RicerCli, SharedOptions};
 use clap::ValueEnum;
 use clone::CloneContext;
 use commit::CommitContext;
@@ -90,8 +90,8 @@ pub struct SharedContext {
     pub hook_action: HookAction,
 }
 
-impl From<SharedOpts> for SharedContext {
-    fn from(opts: SharedOpts) -> Self {
+impl From<SharedOptions> for SharedContext {
+    fn from(opts: SharedOptions) -> Self {
         Self { hook_action: opts.run_hook }
     }
 }
