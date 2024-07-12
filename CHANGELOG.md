@@ -8,10 +8,41 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 All notable changes to this project will be documented in this file. See
 [contributing guidelines](CONTRIBUTING.md) for commit guidelines.
 
-## [0.2.0](https://github.com/rice-configs/ricer/compare/v0.1.1..0.2.0) - 2024-07-10
+## [0.3.0](https://github.com/rice-configs/ricer/compare/v0.2.0..0.3.0) - 2024-07-12
 
 ### Documentation
 
+- **(ricer)** Remove invariant for `run_ricer` - ([9f02285](https://github.com/rice-configs/ricer/commit/9f0228522e738472ff5e6aebfc14e3c4239aaa1d)) - Jason Pena
+- **(ricer_core::context)** State what the context layer does - ([9a7010a](https://github.com/rice-configs/ricer/commit/9a7010a2a50aee5b1d3bd292be56d425e75eeff5)) - Jason Pena
+- **(ricer_core::context)** Fix up wording of `HookAction` - ([ab83628](https://github.com/rice-configs/ricer/commit/ab836286e016fad353f1b628311f9c337f6b143c)) - Jason Pena
+
+### Features
+
+- **(main)** [**breaking**] Add usage of `ricer_core::context` - ([4191c52](https://github.com/rice-configs/ricer/commit/4191c52df116b8dca462b1dd2ecad139d608d607)) - Jason Pena
+- **(ricer_core::context)** Setup command context state layer - ([373725e](https://github.com/rice-configs/ricer/commit/373725ea09028f13cb27fd979806f7617722c839)) - Jason Pena
+- **(ricer_core::context)** Setup context state for commit command - ([2a12055](https://github.com/rice-configs/ricer/commit/2a120558fde9d25e1f6b6ba3874675ce75fcbab3)) - Jason Pena
+- **(ricer_core::context)** Setup context for push command - ([7db66a7](https://github.com/rice-configs/ricer/commit/7db66a7a6168efd065049f469a1c5cf58905bb9b)) - Jason Pena
+- **(ricer_core::context)** Setup context for pull command - ([dc12402](https://github.com/rice-configs/ricer/commit/dc12402c460a4414684a335d33e5bf7fb34bef97)) - Jason Pena
+- **(ricer_core::context)** Setup context for init command - ([58d4581](https://github.com/rice-configs/ricer/commit/58d458198f514b7c8b015475e71a90040f30576d)) - Jason Pena
+- **(ricer_core::context)** Setup context for clone command - ([80beee4](https://github.com/rice-configs/ricer/commit/80beee402204e6cc5b2b00d0ceaa13b81f073bb9)) - Jason Pena
+- **(ricer_core::context)** Setup context for delete command - ([fc461fc](https://github.com/rice-configs/ricer/commit/fc461fc34b47a926308299ed9c0a09ac7cbf79ab)) - Jason Pena
+- **(ricer_core::context)** Setup context for rename command - ([5661ec9](https://github.com/rice-configs/ricer/commit/5661ec9f4225298e91da630d92969e67488659c6)) - Jason Pena
+- **(ricer_core::context)** Setup context for status command - ([2ff61a2](https://github.com/rice-configs/ricer/commit/2ff61a22bf48827f870e42588b14e514f6763041)) - Jason Pena
+- **(ricer_core::context)** Setup context for list command - ([b4fdc60](https://github.com/rice-configs/ricer/commit/b4fdc608b04cb01f6a4b4fa6584be3c0179f405a)) - Jason Pena
+- **(ricer_core::context)** Setup context for enter command - ([b52a313](https://github.com/rice-configs/ricer/commit/b52a313c4323ab1e36c0e05dc67dd280da3a9fa1)) - Jason Pena
+- **(ricer_core::context)** Setup context for git subcommand shortcut - ([f36e38a](https://github.com/rice-configs/ricer/commit/f36e38ac06c5cd1d396d72ac9203c6c46e870a6c)) - Jason Pena
+
+### Refactoring
+
+- **(clippy)** Thanks clippy - ([4df6709](https://github.com/rice-configs/ricer/commit/4df67099352b4d85eae5ae518e10d58e499ceb53)) - Jason Pena
+- **(ricer_core)** Rename `UseGitBinOnRepo` to `RepoGit` - ([1761293](https://github.com/rice-configs/ricer/commit/1761293bc60d584003b64376846501970fed190d)) - Jason Pena
+- **(ricer_core)** [**breaking**] Combine shared command options in `SharedContext` - ([5f64454](https://github.com/rice-configs/ricer/commit/5f64454b6d7f7b6b4a76fd6f2e16fac3d13a9f0d)) - Jason Pena
+
+## [0.2.0](https://github.com/rice-configs/ricer/compare/v0.1.1..v0.2.0) - 2024-07-10
+
+### Documentation
+
+- **(changelog)** Document version 0.2.0 - ([afd3b9a](https://github.com/rice-configs/ricer/commit/afd3b9a8c36f9b72bac2831bc48f853b371590f2)) - Jason Pena
 - **(contrib)** Detail what commits will be included in changelog - ([ea83245](https://github.com/rice-configs/ricer/commit/ea8324559957f9415d85ec64b11a029df0e40172)) - Jason Pena
 - **(lib)** Document Ricer crate - ([02edaee](https://github.com/rice-configs/ricer/commit/02edaee5db3ca64e4d371b12a0f14795c71604fc)) - Jason Pena
 - **(lib)** Module `ricer::cli` documents itself now - ([dd435fb](https://github.com/rice-configs/ricer/commit/dd435fb5d0a6418896aef8f4994232911a63aa37)) - Jason Pena
