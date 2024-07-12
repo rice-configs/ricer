@@ -39,11 +39,6 @@ fn main() {
 ///
 /// 1. Parse and execute Ricer command set.
 /// 2. Provide [`ExitCode`] after processing.
-///
-/// # Invariants
-///
-/// 1. Do not allow `main` to panic, i.e., catch all possible errors so `main`
-///    can report them.
 fn run_ricer<I, F>(args: F) -> Result<ExitCode>
 where
     I: IntoIterator<Item = OsString>,
