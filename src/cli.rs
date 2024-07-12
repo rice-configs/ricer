@@ -43,8 +43,8 @@
 //! external subcommand shortcut to the user.
 
 use crate::build;
-use crate::context::HookAction;
 use crate::context::commit::FixupAction;
+use crate::context::HookAction;
 use clap::{Args, Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use const_format::formatcp;
@@ -125,7 +125,6 @@ pub struct SharedOpts {
     #[arg(default_value_t = HookAction::Prompt, value_enum, value_name = "ACTION")]
     pub run_hook: HookAction,
 }
-
 
 /// Current Ricer command set.
 ///

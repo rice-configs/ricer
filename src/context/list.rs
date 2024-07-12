@@ -25,10 +25,6 @@ impl From<RicerCli> for ListContext {
             _ => unreachable!("This should never happen. The command is not 'list'!"),
         };
 
-        Self {
-            tracked: cmd_set.tracked,
-            untracked: cmd_set.untracked,
-            shared: shared_opts.into(),
-        }
+        Self { tracked: cmd_set.tracked, untracked: cmd_set.untracked, shared: shared_opts.into() }
     }
 }
