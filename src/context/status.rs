@@ -22,9 +22,6 @@ impl From<RicerCli> for StatusContext {
             _ => unreachable!("This should never happen. The command is not 'status'!"),
         };
 
-        Self {
-            terse: cmd_set.terse,
-            shared: shared_opts.into(),
-        }
+        Self { terse: cmd_set.terse, shared: shared_opts.into() }
     }
 }

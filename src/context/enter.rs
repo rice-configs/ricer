@@ -22,9 +22,6 @@ impl From<RicerCli> for EnterContext {
             _ => unreachable!("This should never happen. The command is not 'enter'!"),
         };
 
-        Self {
-            repo: cmd_set.repo,
-            shared: shared_opts.into(),
-        }
+        Self { repo: cmd_set.repo, shared: shared_opts.into() }
     }
 }

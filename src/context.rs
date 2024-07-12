@@ -27,26 +27,26 @@ pub mod clone;
 pub mod commit;
 pub mod delete;
 pub mod enter;
-pub mod repo_git;
 pub mod init;
 pub mod list;
 pub mod pull;
 pub mod push;
 pub mod rename;
+pub mod repo_git;
 pub mod status;
 
-use crate::cli::{CommandSet, SharedOpts, RicerCli};
+use crate::cli::{CommandSet, RicerCli, SharedOpts};
 use clap::ValueEnum;
 use clone::CloneContext;
 use commit::CommitContext;
 use delete::DeleteContext;
 use enter::EnterContext;
-use repo_git::RepoGitContext;
 use init::InitContext;
 use list::ListContext;
 use pull::PullContext;
 use push::PushContext;
 use rename::RenameContext;
+use repo_git::RepoGitContext;
 use status::StatusContext;
 
 /// Context states for each Ricer command.
@@ -78,7 +78,7 @@ impl From<RicerCli> for Context {
             CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
             CommandSet::List(_) => Self::List(ListContext::from(opts)),
             CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
-            CommandSet::RepoGit(_) => Self::RepoGit(RepoGitContext::from(opts))
+            CommandSet::RepoGit(_) => Self::RepoGit(RepoGitContext::from(opts)),
         }
     }
 }

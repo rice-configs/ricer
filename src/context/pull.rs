@@ -25,10 +25,6 @@ impl From<RicerCli> for PullContext {
             _ => unreachable!("This should never happen. The command is not 'pull'!"),
         };
 
-        Self {
-            remote: cmd_set.remote,
-            branch: cmd_set.branch,
-            shared: shared_opts.into(),
-        }
+        Self { remote: cmd_set.remote, branch: cmd_set.branch, shared: shared_opts.into() }
     }
 }

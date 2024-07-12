@@ -25,10 +25,6 @@ impl From<RicerCli> for RenameContext {
             _ => unreachable!("This should never happen. The command is not 'rename'!"),
         };
 
-        Self {
-            old_name: cmd_set.old_name,
-            new_name: cmd_set.new_name,
-            shared: shared_opts.into(),
-        }
+        Self { old_name: cmd_set.old_name, new_name: cmd_set.new_name, shared: shared_opts.into() }
     }
 }

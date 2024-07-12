@@ -26,11 +26,7 @@ impl From<RicerCli> for CommitContext {
             _ => unreachable!("This should never happen. The command is not 'commit'!"),
         };
 
-        Self {
-            fixup: cmd_set.fixup,
-            message: cmd_set.message,
-            shared: shared_opts.into(),
-        }
+        Self { fixup: cmd_set.fixup, message: cmd_set.message, shared: shared_opts.into() }
     }
 }
 
