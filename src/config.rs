@@ -55,7 +55,7 @@
 
 use anyhow::anyhow;
 use directories::ProjectDirs;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 use crate::error::RicerError;
 
@@ -97,9 +97,10 @@ impl<D: ConfigDir> Config<D> {
     pub fn try_to_find_repo(&self, repo: impl AsRef<str>) -> Result<PathBuf, RicerError> {
         let repo_path = self.dir.repos_dir().join(format!("{}.git", repo.as_ref()).as_str());
         if !repo_path.exists() {
-            return Err(RicerError::ConfigError(
-                anyhow!("Failed to find '{}' repository", repo.as_ref())
-            ));
+            return Err(RicerError::ConfigError(anyhow!(
+                "Failed to find '{}' repository",
+                repo.as_ref()
+            )));
         }
 
         Ok(repo_path)
@@ -118,9 +119,10 @@ impl<D: ConfigDir> Config<D> {
     pub fn try_to_find_hook(&self, hook: impl AsRef<str>) -> Result<PathBuf, RicerError> {
         let hook_path = self.dir.hooks_dir().join(hook.as_ref());
         if !hook_path.exists() {
-            return Err(RicerError::ConfigError(
-                anyhow!("Failed to find '{}' hook", hook.as_ref())
-            ));
+            return Err(RicerError::ConfigError(anyhow!(
+                "Failed to find '{}' hook",
+                hook.as_ref()
+            )));
         }
 
         Ok(hook_path)
@@ -142,9 +144,10 @@ impl<D: ConfigDir> Config<D> {
     pub fn try_to_find_ignore(&self, repo: impl AsRef<str>) -> Result<PathBuf, RicerError> {
         let ignore_path = self.dir.ignores_dir().join(format!("{}.ignore", repo.as_ref()).as_str());
         if !ignore_path.exists() {
-            return Err(RicerError::ConfigError(
-                anyhow!("Failed to find '{}' ignore/exclude file", repo.as_ref())
-            ));
+            return Err(RicerError::ConfigError(anyhow!(
+                "Failed to find '{}' ignore/exclude file",
+                repo.as_ref()
+            )));
         }
 
         Ok(ignore_path)
