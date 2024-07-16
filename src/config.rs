@@ -103,6 +103,26 @@ impl<D: ConfigDir> Config<D> {
 
         Ok(repo_path)
     }
+
+    /// Determine if a hook script can be found in configuration directory by name.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Hook script must exist in `hooks/` directory.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Provide full path to hook script, or error out if it does not exist.
+    pub fn try_to_find_hook(&self, hook: impl AsRef<str>) -> Result<PathBuf, RicerError> {
+        let hook_path = self.dir.hooks_dir().join(hook.as_ref());
+        if !hook_path.exists() {
+            return Err(RicerError::ConfigError(
+                anyhow!("Failed to find '{}' hook", hook.as_ref())
+            ));
+        }
+
+        Ok(hook_path)
+    }
 }
 
 /// Configuration directory representation.
