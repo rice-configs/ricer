@@ -85,3 +85,27 @@ pub trait ConfigDir {
     fn ignores_dir(&self) -> &Path;
 }
 
+/// Default configuration directory.
+///
+/// Meant to represent Ricer's default configuration directory in
+/// `$XDG_CONFIG_HOME/ricer`. See [`crate::config`] for more details about the
+/// layout of Ricer's configuration directory.
+///
+/// [`crate::config`]: crate::config
+#[derive(Debug)]
+pub struct DefaultConfigDir {
+    // $XDG_CONFIG_HOME/ricer/
+    base_dir: PathBuf,
+
+    // $XDG_CONFIG_HOME/ricer/hooks/
+    hooks_dir: PathBuf,
+
+    // $XDG_CONFIG_HOME/ricer/repos/
+    repos_dir: PathBuf,
+
+    // $XDG_CONFIG_HOME/ricer/ignores/
+    ignores_dir: PathBuf,
+}
+
+impl DefaultConfigDir {
+}
