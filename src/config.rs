@@ -108,4 +108,21 @@ pub struct DefaultConfigDir {
 }
 
 impl DefaultConfigDir {
+    pub fn try_new() -> Result<Self, RicerError> {
+        let dir = match ProjectDirs::from("com", "awkless", "ricer") {
+            Some(dir) => dir,
+            None => {
+                return Err(RicerError::ConfigError(anyhow!(
+                    "Failed to locate default configuration direcotry"
+                )))
+            }
+        };
+
+        let base_dir = dir.config_dir().to_path_buf();
+        let hooks_dir = dir.config_dir().join("hooks/");
+        let repos_dir = dir.config_dir().join("repos/");
+        let ignores_dir = dir.config_dir().join("ignores/");
+
+        Ok(Self { base_dir, hooks_dir, repos_dir, ignores_dir })
+    }
 }
