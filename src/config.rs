@@ -126,3 +126,21 @@ impl DefaultConfigDir {
         Ok(Self { base_dir, hooks_dir, repos_dir, ignores_dir })
     }
 }
+
+impl ConfigDir for DefaultConfigDir {
+    fn base_dir(&self) -> &Path {
+        self.base_dir.as_path()
+    }
+
+    fn hooks_dir(&self) -> &Path {
+        self.hooks_dir.as_path()
+    }
+
+    fn repos_dir(&self) -> &Path {
+        self.repos_dir.as_path()
+    }
+
+    fn ignores_dir(&self) -> &Path {
+        self.ignores_dir.as_path()
+    }
+}
