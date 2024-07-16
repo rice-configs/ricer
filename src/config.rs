@@ -65,7 +65,7 @@ use crate::error::RicerError;
 /// we can easily define and modify the directory layout any time without
 /// much hassle.
 ///
-/// # Preconditions
+/// # Invariants
 ///
 /// 1. Implementors of this trait should only provide _expected_ paths for each
 ///    trait method such that path verification should be left to [`Config`].
@@ -108,6 +108,35 @@ pub struct DefaultConfigDir {
 }
 
 impl DefaultConfigDir {
+    /// Try to create new instance of default configuration directory.
+    ///
+    /// For Linux and macOS:
+    ///
+    /// 1. Use `$HOME` if it is set and not empty.
+    /// 2. If `$HOME` is not set or empty, then function `getpwuid_r` is used to
+    ///    determine home directory of current user.
+    /// 3. If `getpwuid_r` lacks an entry for the current user ID or the
+    ///    home directory field is empty, _then_ error out.
+    ///
+    /// For Windows:
+    ///
+    /// 1. Retrieve user profile folder using `SHGetKnownFolderPath`.
+    /// 2. If this fails, _then_ error out.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Obtain instance of default configuration directory, or an error
+    ///    indicating that the _expected_ path could not be obtained from the
+    ///    user's environment.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Only determine if defualt configuration directory path is reachable
+    ///    in current user environment, _not_ whether it actually __exists__.
+    ///
+    /// # See
+    ///
+    /// - <https://docs.rs/directories/latest/directories/struct.BaseDirs.html#method.new>
     pub fn try_new() -> Result<Self, RicerError> {
         let dir = match ProjectDirs::from("com", "awkless", "ricer") {
             Some(dir) => dir,
