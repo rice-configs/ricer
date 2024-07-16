@@ -84,7 +84,8 @@ impl<D: ConfigDir> Config<D> {
         Self { dir: config_dir }
     }
 
-    /// Determine if a repository can be found in configuration directory by name.
+    /// Determine if a repository can be found in configuration directory by
+    /// name.
     ///
     /// # Preconditions
     ///
@@ -104,7 +105,8 @@ impl<D: ConfigDir> Config<D> {
         Ok(repo_path)
     }
 
-    /// Determine if a hook script can be found in configuration directory by name.
+    /// Determine if a hook script can be found in configuration directory by
+    /// name.
     ///
     /// # Preconditions
     ///
@@ -122,6 +124,30 @@ impl<D: ConfigDir> Config<D> {
         }
 
         Ok(hook_path)
+    }
+
+    /// Determine if a ignore file can be found in configuration directory by
+    /// repository name.
+    ///
+    /// Ignore files in Ricer are repository specific. Hence, why we need to
+    /// search for them by the name of a given repository.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Ignore file must exist in `hooks/` directory.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Provide full path to ignore file, or error out if it does not exist.
+    pub fn try_to_find_ignore(&self, repo: impl AsRef<str>) -> Result<PathBuf, RicerError> {
+        let ignore_path = self.dir.ignores_dir().join(format!("{}.ignore", repo.as_ref()).as_str());
+        if !ignore_path.exists() {
+            return Err(RicerError::ConfigError(
+                anyhow!("Failed to find '{}' ignore/exclude file", repo.as_ref())
+            ));
+        }
+
+        Ok(ignore_path)
     }
 }
 
