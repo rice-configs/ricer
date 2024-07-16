@@ -83,6 +83,26 @@ impl<D: ConfigDir> Config<D> {
     pub fn new(config_dir: D) -> Self {
         Self { dir: config_dir }
     }
+
+    /// Determine if a repository can be found in configuration directory by name.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Repository must exist in `repos/` directory.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Provide full path to repository, or error out if it does not exist.
+    pub fn try_to_find_repo(&self, repo: impl AsRef<str>) -> Result<PathBuf, RicerError> {
+        let repo_path = self.dir.repos_dir().join(format!("{}.git", repo.as_ref()).as_str());
+        if !repo_path.exists() {
+            return Err(RicerError::ConfigError(
+                anyhow!("Failed to find '{}' repository", repo.as_ref())
+            ));
+        }
+
+        Ok(repo_path)
+    }
 }
 
 /// Configuration directory representation.
