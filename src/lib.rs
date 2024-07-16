@@ -44,6 +44,8 @@
 use shadow_rs::shadow;
 shadow!(build);
 
+pub mod error;
+
 pub mod cli;
 
 pub mod context;
