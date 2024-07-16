@@ -69,7 +69,20 @@ pub struct Config<D: ConfigDir> {
 }
 
 impl<D: ConfigDir> Config<D> {
-
+    /// Create new Ricer configuration.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer_core::config::{ConfigDir, DefaultConfigDir, Config};
+    ///
+    /// let config_dir = DefaultConfigDir::try_new()
+    ///     .expect("Failed to locate default configuration directory");
+    /// let config = Config::new(config_dir);
+    /// ```
+    pub fn new(config_dir: D) -> Self {
+        Self { dir: config_dir }
+    }
 }
 
 /// Configuration directory representation.
