@@ -59,6 +59,19 @@ use std::path::{PathBuf, Path};
 
 use crate::error::RicerError;
 
+/// Ricer configuration manipulation.
+///
+/// Simple API that allows for the manipulation and management of Ricer's
+/// configuration directory data.
+#[derive(Debug)]
+pub struct Config<D: ConfigDir> {
+    dir: D,
+}
+
+impl<D: ConfigDir> Config<D> {
+
+}
+
 /// Configuration directory representation.
 ///
 /// Meant to represent the layout of Ricer's configuration directory. As a trait
