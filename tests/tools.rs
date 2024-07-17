@@ -40,3 +40,21 @@ impl FakeConfigDir {
         Self { base_dir, hooks_dir, repos_dir, ignores_dir }
     }
 }
+
+impl ConfigDir for FakeConfigDir {
+    fn base_dir(&self) -> &Path {
+        self.base_dir.path()
+    }
+
+    fn hooks_dir(&self) -> &Path {
+        self.hooks_dir.path()
+    }
+
+    fn repos_dir(&self) -> &Path {
+        self.repos_dir.path()
+    }
+
+    fn ignores_dir(&self) -> &Path {
+        self.ignores_dir.path()
+    }
+}
