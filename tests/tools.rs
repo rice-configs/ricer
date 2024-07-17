@@ -58,3 +58,19 @@ impl ConfigDir for FakeConfigDir {
         self.ignores_dir.path()
     }
 }
+
+impl Drop for FakeConfigDir {
+    fn drop(&mut self) {
+        debug!("Remove '{}'", self.ignores_dir.path().display());
+        remove_dir_all(self.ignores_dir.path()).expect("Failed to close 'ignores/' fixture");
+
+        debug!("Remove '{}'", self.repos_dir.path().display());
+        remove_dir_all(self.repos_dir.path()).expect("Failed to close 'repos/' fixture");
+
+        debug!("Remove '{}'", self.hooks_dir.path().display());
+        remove_dir_all(self.hooks_dir.path()).expect("Failed to close 'hooks/' fixture");
+
+        debug!("Remove '{}'", self.base_dir.path().display());
+        remove_dir_all(self.base_dir.path()).expect("Failed to close base directory fixture");
+    }
+}
