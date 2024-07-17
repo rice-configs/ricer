@@ -16,5 +16,27 @@ pub struct FakeConfigDir {
 }
 
 impl FakeConfigDir {
-    // TODO...
+    pub fn new() -> Self {
+        let base_dir = Builder::new()
+            .prefix("ricer")
+            .tempdir()
+            .expect("Failed to create base directory");
+
+        let hooks_dir = Builder::new()
+            .prefix("hooks")
+            .tempdir_in(base_dir.path())
+            .expect("Failed to create 'hooks' directory");
+
+        let repos_dir = Builder::new()
+            .prefix("repos")
+            .tempdir_in(base_dir.path())
+            .expect("Failed to create 'repos' directory");
+
+        let ignores_dir = Builder::new()
+            .prefix("ignores")
+            .tempdir_in(base_dir.path())
+            .expect("Failed to create 'ignores' directory");
+
+        Self { base_dir, hooks_dir, repos_dir, ignores_dir }
+    }
 }
