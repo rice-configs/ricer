@@ -8,7 +8,7 @@ use tempfile::{Builder, TempDir};
 
 use ricer_core::config::ConfigDir;
 
-use crate::tools::stubs::FileStub;
+use crate::tools::stubs::{FileStub, GitRepoStub};
 
 // Create an instance of a fake Ricer configuration directory.
 //
@@ -33,6 +33,9 @@ pub struct FakeConfigDir {
     // Store tracked stub files using their path as the key. HashMap is used for
     // O(1) lookup.
     file_stubs: HashMap<PathBuf, FileStub>,
+
+    // Store tracked stub repositories using their path as the key.
+    repo_stubs: HashMap<PathBuf, GitRepoStub>,
 }
 
 impl FakeConfigDir {
@@ -89,7 +92,7 @@ impl FakeConfigDir {
         }
     }
 
-    // Get path to stored hook script in fake 'hooks' directory. 
+    // Get path to stored hook script in fake 'hooks' directory.
     //
     // Caller needs to provide full filename of hook to obtain its path.
     //
@@ -123,6 +126,42 @@ impl FakeConfigDir {
                 "Hook script '{}' is not being tracked by fake directory",
                 &name.as_ref().display()
             ),
+        }
+    }
+
+    // Get path to stored Git repository in fake 'repos' directory.
+    //
+    // Caller needs to provide full filename of hook to obtain its path.
+    //
+    // Preconditions:
+    //
+    // 1. Git repository must be currently tracked by fake configuration
+    //    directory.
+    //
+    // Postconditions:
+    //
+    // 1. Get absolute path to Git repository in fake 'repos' directory.
+    //
+    // Errors:
+    //
+    // Panics if named Git repository is not being tracked by fake configuration
+    // directory.
+    //
+    // Examples:
+    //
+    // ```
+    // use crate::tools::fakes::FakeConfigDir;
+    //
+    // let config = FakeConfigDir::builder()
+    //     .git_repo("fake_repo")
+    //     .build();
+    // let path = config.path_to_hook_script("hook.sh");
+    // ```
+    pub fn path_to_git_repo(&self, name: impl AsRef<Path>) -> &GitRepoStub {
+        let git_repo = format!("{}.git", name.as_ref().display());
+        match self.repo_stubs.get(&self.repos_dir().join(&git_repo)) {
+            Some(repo) => repo,
+            None => panic!("Repository '{}' is not being tracked by fake directory", &git_repo),
         }
     }
 }
@@ -162,6 +201,7 @@ pub struct FakeConfigDirBuilder {
     repos_dir: TempDir,
     ignores_dir: TempDir,
     file_stubs: HashMap<PathBuf, FileStub>,
+    repo_stubs: HashMap<PathBuf, GitRepoStub>,
 }
 
 impl FakeConfigDirBuilder {
@@ -213,7 +253,14 @@ impl FakeConfigDirBuilder {
             .tempdir_in(base_dir.path())
             .expect("Failed to create 'ignores' directory");
 
-        Self { base_dir, hooks_dir, repos_dir, ignores_dir, file_stubs: HashMap::default() }
+        Self {
+            base_dir,
+            hooks_dir,
+            repos_dir,
+            ignores_dir,
+            file_stubs: HashMap::default(),
+            repo_stubs: HashMap::default(),
+        }
     }
 
     // Write fake ignore file in fake 'ignores' directory.
@@ -276,6 +323,31 @@ impl FakeConfigDirBuilder {
         self
     }
 
+    // Create Git repository in 'repos' directory.
+    //
+    // Postconditions:
+    //
+    // 1. Create Git repository in 'repos' directory retaining repo stub data.
+    //
+    // Errors:
+    //
+    // Panics if it cannot create the Git repository.
+    //
+    // Examples:
+    //
+    // ```
+    // use crate::tools::fakes::FakeConfigDirBuilder;
+    //
+    // let builder = FakeConfigDirBuilder::new()
+    //     .git_repo("fake_repo")
+    // ```
+    pub fn git_repo(mut self, name: impl AsRef<str>) -> Self {
+        let repo = format!("{}.git", name.as_ref());
+        let repo_stub = GitRepoStub::new(self.repos_dir.path().join(repo));
+        self.repo_stubs.insert(repo_stub.as_path().to_path_buf(), repo_stub);
+        self
+    }
+
     // Build fake configuration directory instance.
     //
     // Postconditions:
@@ -299,6 +371,7 @@ impl FakeConfigDirBuilder {
             repos_dir: self.repos_dir,
             ignores_dir: self.ignores_dir,
             file_stubs: self.file_stubs,
+            repo_stubs: self.repo_stubs,
         }
     }
 }
