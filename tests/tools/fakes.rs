@@ -1,12 +1,14 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
-use std::path::Path;
 use log::debug;
 use std::fs::remove_dir_all;
+use std::path::Path;
 use tempfile::{Builder, TempDir};
 
 use ricer_core::config::ConfigDir;
+
+use crate::tools::stubs::StubFile;
 
 pub struct FakeConfigDir {
     base_dir: TempDir,
@@ -17,10 +19,8 @@ pub struct FakeConfigDir {
 
 impl FakeConfigDir {
     pub fn new() -> Self {
-        let base_dir = Builder::new()
-            .prefix("ricer")
-            .tempdir()
-            .expect("Failed to create base directory");
+        let base_dir =
+            Builder::new().prefix("ricer").tempdir().expect("Failed to create base directory");
 
         let hooks_dir = Builder::new()
             .prefix("hooks")
