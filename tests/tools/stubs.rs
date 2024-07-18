@@ -7,7 +7,7 @@
 // in Ricer.
 
 use std::fs::{metadata, set_permissions, write};
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 // Basic stub of `std::fs::File`.
 //
