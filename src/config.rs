@@ -116,7 +116,7 @@ impl<D: ConfigDir> Config<D> {
     /// # Postconditions
     ///
     /// 1. Provide full path to hook script, or error out if it does not exist.
-    pub fn try_to_find_hook(&self, hook: impl AsRef<str>) -> Result<PathBuf, RicerError> {
+    pub fn try_to_find_hook_script(&self, hook: impl AsRef<str>) -> Result<PathBuf, RicerError> {
         let hook_path = self.dir.hooks_dir().join(hook.as_ref());
         if !hook_path.exists() {
             return Err(RicerError::ConfigError(anyhow!(
@@ -141,7 +141,7 @@ impl<D: ConfigDir> Config<D> {
     /// # Postconditions
     ///
     /// 1. Provide full path to ignore file, or error out if it does not exist.
-    pub fn try_to_find_ignore(&self, repo: impl AsRef<str>) -> Result<PathBuf, RicerError> {
+    pub fn try_to_find_ignore_file(&self, repo: impl AsRef<str>) -> Result<PathBuf, RicerError> {
         let ignore_path = self.dir.ignores_dir().join(format!("{}.ignore", repo.as_ref()).as_str());
         if !ignore_path.exists() {
             return Err(RicerError::ConfigError(anyhow!(
