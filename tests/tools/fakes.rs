@@ -50,7 +50,9 @@ impl FakeConfigDir {
     //
     // Ignore files in Ricer are named after repositories in the `repos`
     // directory with a '.ignore' extension. However, not all repositories will
-    // have a corresponding ignore file.
+    // have a corresponding ignore file. Usually, repositories without ignore
+    // files are ones who do not target the user's home directory as their
+    // working tree.
     //
     // Regardless, to get an absolute path to fake ignore file, the caller
     // just needs to provide the name of the file without the `.ignore`
@@ -58,7 +60,7 @@ impl FakeConfigDir {
     //
     // Preconditions:
     //
-    // 1. Ignore file exists in `file_stubs` member.
+    // 1. Ignore file is being tracked by fake configuration directory.
     //
     // Postconditions:
     //
@@ -66,7 +68,8 @@ impl FakeConfigDir {
     //
     // Errors:
     //
-    // Panics if it cannot find fake ignore file.
+    // Panics if ignore file is not being tracked by fake configuration
+    // directory.
     //
     // Examples:
     //
@@ -82,7 +85,44 @@ impl FakeConfigDir {
         let ignore_file = format!("{}.ignore", repo.as_ref().display());
         match self.file_stubs.get(&self.ignores_dir().join(&ignore_file)) {
             Some(file) => file,
-            None => panic!("Failed to find '{}' in 'ignores' directory", &ignore_file),
+            None => panic!("Ignore file '{}' is not being tracked by fake directory", &ignore_file),
+        }
+    }
+
+    // Get path to stored hook script in fake 'hooks' directory. 
+    //
+    // Caller needs to provide full filename of hook to obtain its path.
+    //
+    // Preconditions:
+    //
+    // 1. Hook script must be currently tracked by fake configuration directory.
+    //
+    // Postconditions:
+    //
+    // 1. Get absolute path to hook script in fake 'hooks' directory.
+    //
+    // Errors:
+    //
+    // Panics if named hook script is not being tracked by fake configuration
+    // directory.
+    //
+    // Examples:
+    //
+    // ```
+    // use crate::tools::fakes::FakeConfigDir;
+    //
+    // let config = FakeConfigDir::builder()
+    //     .hook_script("hook.sh", "chmod +x blah")
+    //     .build();
+    // let path = config.path_to_hook_script("hook.sh");
+    // ```
+    pub fn path_to_hook_script(&self, name: impl AsRef<Path>) -> &FileStub {
+        match self.file_stubs.get(&self.hooks_dir().join(name.as_ref())) {
+            Some(file) => file,
+            None => panic!(
+                "Hook script '{}' is not being tracked by fake directory",
+                &name.as_ref().display()
+            ),
         }
     }
 }
