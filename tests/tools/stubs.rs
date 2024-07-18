@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
+use log::debug;
 use std::fs::{metadata, set_permissions, write};
 use std::path::{PathBuf, Path};
 
@@ -55,6 +56,7 @@ impl StubFileBuilder {
     }
 
     pub fn build(self) -> StubFile {
+        debug!("Write data to stub file: '{}'", self.path.display());
         write(&self.path, &self.data).unwrap_or_else(|error| {
             panic!("Failed to create file '{}': {}", self.path.display(), error)
         });

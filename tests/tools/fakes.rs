@@ -8,8 +8,6 @@ use tempfile::{Builder, TempDir};
 
 use ricer_core::config::ConfigDir;
 
-use crate::tools::stubs::StubFile;
-
 pub struct FakeConfigDir {
     base_dir: TempDir,
     hooks_dir: TempDir,
@@ -37,6 +35,10 @@ impl FakeConfigDir {
             .tempdir_in(base_dir.path())
             .expect("Failed to create 'ignores' directory");
 
+        debug!("Fake configuration base directory '{}'", base_dir.path().display());
+        debug!("Fake hooks directory '{}'", hooks_dir.path().display());
+        debug!("Fake repos directory '{}'", repos_dir.path().display());
+        debug!("Fake ignores directory '{}'", ignores_dir.path().display());
         Self { base_dir, hooks_dir, repos_dir, ignores_dir }
     }
 }
