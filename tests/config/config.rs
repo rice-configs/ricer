@@ -17,7 +17,7 @@ fn ignore_file_fixture() -> FakeConfigDir {
 
 #[rstest]
 fn try_to_find_ignore_gives_correct_path(ignore_file_fixture: FakeConfigDir) {
-    let expect = ignore_file_fixture.find_ignore("fake_repo").as_path().to_path_buf();
+    let expect = ignore_file_fixture.path_to_ignore_file("fake_repo").as_path().to_path_buf();
     let result = match Config::new(ignore_file_fixture).try_to_find_ignore("fake_repo") {
         Ok(path) => path,
         Err(error) => panic!("Expect `try_to_find_ignore` to succeed, but got: {}", error),
