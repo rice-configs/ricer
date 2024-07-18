@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
-use std::fs::remove_dir_all;
-use std::path::{PathBuf, Path};
-use tempfile::{Builder, TempDir};
 use std::collections::HashMap;
+use std::fs::remove_dir_all;
+use std::path::{Path, PathBuf};
+use tempfile::{Builder, TempDir};
 
 use ricer_core::config::ConfigDir;
 
@@ -24,6 +24,12 @@ impl FakeConfigDir {
         FakeConfigDirBuilder::new()
     }
 
+    pub fn find_ignore(&self, repo: impl AsRef<Path>) -> &FileStub {
+        let ignore_file = format!("{}.ignore", repo.as_ref().display());
+        match self.stub_files.get(&self.ignores_dir().join(&ignore_file)) {
+            Some(file) => file,
+            None => panic!("Failed to find '{}' in 'ignores' directory", &ignore_file),
+        }
     }
 }
 
@@ -110,12 +116,12 @@ impl FakeConfigDirBuilder {
     }
 
     pub fn build(self) -> FakeConfigDir {
-        FakeConfigDir { 
+        FakeConfigDir {
             base_dir: self.base_dir,
             hooks_dir: self.hooks_dir,
             repos_dir: self.repos_dir,
             ignores_dir: self.ignores_dir,
-            stub_files: self.stub_files
+            stub_files: self.stub_files,
         }
     }
 }
