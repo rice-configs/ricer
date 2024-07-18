@@ -25,7 +25,7 @@ fn main() {
         match run_ricer(std::env::args_os) {
             Ok(exit_code) => exit_code,
             Err(error) => {
-                error!("{}", error);
+                error!("{:?}", error);
                 ExitCode::Failure
             }
         }
