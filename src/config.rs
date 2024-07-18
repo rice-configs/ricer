@@ -94,7 +94,7 @@ impl<D: ConfigDir> Config<D> {
     /// # Postconditions
     ///
     /// 1. Provide full path to repository, or error out if it does not exist.
-    pub fn try_to_find_repo(&self, repo: impl AsRef<str>) -> Result<PathBuf, RicerError> {
+    pub fn try_to_find_git_repo(&self, repo: impl AsRef<str>) -> Result<PathBuf, RicerError> {
         let repo_path = self.dir.repos_dir().join(format!("{}.git", repo.as_ref()).as_str());
         if !repo_path.exists() {
             return Err(RicerError::ConfigError(anyhow!(
