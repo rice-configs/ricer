@@ -118,22 +118,22 @@ pub struct FileStubBuilder {
 impl FileStubBuilder {
     // Construct new instance of file stub builder.
     //
-    // # Postconditions:
+    // Postconditions:
     //
     // 1. Get valid instance of default file stub builder.
     //
-    // # Invariants:
+    // Invariants:
     //
     // 1. Do not leave any fields uninitialized without a sane default value.
     //
-    // # Note:
+    // Note:
     //
     // Caller should use `FileStub::builder()` instead of directly calling this
     // method. That way they can use `FileStub` more directly. Unless they need
     // the file stub instance separate from their file stub builder instance for
     // whatever reason (unlikely but possible).
     //
-    // # Examples:
+    // Examples:
     //
     // ```
     // use crate::tools::stubs::FileStubBuilder;
