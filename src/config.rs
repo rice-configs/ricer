@@ -53,11 +53,17 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
+use log::debug;
 use anyhow::anyhow;
 use directories::ProjectDirs;
+use log::{debug, trace};
+use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
 
+pub mod file;
+
 use crate::error::RicerError;
+use file::ConfigFile;
 
 /// Ricer configuration manipulation.
 ///
@@ -65,7 +71,11 @@ use crate::error::RicerError;
 /// configuration directory data.
 #[derive(Debug)]
 pub struct Config<D: ConfigDir> {
+    /// Layout of Ricer's configuration directory.
     dir: D,
+
+    /// Contents of configuration file.
+    pub file: ConfigFile,
 }
 
 impl<D: ConfigDir> Config<D> {
@@ -81,7 +91,54 @@ impl<D: ConfigDir> Config<D> {
     /// let config = Config::new(config_dir);
     /// ```
     pub fn new(config_dir: D) -> Self {
-        Self { dir: config_dir }
+        Self { dir: config_dir, file: ConfigFile::default() }
+    }
+
+    /// Read configuration file at the base directory.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Configuration file 'config.toml' needs to exist at `$XDG_CONFIG_HOME/ricer`, i.e.,
+    ///    Ricer's base configuration directory.
+    /// 2. Configuration file contains proper TOML formatting.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Read and deserialize configuration file.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer_core::config::{ConfigDir, DefaultConfigDir, Config};
+    ///
+    /// let config_dir = DefaultConfigDir::try_new()
+    ///     .expect("Failed to locate defualt configuration directory");
+    /// let mut config = Config::new(config_dir);
+    /// config.try_read_config_file().expect("Failed to read configuration file");
+    /// println!("{:#?}", config.file);
+    /// ```
+    pub fn try_to_read_config_file(&mut self) -> Result<(), RicerError> {
+        let config_path = self.dir.base_dir().join("config.toml");
+
+        debug!("Read configuration file at '{}'", &config_path.display());
+        let buffer = read_to_string(&config_path).map_err(|error| {
+            RicerError::ConfigError(anyhow!(
+                "Failed to read '{}': {}",
+                &config_path.display(),
+                error
+            ))
+        })?;
+
+        let config_file: ConfigFile = toml::from_str(&buffer).map_err(|error| {
+            RicerError::ConfigError(anyhow!(
+                "Failed to parse '{}': {}",
+                &config_path.display(),
+                error
+            ))
+        })?;
+
+        self.file = config_file;
+        Ok(())
     }
 
     /// Determine if a repository can be found in configuration directory by
