@@ -1,13 +1,104 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
+use indoc::indoc;
 use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
+use std::collections::HashMap;
 
+use ricer_core::config::file::*;
 use ricer_core::config::Config;
 use ricer_core::error::RicerError;
 
 use crate::tools::fakes::FakeConfigDir;
+
+#[fixture]
+fn bad_config_file_fixture() -> FakeConfigDir {
+    let config_dir = FakeConfigDir::builder()
+        .config_file(indoc! {"
+            [repos]
+            vim = { target_home = false, main_branch = 'main', main_remote = 'main' # Not closed
+            "
+        })
+        .build();
+
+    config_dir
+}
+
+#[fixture]
+fn no_config_file_fixture() -> FakeConfigDir {
+    let config_dir = FakeConfigDir::builder().build();
+    config_dir
+}
+
+#[fixture]
+fn config_file_fixture() -> FakeConfigDir {
+    let config_dir = FakeConfigDir::builder()
+        .config_file(indoc! {"
+            [repos]
+            vim = { target_home = true, main_branch = 'main', main_remote = 'origin' }
+            st = { target_home = false, main_branch = 'master', main_remote = 'origin' }
+
+            [hooks]
+            commit = [
+                { pre = 'hook.sh', post = 'hook.sh', repo = 'vim' },
+                { post = 'hook.sh' }
+            ]
+
+            clone = [
+                { post = 'hook.sh', repo = 'st' },
+                { pre = 'hook.sh' }
+            ]
+            "
+        })
+        .build();
+
+    config_dir
+}
+
+#[fixture]
+fn deserialized_config_file_fixture() -> ConfigFile {
+    let mut stub_repos_table = HashMap::new();
+    stub_repos_table.insert(
+        "vim".to_string(),
+        ReposTable { target_home: true, main_branch: "main".into(), main_remote: "origin".into() },
+    );
+
+    stub_repos_table.insert(
+        "st".to_string(),
+        ReposTable {
+            target_home: false,
+            main_branch: "master".into(),
+            main_remote: "origin".into(),
+        },
+    );
+
+    let stub_hooks_table = HooksTable {
+        commit: Some(vec![
+            HookConfig {
+                pre: Some("hook.sh".into()),
+                post: Some("hook.sh".into()),
+                repo: Some("vim".into()),
+            },
+            HookConfig { pre: None, post: Some("hook.sh".into()), repo: None },
+        ]),
+        push: None,
+        pull: None,
+        init: None,
+        clone: Some(vec![
+            HookConfig { pre: None, post: Some("hook.sh".into()), repo: Some("st".into()) },
+            HookConfig { pre: Some("hook.sh".into()), post: None, repo: None },
+        ]),
+        delete: None,
+        rename: None,
+        status: None,
+        list: None,
+        enter: None,
+    };
+
+    let config = ConfigFile { repos: Some(stub_repos_table), hooks: Some(stub_hooks_table) };
+    config
+}
 
 #[fixture]
 fn hook_script_fixture() -> FakeConfigDir {
@@ -25,6 +116,42 @@ fn git_repo_fixture() -> FakeConfigDir {
 fn ignore_file_fixture() -> FakeConfigDir {
     let config_dir = FakeConfigDir::builder().ignore_file("fake_repo", "/*").build();
     config_dir
+}
+
+#[rstest]
+fn try_to_read_config_file_catches_bad_formatting(bad_config_file_fixture: FakeConfigDir) {
+    let mut config = Config::new(bad_config_file_fixture);
+    let result = match config.try_to_read_config_file() {
+        Ok(_) => panic!("Expect `try_to_read_config_file` to fail, but it somehow did not"),
+        Err(error) => error,
+    };
+
+    assert!(matches!(result, RicerError::ConfigError(..)));
+}
+
+#[rstest]
+fn try_to_read_config_file_no_config_file_found(no_config_file_fixture: FakeConfigDir) {
+    let mut config = Config::new(no_config_file_fixture);
+    let result = match config.try_to_read_config_file() {
+        Ok(_) => panic!("Expect `try_to_read_config_file` to fail, but it somehow did not"),
+        Err(error) => error,
+    };
+
+    assert!(matches!(result, RicerError::ConfigError(..)));
+}
+
+#[rstest]
+fn try_to_read_config_file_deserializes_correctly(
+    config_file_fixture: FakeConfigDir,
+    deserialized_config_file_fixture: ConfigFile,
+) {
+    let expect = deserialized_config_file_fixture;
+    let mut config = Config::new(config_file_fixture);
+
+    config.try_to_read_config_file().expect("Failed to read configuration file");
+    let result = config.file;
+
+    assert_eq!(result, expect);
 }
 
 #[rstest]
