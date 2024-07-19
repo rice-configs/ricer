@@ -11,6 +11,7 @@ use log::error;
 use std::ffi::OsString;
 
 use ricer_core::cli::RicerCli;
+use ricer_core::config::{Config, DefaultConfigDir};
 use ricer_core::context::Context;
 
 /// Starting point of Ricer binary.
@@ -50,8 +51,11 @@ where
         .filter_level(opts.log_opts.log_level_filter())
         .init();
 
-    let ctx = Context::from(opts);
-    println!("{:?}", ctx);
+    let _ctx = Context::from(opts);
+    let config_dir = DefaultConfigDir::try_new()?;
+    let mut config = Config::new(config_dir);
+    config.try_to_read_config_file()?;
+    println!("{:#?}", config.file);
 
     // TODO: match and execute command in Ricer's command set...
 
