@@ -53,7 +53,6 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
-use log::{debug, trace};
 use anyhow::anyhow;
 use directories::ProjectDirs;
 use log::{debug, trace};

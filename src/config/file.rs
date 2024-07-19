@@ -23,7 +23,7 @@ pub struct ConfigFile {
     pub repos: Option<HashMap<String, ReposTable>>,
 
     /// Current command hooks to execute.
-    pub hooks: Option<HookTable>,
+    pub hooks: Option<HooksTable>,
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -40,7 +40,7 @@ pub struct ReposTable {
 
 /// Command hooks.
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct HookTable {
+pub struct HooksTable {
     pub commit: Option<Vec<HookConfig>>,
     pub push: Option<Vec<HookConfig>>,
     pub pull: Option<Vec<HookConfig>>,
