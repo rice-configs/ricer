@@ -263,6 +263,36 @@ impl FakeConfigDirBuilder {
         }
     }
 
+    // Write fake configuration file in fake base directory.
+    //
+    // Postconditions:
+    //
+    // 1. Write a fake configuration file in the fake base directory retaining
+    //    file stub data.
+    //
+    // Errors:
+    //
+    // Panics if it cannot create fake configuration file.
+    //
+    // Examples:
+    //
+    // ```
+    // use crate::tools::fakes::FakeConfigDirBuilder;
+    //
+    // let builder = FakeConfigDirBuilder::new()
+    //     .config_file("[hooks]");
+    // ```
+    pub fn config_file(mut self, data: impl AsRef<str>) -> Self {
+        let config_stub = FileStub::builder()
+            .path(self.base_dir.path().join("config.toml"))
+            .data(data.as_ref())
+            .executable(false)
+            .build();
+
+        self.file_stubs.insert(config_stub.as_path().to_path_buf(), config_stub);
+        self
+    }
+
     // Write fake ignore file in fake 'ignores' directory.
     //
     // Postconditions:
