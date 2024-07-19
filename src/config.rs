@@ -53,7 +53,7 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
-use log::debug;
+use log::{debug, trace};
 use anyhow::anyhow;
 use directories::ProjectDirs;
 use log::{debug, trace};
@@ -155,11 +155,12 @@ impl<D: ConfigDir> Config<D> {
         let repo_path = self.dir.repos_dir().join(format!("{}.git", repo.as_ref()).as_str());
         if !repo_path.exists() {
             return Err(RicerError::ConfigError(anyhow!(
-                "Failed to find '{}' repository",
-                repo.as_ref()
+                "Failed to find Git repository: '{}'",
+                repo_path.display()
             )));
         }
 
+        debug!("Found Git repository: '{}'", &repo_path.display());
         Ok(repo_path)
     }
 
@@ -177,11 +178,12 @@ impl<D: ConfigDir> Config<D> {
         let hook_path = self.dir.hooks_dir().join(hook.as_ref());
         if !hook_path.exists() {
             return Err(RicerError::ConfigError(anyhow!(
-                "Failed to find '{}' hook",
-                hook.as_ref()
+                "Failed to find hook script: '{}'",
+                &hook_path.display()
             )));
         }
 
+        debug!("Found hook script: '{}'", &hook_path.display());
         Ok(hook_path)
     }
 
@@ -193,7 +195,7 @@ impl<D: ConfigDir> Config<D> {
     ///
     /// # Preconditions
     ///
-    /// 1. Ignore file must exist in `hooks/` directory.
+    /// 1. Ignore file must exist in `ignores/` directory.
     ///
     /// # Postconditions
     ///
@@ -202,11 +204,12 @@ impl<D: ConfigDir> Config<D> {
         let ignore_path = self.dir.ignores_dir().join(format!("{}.ignore", repo.as_ref()).as_str());
         if !ignore_path.exists() {
             return Err(RicerError::ConfigError(anyhow!(
-                "Failed to find '{}' ignore/exclude file",
-                repo.as_ref()
+                "Failed to find ignore/exclude file: '{}'",
+                &ignore_path.display()
             )));
         }
 
+        debug!("Found ignore/exclude file: '{}'", &ignore_path.display());
         Ok(ignore_path)
     }
 }
@@ -290,6 +293,7 @@ impl DefaultConfigDir {
     ///
     /// - <https://docs.rs/directories/latest/directories/struct.BaseDirs.html#method.new>
     pub fn try_new() -> Result<Self, RicerError> {
+        trace!("Locate default path to configuration directory");
         let dir = match ProjectDirs::from("com", "awkless", "ricer") {
             Some(dir) => dir,
             None => {
@@ -304,6 +308,7 @@ impl DefaultConfigDir {
         let repos_dir = dir.config_dir().join("repos/");
         let ignores_dir = dir.config_dir().join("ignores/");
 
+        debug!("Path to configuration directory: '{}'", &base_dir.display());
         Ok(Self { base_dir, hooks_dir, repos_dir, ignores_dir })
     }
 }
