@@ -10,9 +10,9 @@ use anyhow::Result;
 use log::error;
 use std::ffi::OsString;
 
-use ricer_core::cli::RicerCli;
-use ricer_core::config::{Config, DefaultConfigDir};
-use ricer_core::context::Context;
+use ricer::cli::RicerCli;
+use ricer::context::Context;
+use ricer::config::locator::XdgConfigDirLocator;
 
 /// Starting point of Ricer binary.
 ///
@@ -52,10 +52,7 @@ where
         .init();
 
     let _ctx = Context::from(opts);
-    let config_dir = DefaultConfigDir::try_new()?;
-    let mut config = Config::new(config_dir);
-    config.try_to_read_config_file()?;
-    println!("{:#?}", config.file);
+    let locator = XdgConfigDirLocator::try_new()?;
 
     // TODO: match and execute command in Ricer's command set...
 
