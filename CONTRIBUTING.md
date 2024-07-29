@@ -36,10 +36,8 @@ followed. To make development easier, use the `rustfmt` tool to automaically
 format any piece of code.
 
 Document all functions regardless if they are public or private via rustdocs.
-Be sure to include any preconditions, postconditions, invariants, and side
-effects a given piece of code may have. If applicable, then also provide
-examples on how to use the code via rustdocs. Do not use rustdocs to document
-implementation details, because that should be expressed in the code.
+Read [the rustdoc book][rustdoc-book] for how your documentation should be
+formatted and what information it should generally contain.
 
 ## Commit Style
 
@@ -109,6 +107,7 @@ SPDX-FileCopyrightText: <year> <name> <email>
 ```
 
 [rust-lang]: doc.rust-lang.org
+[rustdoc-book]: https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html
 [rust-style]: doc.rust-lang.org/beta/style-guide/index.html
 [linux-dco]: https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin
 [reuse3]: https://reuse.software/spec/
