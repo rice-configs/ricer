@@ -13,3 +13,16 @@
 //! [`XdgConfigDirLocator`] handler is expected to be used. However, if the
 //! location of the configuration directory needs to change for whatever reason,
 //! then simply implement a new locator with [`ConfigDirLocator`] trait.
+
+use anyhow::anyhow;
+use directories::ProjectDirs;
+use log::{debug, trace};
+use std::path::{Path, PathBuf};
+
+use crate::error::{RicerError, RicerResult};
+
+/// Configuration directory locator representation.
+pub trait ConfigDirLocator {
+    /// Provide absolute path to located configuration directory.
+    fn config_dir(&self) -> &Path;
+}
