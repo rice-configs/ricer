@@ -11,7 +11,9 @@ use log::error;
 use std::ffi::OsString;
 
 use ricer::cli::RicerCli;
-use ricer::config::locator::{recover_xdg_config_dir_locator, XdgConfigDirLocator};
+use ricer::config::locator::{
+    recover_default_config_dir_locator, DefaultConfigDirLocator, DefaultXdgBaseDirSpec,
+};
 use ricer::context::Context;
 use ricer::error::RicerError;
 
@@ -54,9 +56,10 @@ where
         .init();
 
     let _ctx = Context::from(opts);
-    let _locator = match XdgConfigDirLocator::try_new_locate_exists() {
+    let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
+    let _locator = match DefaultConfigDirLocator::try_new_locate(&xdg_spec) {
         Ok(locator) => locator,
-        Err(RicerError::NoConfigDir(..)) => recover_xdg_config_dir_locator()?,
+        Err(RicerError::NoConfigDir(..)) => recover_default_config_dir_locator(&xdg_spec)?,
         Err(err) => return Err(err.into()),
     };
 
