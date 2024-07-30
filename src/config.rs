@@ -53,8 +53,8 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
-pub mod locator;
 pub mod file;
+pub mod locator;
 
 pub struct Config {
     // TODO: Implement this!
