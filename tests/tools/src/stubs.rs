@@ -6,7 +6,7 @@
 //! This helper module is responsible for managing stubs for integration tests
 //! in Ricer.
 
-use std::fs::{read_to_string, create_dir, metadata, set_permissions, write};
+use std::fs::{create_dir, metadata, read_to_string, set_permissions, write};
 use std::path::{Path, PathBuf};
 
 /// Basic stub of `std::fs::File`.

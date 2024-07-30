@@ -21,7 +21,8 @@ use crate::stubs::{FileStub, GitRepoStub};
 /// for API feedback purposes.
 #[derive(Debug)]
 pub struct FakeConfigDir {
-    root_dir: TempDir,
+    temp_dir: TempDir,
+    root_dir: PathBuf,
     hooks_dir: PathBuf,
     repos_dir: PathBuf,
     ignores_dir: PathBuf,
@@ -147,18 +148,39 @@ impl FakeConfigDir {
             file_stub.sync();
         }
     }
+
+    pub fn temp_dir(&self) -> &Path {
+        self.temp_dir.path()
+    }
+
+    pub fn root_dir(&self) -> &Path {
+        self.root_dir.as_path()
+    }
+
+    pub fn repos_dir(&self) -> &Path {
+        self.repos_dir.as_path()
+    }
+
+    pub fn hooks_dir(&self) -> &Path {
+        self.hooks_dir.as_path()
+    }
+
+    pub fn ignores_dir(&self) -> &Path {
+        self.ignores_dir.as_path()
+    }
 }
 
 impl Drop for FakeConfigDir {
     fn drop(&mut self) {
         self.file_stubs.clear();
-        remove_dir_all(self.root_dir.path()).expect("Failed to close fake root directory");
+        remove_dir_all(self.temp_dir.path()).expect("Failed to close fake root directory");
     }
 }
 
 #[derive(Debug)]
 pub struct FakeConfigDirBuilder {
-    root_dir: TempDir,
+    temp_dir: TempDir,
+    root_dir: PathBuf,
     hooks_dir: PathBuf,
     repos_dir: PathBuf,
     ignores_dir: PathBuf,
@@ -187,17 +209,19 @@ impl FakeConfigDirBuilder {
     /// let builder = FakeConfigDirBuilder::new();
     /// ```
     pub fn new() -> Self {
-        let root_dir =
-            Builder::new().prefix("ricer").tempdir().expect("Failed to create base directory");
-        let hooks_dir = PathBuf::from(format!("{}/hooks", root_dir.path().display()));
-        let repos_dir = PathBuf::from(format!("{}/repos", root_dir.path().display()));
-        let ignores_dir = PathBuf::from(format!("{}/ignores", root_dir.path().display()));
+        let temp_dir = Builder::new().tempdir().expect("Failed to create base directory");
+        let root_dir = PathBuf::from(format!("{}/ricer", temp_dir.path().display()));
+        let hooks_dir = PathBuf::from(format!("{}/hooks", root_dir.as_path().display()));
+        let repos_dir = PathBuf::from(format!("{}/repos", root_dir.as_path().display()));
+        let ignores_dir = PathBuf::from(format!("{}/ignores", root_dir.as_path().display()));
 
+        create_dir(&root_dir).expect("Failed to create root directory");
         create_dir(&hooks_dir).expect("Failed to create 'hooks' directory");
         create_dir(&repos_dir).expect("Failed to create 'repos' directory");
         create_dir(&ignores_dir).expect("Failed to create 'ignores' directory");
 
         Self {
+            temp_dir,
             root_dir,
             hooks_dir,
             repos_dir,
@@ -223,7 +247,7 @@ impl FakeConfigDirBuilder {
     /// ```
     pub fn config_file(mut self, data: impl AsRef<str>) -> Self {
         let config_stub = FileStub::builder()
-            .path(self.root_dir.path().join("config.toml"))
+            .path(self.root_dir.as_path().join("config.toml"))
             .data(data.as_ref())
             .executable(false)
             .build();
@@ -317,6 +341,7 @@ impl FakeConfigDirBuilder {
     /// ```
     pub fn build(self) -> FakeConfigDir {
         FakeConfigDir {
+            temp_dir: self.temp_dir,
             root_dir: self.root_dir,
             hooks_dir: self.hooks_dir,
             repos_dir: self.repos_dir,
