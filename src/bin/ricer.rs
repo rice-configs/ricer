@@ -11,8 +11,9 @@ use log::error;
 use std::ffi::OsString;
 
 use ricer::cli::RicerCli;
+use ricer::config::locator::{recover_xdg_config_dir_locator, XdgConfigDirLocator};
 use ricer::context::Context;
-use ricer::config::locator::XdgConfigDirLocator;
+use ricer::error::RicerError;
 
 /// Starting point of Ricer binary.
 ///
@@ -47,12 +48,17 @@ where
 {
     let opts = RicerCli::parse_args(args());
     env_logger::Builder::new()
+        .format_target(false)
         .format_timestamp(None)
         .filter_level(opts.log_opts.log_level_filter())
         .init();
 
     let _ctx = Context::from(opts);
-    let locator = XdgConfigDirLocator::try_new()?;
+    let _locator = match XdgConfigDirLocator::try_new_locate_exists() {
+        Ok(locator) => locator,
+        Err(RicerError::NoConfigDir(..)) => recover_xdg_config_dir_locator()?,
+        Err(err) => return Err(err.into()),
+    };
 
     // TODO: match and execute command in Ricer's command set...
 
