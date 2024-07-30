@@ -829,6 +829,7 @@ dependencies = [
  "indoc",
  "log",
  "pretty_assertions",
+ "ricer-test-tools",
  "rstest",
  "serde",
  "shadow-rs",
@@ -836,6 +837,14 @@ dependencies = [
  "thiserror",
  "toml",
  "toml_edit 0.22.16",
+]
+
+[[package]]
+name = "ricer-test-tools"
+version = "0.1.0"
+dependencies = [
+ "ricer",
+ "tempfile",
 ]
 
 [[package]]
