@@ -62,7 +62,7 @@ impl XdgConfigDirLocator {
     /// use ricer::config::locator::XdgConfigDirLocator;
     /// use ricer::error::RicerError;
     ///
-    /// let locator = match XdgConfigLocator::try_new_locate() {
+    /// let locator = match XdgConfigDirLocator::try_new_locate_exists() {
     ///     Ok(locator) => locator,
     ///     Err(RicerError::NoConfigDir(..)) => {
     ///         // TODO: Recovery logic...
@@ -149,7 +149,7 @@ impl ConfigDirLocator for XdgConfigDirLocator {
 /// use ricer::config::locator::{recover_xdg_config_dir_locator, XdgConfigDirLocator};
 /// use ricer::error::RicerError;
 ///
-/// let locator = match XdgConfigLocator::try_new_locate() {
+/// let locator = match XdgConfigDirLocator::try_new_locate_exists() {
 ///     Ok(locator) => locator,
 ///     Err(RicerError::NoConfigDir(..)) => recover_xdg_config_dir_locator()?,
 ///     Err(err) => return Err(err.into()),
