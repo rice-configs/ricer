@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
+# SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
+
+[package]
+name = "ricer-test-tools"
+description = "Testing tools for Ricer"
+authors = ["Jason Pena <jasonpena@awkless.com>"]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74.1"
+license = "GPL-2.0-or-later WITH GPL-CC-1.0"
+
+[dependencies]
+ricer = { path = "../../" }
+tempfile = "3.10"
