@@ -50,7 +50,7 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 use crate::config::locator::ConfigDirLocator;
 use crate::error::RicerResult;
@@ -68,4 +68,56 @@ pub trait ConfigDirManager {
 
     /// Absolute path to ignore files directory.
     fn ignores_dir(&self) -> &Path;
+}
+
+pub struct DefaultConfigDirManager {
+    root_dir: PathBuf,
+    repos_dir: PathBuf,
+    hooks_dir: PathBuf,
+    ignores_dir: PathBuf,
+}
+
+impl DefaultConfigDirManager {
+    /// Construct new default configuration directory manager.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::dir::DefaultConfigDirManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
+    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn new(locator: &dyn ConfigDirLocator) -> Self {
+        let root_dir = locator.config_dir().to_path_buf();
+        let repos_dir = root_dir.join("repos");
+        let hooks_dir = root_dir.join("hooks");
+        let ignores_dir = root_dir.join("ignores");
+
+        Self { root_dir, repos_dir, hooks_dir, ignores_dir }
+    }
+}
+
+impl ConfigDirManager for DefaultConfigDirManager {
+    fn root_dir(&self) -> &Path {
+        self.root_dir.as_path()
+    }
+
+    fn repos_dir(&self) -> &Path {
+        self.repos_dir.as_path()
+    }
+
+    fn hooks_dir(&self) -> &Path {
+        self.hooks_dir.as_path()
+    }
+
+    fn ignores_dir(&self) -> &Path {
+        self.ignores_dir.as_path()
+    }
 }
