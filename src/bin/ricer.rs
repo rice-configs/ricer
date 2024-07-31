@@ -11,6 +11,7 @@ use log::error;
 use std::ffi::OsString;
 
 use ricer::cli::RicerCli;
+use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
 use ricer::config::locator::{
     recover_default_config_dir_locator, DefaultConfigDirLocator, DefaultXdgBaseDirSpec,
 };
@@ -57,11 +58,13 @@ where
 
     let _ctx = Context::from(opts);
     let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
-    let _locator = match DefaultConfigDirLocator::try_new_locate(&xdg_spec) {
+    let locator = match DefaultConfigDirLocator::try_new_locate(&xdg_spec) {
         Ok(locator) => locator,
         Err(RicerError::NoConfigDir(..)) => recover_default_config_dir_locator(&xdg_spec)?,
         Err(err) => return Err(err.into()),
     };
+    let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    println!("{}", cfg_dir_mgr.root_dir().display());
 
     // TODO: match and execute command in Ricer's command set...
 
