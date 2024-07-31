@@ -36,6 +36,30 @@ impl FakeConfigDir {
         FakeConfigDirBuilder::new()
     }
 
+    /// Get stored path to target fake configuration file at top-level.
+    ///
+    /// # Errors
+    ///
+    /// Panics if ignore file is not being tracked by fake configuration
+    /// directory.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ricer_test_tools::fakes::FakeConfigDir;
+    ///
+    /// let config = FakeConfigDir::builder()
+    ///     .config_file("sample config data")
+    ///     .build();
+    /// let path = config.path_to_config_file();
+    /// ```
+    pub fn path_to_config_file(&self) -> &FileStub {
+        match self.file_stubs.get(&self.root_dir.join("config.toml")) {
+            Some(file) => file,
+            None => panic!("Configuration file is not being tracked by fake directory"),
+        }
+    }
+
     /// Get stored path to target fake ignore file in 'ignores' directory.
     ///
     /// Ignore files in Ricer are named after repositories in the `repos`
@@ -59,7 +83,7 @@ impl FakeConfigDir {
     /// use ricer_test_tools::fakes::FakeConfigDir;
     ///
     /// let config = FakeConfigDir::builder()
-    ///     .ignore_file("fake_ignore", "/*") /// Stored as 'fake_ignore.ignore'
+    ///     .ignore_file("fake_ignore", "/*") // Stored as 'fake_ignore.ignore'
     ///     .build();
     /// let path = config.path_to_ignore_file("fake_ignore");
     /// ```
