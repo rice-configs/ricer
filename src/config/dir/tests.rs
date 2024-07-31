@@ -15,6 +15,7 @@ fn full_config_dir_fixture() -> FakeConfigDir {
         .config_file("fake it till you make it!")
         .git_repo("vim")
         .hook_script("hook.sh", "fake it till you make it!")
+        .ignore_file("vim", "fake it till you make it!")
         .build()
 }
 
@@ -95,5 +96,30 @@ fn try_find_hook_script_cannot_find_hook_script(empty_config_dir_fixture: FakeCo
 
     let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
     let result = cfg_dir_mgr.try_find_hook_script("nonexistant");
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+}
+
+#[rstest]
+fn try_find_ignore_file_finds_ignore_file(full_config_dir_fixture: FakeConfigDir) {
+    let mut mock_locator = MockConfigDirLocator::new();
+    mock_locator
+        .expect_config_dir()
+        .return_const(full_config_dir_fixture.root_dir().to_path_buf());
+
+    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
+    let expect = full_config_dir_fixture.path_to_ignore_file("vim").as_path();
+    let result = cfg_dir_mgr.try_find_ignore_file("vim").expect("Expect success");
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn try_find_ignore_file_cannot_find_ignore_file(empty_config_dir_fixture: FakeConfigDir) {
+    let mut mock_locator = MockConfigDirLocator::new();
+    mock_locator
+        .expect_config_dir()
+        .return_const(empty_config_dir_fixture.root_dir().to_path_buf());
+
+    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
+    let result = cfg_dir_mgr.try_find_ignore_file("nonexistant");
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
