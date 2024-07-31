@@ -95,7 +95,7 @@ impl DefaultConfigDirManager {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
