@@ -61,6 +61,9 @@ pub trait ConfigDirManager {
     /// Find absolute path to configuration file.
     fn try_find_config_file(&self) -> RicerResult<PathBuf>;
 
+    /// Find absolute path to Git repository.
+    fn try_find_git_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+
     /// Absolute path to root/top-level configuration directory.
     fn root_dir(&self) -> &Path;
 
@@ -119,6 +122,18 @@ impl ConfigDirManager for DefaultConfigDirManager {
         }
 
         Ok(cfg_file_path)
+    }
+
+    fn try_find_git_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
+        let repo_path = self.repos_dir.join(format!("{}.git", repo_name.as_ref()));
+        if !repo_path.exists() {
+            return Err(RicerError::Unrecoverable(anyhow!(
+                "Git repository '{}' does not exist",
+                repo_path.display()
+            )));
+        }
+
+        Ok(repo_path)
     }
 
     fn root_dir(&self) -> &Path {
