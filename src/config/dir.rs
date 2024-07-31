@@ -67,6 +67,9 @@ pub trait ConfigDirManager {
     /// Find absolute path to hook script.
     fn try_find_hook_script(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
+    /// Find absolute path to ignore file.
+    fn try_find_ignore_file(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+
     /// Absolute path to root/top-level configuration directory.
     fn root_dir(&self) -> &Path;
 
@@ -149,6 +152,18 @@ impl ConfigDirManager for DefaultConfigDirManager {
         }
 
         Ok(hook_path)
+    }
+
+    fn try_find_ignore_file(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
+        let ignore_path = self.ignores_dir.join(format!("{}.ignore", repo_name.as_ref()));
+        if !ignore_path.exists() {
+            return Err(RicerError::Unrecoverable(anyhow!(
+                "Ignore file '{}' does not exist",
+                ignore_path.display()
+            )));
+        }
+
+        Ok(ignore_path)
     }
 
     fn root_dir(&self) -> &Path {
