@@ -22,6 +22,7 @@ use mockall::automock;
 use crate::error::{RicerError, RicerResult};
 
 /// Configuration directory locator representation.
+#[cfg_attr(test, automock)]
 pub trait ConfigDirLocator {
     /// Provide absolute path to located configuration directory.
     fn config_dir(&self) -> &Path;
