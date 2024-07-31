@@ -50,13 +50,17 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
+use anyhow::anyhow;
 use std::path::{Path, PathBuf};
 
 use crate::config::locator::ConfigDirLocator;
-use crate::error::RicerResult;
+use crate::error::{RicerError, RicerResult};
 
 /// Configuration directory manager representation.
 pub trait ConfigDirManager {
+    /// Find absolute path to configuration file.
+    fn try_find_config_file(&self) -> RicerResult<PathBuf>;
+
     /// Absolute path to root/top-level configuration directory.
     fn root_dir(&self) -> &Path;
 
@@ -105,6 +109,18 @@ impl DefaultConfigDirManager {
 }
 
 impl ConfigDirManager for DefaultConfigDirManager {
+    fn try_find_config_file(&self) -> RicerResult<PathBuf> {
+        let cfg_file_path = self.root_dir.join("config.toml");
+        if !cfg_file_path.exists() {
+            return Err(RicerError::Unrecoverable(anyhow!(
+                "Configuration file does not exist at '{}'",
+                cfg_file_path.display()
+            )));
+        }
+
+        Ok(cfg_file_path)
+    }
+
     fn root_dir(&self) -> &Path {
         self.root_dir.as_path()
     }
@@ -121,3 +137,6 @@ impl ConfigDirManager for DefaultConfigDirManager {
         self.ignores_dir.as_path()
     }
 }
+
+#[cfg(test)]
+mod tests;
