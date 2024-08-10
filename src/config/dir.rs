@@ -65,7 +65,7 @@ pub trait ConfigDirManager {
     fn git_repo_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Find absolute path to hook script.
-    fn find_hook_script(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+    fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Find absolute path to ignore file.
     fn find_ignore_file(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
@@ -147,7 +147,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
-    /// use ricer::config::dir::DefaultConfigDirManager;
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
     ///
     /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
     /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
@@ -201,7 +201,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
-    /// use ricer::config::dir::DefaultConfigDirManager;
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
     ///
     /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
     /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
@@ -226,8 +226,50 @@ impl ConfigDirManager for DefaultConfigDirManager {
         Ok(repo_path)
     }
 
-    fn find_hook_script(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf> {
+    /// Get path to hook script.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Hook script exists in `$XDG_CONFIG_HOME/ricer/hooks` directory.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path to hook script.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Path returned is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// # Errors
+    ///
+    /// 1. Returns `RicerError::Unrecoverable` if hook script does not exist
+    ///    in `$XDG_CONFIG_HOME/ricer/hooks` directory.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
+    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// let repo_path = cfg_dir_mgr.hook_script_path("vim")?;
+    /// println!("{}", repo_path.display());
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf> {
         let hook_path = self.hooks_dir.join(hook_name.as_ref());
+        debug_assert!(hook_path.is_absolute(), "Hook script path is not absolute");
         if !hook_path.exists() {
             return Err(RicerError::Unrecoverable(anyhow!(
                 "Hook script '{}' does not exist",
