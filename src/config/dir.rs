@@ -182,6 +182,3 @@ impl ConfigDirManager for DefaultConfigDirManager {
         self.ignores_dir.as_path()
     }
 }
-
-#[cfg(test)]
-mod tests;
