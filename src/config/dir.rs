@@ -58,17 +58,17 @@ use crate::error::{RicerError, RicerResult};
 
 /// Configuration directory manager representation.
 pub trait ConfigDirManager {
-    /// Find absolute path to configuration file.
-    fn try_find_config_file(&self) -> RicerResult<PathBuf>;
+    /// Get absolute path to configuration file.
+    fn config_file_path(&self) -> RicerResult<PathBuf>;
 
     /// Find absolute path to Git repository.
-    fn try_find_git_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+    fn find_git_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Find absolute path to hook script.
-    fn try_find_hook_script(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+    fn find_hook_script(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Find absolute path to ignore file.
-    fn try_find_ignore_file(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+    fn find_ignore_file(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Absolute path to root/top-level configuration directory.
     fn root_dir(&self) -> &Path;
@@ -118,8 +118,49 @@ impl DefaultConfigDirManager {
 }
 
 impl ConfigDirManager for DefaultConfigDirManager {
-    fn try_find_config_file(&self) -> RicerResult<PathBuf> {
+    /// Get path to configuration file.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Configuration file exists at `$XDG_CONFIG_HOME/ricer/config.toml`.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path to configuration file.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Path returned is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// # Errors
+    ///
+    /// 1. Returns `RicerError::Unrecoverable` if configuration file does not
+    ///    exist at `$XDG_CONFIG_HOME/ricer/config.toml`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::dir::DefaultConfigDirManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
+    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// println!("{}", cfg_dir_mgr.config_file_path().display());
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn config_file_path(&self) -> RicerResult<PathBuf> {
         let cfg_file_path = self.root_dir.join("config.toml");
+        debug_assert!(cfg_file_path.is_absolute(), "Configuration file path is not absolute");
         if !cfg_file_path.exists() {
             return Err(RicerError::Unrecoverable(anyhow!(
                 "Configuration file does not exist at '{}'",
@@ -130,7 +171,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
         Ok(cfg_file_path)
     }
 
-    fn try_find_git_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
+    fn find_git_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
         let repo_path = self.repos_dir.join(format!("{}.git", repo_name.as_ref()));
         if !repo_path.exists() {
             return Err(RicerError::Unrecoverable(anyhow!(
@@ -142,7 +183,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
         Ok(repo_path)
     }
 
-    fn try_find_hook_script(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf> {
+    fn find_hook_script(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf> {
         let hook_path = self.hooks_dir.join(hook_name.as_ref());
         if !hook_path.exists() {
             return Err(RicerError::Unrecoverable(anyhow!(
@@ -154,7 +195,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
         Ok(hook_path)
     }
 
-    fn try_find_ignore_file(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
+    fn find_ignore_file(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
         let ignore_path = self.ignores_dir.join(format!("{}.ignore", repo_name.as_ref()));
         if !ignore_path.exists() {
             return Err(RicerError::Unrecoverable(anyhow!(
