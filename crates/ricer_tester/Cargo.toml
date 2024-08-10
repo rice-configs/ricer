@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
 [package]
-name = "ricer-test-tools"
+name = "ricer_tester"
 description = "Testing tools for Ricer"
 authors = ["Jason Pena <jasonpena@awkless.com>"]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.74.1"
 license = "GPL-2.0-or-later WITH GPL-CC-1.0"
