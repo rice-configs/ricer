@@ -62,7 +62,7 @@ pub trait ConfigDirManager {
     fn config_file_path(&self) -> RicerResult<PathBuf>;
 
     /// Find absolute path to Git repository.
-    fn find_git_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+    fn git_repo_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Find absolute path to hook script.
     fn find_hook_script(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
@@ -152,7 +152,8 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
     /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
-    /// println!("{}", cfg_dir_mgr.config_file_path().display());
+    /// let cfg_file_path = cfg_dir_mgr.config_file_path()?;
+    /// println!("{}", cfg_file_path.display());
     /// # Ok(())
     /// # }
     /// ```
@@ -171,8 +172,50 @@ impl ConfigDirManager for DefaultConfigDirManager {
         Ok(cfg_file_path)
     }
 
-    fn find_git_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
+    /// Get path to Git repository.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Git repository exists in `$XDG_CONFIG_HOME/ricer/repos` directory.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path to Git repository.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Path returned is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// # Errors
+    ///
+    /// 1. Returns `RicerError::Unrecoverable` if Git repository does not exist
+    ///    in `$XDG_CONFIG_HOME/ricer/repos` directory.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::dir::DefaultConfigDirManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
+    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// let repo_path = cfg_dir_mgr.git_repo_path("vim")?;
+    /// println!("{}", repo_path.display());
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn git_repo_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
         let repo_path = self.repos_dir.join(format!("{}.git", repo_name.as_ref()));
+        debug_assert!(repo_path.is_absolute(), "Git repository path is not absolute");
         if !repo_path.exists() {
             return Err(RicerError::Unrecoverable(anyhow!(
                 "Git repository '{}' does not exist",
