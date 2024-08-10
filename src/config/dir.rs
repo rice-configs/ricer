@@ -52,6 +52,7 @@
 
 use anyhow::anyhow;
 use std::path::{Path, PathBuf};
+use log::trace;
 
 use crate::config::locator::ConfigDirLocator;
 use crate::error::{RicerError, RicerResult};
@@ -83,6 +84,11 @@ pub trait ConfigDirManager {
     fn ignores_dir(&self) -> &Path;
 }
 
+/// Default implementation of a configuration directory manager.
+///
+/// # Invariants
+///
+/// 1. Stored paths must be absolute.
 pub struct DefaultConfigDirManager {
     root_dir: PathBuf,
     repos_dir: PathBuf,
@@ -92,6 +98,22 @@ pub struct DefaultConfigDirManager {
 
 impl DefaultConfigDirManager {
     /// Construct new default configuration directory manager.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Provide valid instance of [`ConfigDirLocator`].
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return valid [`DefaultConfigDirManager`] instance.
+    ///
+    /// # Invariants
+    ///
+    /// 1. All stored paths must be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     ///
     /// # Examples
     ///
@@ -107,11 +129,19 @@ impl DefaultConfigDirManager {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// [`ConfigDirLocator`]: crate::config::locator::ConfigDirLocator
     pub fn new(locator: &dyn ConfigDirLocator) -> Self {
+        trace!("Construct default configuration directory manager");
         let root_dir = locator.config_dir().to_path_buf();
         let repos_dir = root_dir.join("repos");
         let hooks_dir = root_dir.join("hooks");
         let ignores_dir = root_dir.join("ignores");
+
+        debug_assert!(root_dir.is_absolute(), "Root directory path is not absolute");
+        debug_assert!(repos_dir.is_absolute(), "The 'repos' directory path is not absolute");
+        debug_assert!(hooks_dir.is_absolute(), "The 'hooks' directory path is not absolute");
+        debug_assert!(ignores_dir.is_absolute(), "The 'ignores' directory path is not absolute");
 
         Self { root_dir, repos_dir, hooks_dir, ignores_dir }
     }
