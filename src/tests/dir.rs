@@ -6,8 +6,8 @@ use rstest::{fixture, rstest};
 
 use ricer_tester::fakes::FakeConfigDir;
 
-use crate::config::locator::MockConfigDirLocator;
 use crate::config::dir::*;
+use crate::config::locator::MockConfigDirLocator;
 use crate::error::RicerError;
 
 fn setup_cfg_dir_mgr(fake_dir: &FakeConfigDir) -> DefaultConfigDirManager {
@@ -33,6 +33,15 @@ fn empty_config_dir_fixture() -> FakeConfigDir {
 }
 
 #[rstest]
+fn new_uses_absolute_paths(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
+    assert!(cfg_dir_mgr.root_dir().is_absolute());
+    assert!(cfg_dir_mgr.repos_dir().is_absolute());
+    assert!(cfg_dir_mgr.hooks_dir().is_absolute());
+    assert!(cfg_dir_mgr.ignores_dir().is_absolute());
+}
+
+#[rstest]
 fn config_file_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
     let expect = full_config_dir_fixture.path_to_config_file().as_path();
@@ -55,70 +64,67 @@ fn config_file_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfig
 }
 
 #[rstest]
-fn git_repo_path_finds_git_repo(full_config_dir_fixture: FakeConfigDir) {
-    let mut mock_locator = MockConfigDirLocator::new();
-    mock_locator.expect_config_dir().return_const(full_config_dir_fixture.root_dir().to_path_buf());
-
-    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
+fn git_repo_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
     let expect = full_config_dir_fixture.path_to_git_repo("vim").as_path();
     let result = cfg_dir_mgr.git_repo_path("vim").expect("Expect success");
     assert_eq!(expect, result);
 }
 
 #[rstest]
-fn git_repo_path_cannot_git_repo_path(empty_config_dir_fixture: FakeConfigDir) {
-    let mut mock_locator = MockConfigDirLocator::new();
-    mock_locator
-        .expect_config_dir()
-        .return_const(empty_config_dir_fixture.root_dir().to_path_buf());
+fn git_repo_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
+    let result = cfg_dir_mgr.git_repo_path("vim").expect("Expect success");
+    assert!(result.is_absolute());
+}
 
-    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
+#[rstest]
+fn git_repo_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
     let result = cfg_dir_mgr.git_repo_path("nonexistant");
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
-fn find_hook_script_finds_hook_script(full_config_dir_fixture: FakeConfigDir) {
-    let mut mock_locator = MockConfigDirLocator::new();
-    mock_locator.expect_config_dir().return_const(full_config_dir_fixture.root_dir().to_path_buf());
-
-    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
+fn hook_script_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
     let expect = full_config_dir_fixture.path_to_hook_script("hook.sh").as_path();
-    let result = cfg_dir_mgr.find_hook_script("hook.sh").expect("Expect success");
+    let result = cfg_dir_mgr.hook_script_path("hook.sh").expect("Expect success");
     assert_eq!(expect, result);
 }
 
 #[rstest]
-fn find_hook_script_cannot_find_hook_script(empty_config_dir_fixture: FakeConfigDir) {
-    let mut mock_locator = MockConfigDirLocator::new();
-    mock_locator
-        .expect_config_dir()
-        .return_const(empty_config_dir_fixture.root_dir().to_path_buf());
+fn hook_script_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
+    let result = cfg_dir_mgr.hook_script_path("hook.sh").expect("Expect success");
+    assert!(result.is_absolute());
+}
 
-    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
-    let result = cfg_dir_mgr.find_hook_script("nonexistant");
+#[rstest]
+fn hook_script_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
+    let result = cfg_dir_mgr.hook_script_path("nonexistant");
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
-fn find_ignore_file_finds_ignore_file(full_config_dir_fixture: FakeConfigDir) {
-    let mut mock_locator = MockConfigDirLocator::new();
-    mock_locator.expect_config_dir().return_const(full_config_dir_fixture.root_dir().to_path_buf());
-
-    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
+fn ignore_file_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
     let expect = full_config_dir_fixture.path_to_ignore_file("vim").as_path();
-    let result = cfg_dir_mgr.find_ignore_file("vim").expect("Expect success");
+    let result = cfg_dir_mgr.ignore_file_path("vim").expect("Expect success");
     assert_eq!(expect, result);
 }
 
 #[rstest]
-fn find_ignore_file_cannot_find_ignore_file(empty_config_dir_fixture: FakeConfigDir) {
-    let mut mock_locator = MockConfigDirLocator::new();
-    mock_locator
-        .expect_config_dir()
-        .return_const(empty_config_dir_fixture.root_dir().to_path_buf());
+fn ignore_file_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
+    let result = cfg_dir_mgr.ignore_file_path("vim").expect("Expect success");
+    assert!(result.is_absolute());
+}
 
-    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
-    let result = cfg_dir_mgr.find_ignore_file("nonexistant");
+#[rstest]
+fn ignore_file_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
+    let result = cfg_dir_mgr.ignore_file_path("nonexistant");
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
