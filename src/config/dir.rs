@@ -68,7 +68,7 @@ pub trait ConfigDirManager {
     fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Find absolute path to ignore file.
-    fn find_ignore_file(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+    fn ignore_file_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Absolute path to root/top-level configuration directory.
     fn root_dir(&self) -> &Path;
@@ -280,8 +280,50 @@ impl ConfigDirManager for DefaultConfigDirManager {
         Ok(hook_path)
     }
 
-    fn find_ignore_file(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
+    /// Get path to ignore file.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Ignore file exists in `$XDG_CONFIG_HOME/ricer/ignores` directory.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path to ignore file.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Path returned is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// # Errors
+    ///
+    /// 1. Returns `RicerError::Unrecoverable` if ignore file does not exist
+    ///    in `$XDG_CONFIG_HOME/ricer/ignores` directory.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
+    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// let ignore_path = cfg_dir_mgr.ignore_file_path("vim")?;
+    /// println!("{}", ignore_path.display());
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn ignore_file_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
         let ignore_path = self.ignores_dir.join(format!("{}.ignore", repo_name.as_ref()));
+        debug_assert!(ignore_path.is_absolute(), "Ignore file path is not absolute");
         if !ignore_path.exists() {
             return Err(RicerError::Unrecoverable(anyhow!(
                 "Ignore file '{}' does not exist",
