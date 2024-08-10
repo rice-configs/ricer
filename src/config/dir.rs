@@ -364,18 +364,86 @@ impl ConfigDirManager for DefaultConfigDirManager {
         Ok(ignore_path)
     }
 
+    /// Get path to root of configuration directory.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path to root of configuration directory.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Path returned is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     fn root_dir(&self) -> &Path {
         self.root_dir.as_path()
     }
 
+    /// Get path to `repos` sub-directory in configuration directory.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path to `repos` sub-directory.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Path returned is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     fn repos_dir(&self) -> &Path {
         self.repos_dir.as_path()
     }
 
+    /// Get path to `hooks` sub-directory in configuration directory.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path to `hooks` sub-directory.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Path returned is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     fn hooks_dir(&self) -> &Path {
         self.hooks_dir.as_path()
     }
 
+    /// Get path to `ignores` sub-directory in configuration directory.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path to `ignores` sub-directory.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Path returned is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     fn ignores_dir(&self) -> &Path {
         self.ignores_dir.as_path()
     }
