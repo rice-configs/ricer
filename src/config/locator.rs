@@ -192,6 +192,3 @@ pub fn recover_default_config_dir_locator(
     let locator = DefaultConfigDirLocator::try_new_locate(xdg_spec)?;
     Ok(locator)
 }
-
-#[cfg(test)]
-mod tests;

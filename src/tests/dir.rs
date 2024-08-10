@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
-use super::*;
 use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
 
-use crate::config::locator::MockConfigDirLocator;
+use ricer_tester::fakes::FakeConfigDir;
 
-use ricer_test_tools::fakes::FakeConfigDir;
+use crate::config::locator::MockConfigDirLocator;
+use crate::config::dir::*;
+use crate::error::RicerError;
 
 #[fixture]
 fn full_config_dir_fixture() -> FakeConfigDir {
