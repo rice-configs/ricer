@@ -57,8 +57,8 @@ where
         .init();
 
     let _ctx = Context::from(opts);
-    let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
-    let locator = match DefaultConfigDirLocator::try_new_locate(&xdg_spec) {
+    let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    let locator = match DefaultConfigDirLocator::new_locate(&xdg_spec) {
         Ok(locator) => locator,
         Err(RicerError::NoConfigDir(..)) => recover_default_config_dir_locator(&xdg_spec)?,
         Err(err) => return Err(err.into()),

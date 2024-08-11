@@ -58,7 +58,7 @@ impl DefaultXdgBaseDirSpec {
     /// # fn main() -> Result<()> {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, XdgBaseDirSpec};
     ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
     /// println!("{}", xdg_spec.config_home_dir().display());
     /// # Ok(())
     /// # }
@@ -67,7 +67,7 @@ impl DefaultXdgBaseDirSpec {
     /// # See
     ///
     /// - <https://docs.rs/directories/latest/directories/struct.BaseDirs.html#method.new>
-    pub fn try_new() -> RicerResult<Self> {
+    pub fn new() -> RicerResult<Self> {
         trace!("Locate expected path to configuration directory");
         let xdg_spec = BaseDirs::new().ok_or(RicerError::Unrecoverable(anyhow!(
             "Failed to locate configuration directory"
@@ -113,8 +113,8 @@ impl DefaultConfigDirLocator {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
     /// use ricer::error::RicerError;
     ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
-    /// let locator = match DefaultConfigDirLocator::try_new_locate(&xdg_spec) {
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = match DefaultConfigDirLocator::new_locate(&xdg_spec) {
     ///     Ok(locator) => locator,
     ///     Err(RicerError::NoConfigDir(..)) => {
     ///         // TODO: Recovery logic...
@@ -127,7 +127,7 @@ impl DefaultConfigDirLocator {
     /// ```
     ///
     /// [`RicerError::NoConfigDir`]: crate::error::RicerError::NoConfigDir
-    pub fn try_new_locate(xdg_spec: &dyn XdgBaseDirSpec) -> RicerResult<Self> {
+    pub fn new_locate(xdg_spec: &dyn XdgBaseDirSpec) -> RicerResult<Self> {
         let config_dir = xdg_spec.config_home_dir().join("ricer");
         if !config_dir.exists() {
             return Err(RicerError::NoConfigDir(anyhow!(
@@ -166,8 +166,8 @@ impl ConfigDirLocator for DefaultConfigDirLocator {
 /// };
 /// use ricer::error::RicerError;
 ///
-/// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
-/// let locator = match DefaultConfigDirLocator::try_new_locate(&xdg_spec) {
+/// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+/// let locator = match DefaultConfigDirLocator::new_locate(&xdg_spec) {
 ///     Ok(locator) => locator,
 ///     Err(RicerError::NoConfigDir(..)) => recover_default_config_dir_locator(&xdg_spec)?,
 ///     Err(err) => return Err(err.into()),
@@ -189,6 +189,6 @@ pub fn recover_default_config_dir_locator(
     warn!("Creating configuration directory since it does not exist at '{}'", config_dir.display());
     create_dir(config_dir)?;
 
-    let locator = DefaultConfigDirLocator::try_new_locate(xdg_spec)?;
+    let locator = DefaultConfigDirLocator::new_locate(xdg_spec)?;
     Ok(locator)
 }
