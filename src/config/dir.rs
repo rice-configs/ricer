@@ -51,8 +51,8 @@
 //! entire home directory.
 
 use anyhow::anyhow;
-use std::path::{Path, PathBuf};
 use log::trace;
+use std::path::{Path, PathBuf};
 
 use crate::config::locator::ConfigDirLocator;
 use crate::error::{RicerError, RicerResult};
