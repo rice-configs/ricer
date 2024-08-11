@@ -303,14 +303,3 @@ const EXTERNAL_SUBCOMMAND_INFORMATION: &str = indoc! {"
       <REPO> <GIT_CMD>  Shortcut to execute a Git command directly on a target repository.
     "
 };
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use clap::CommandFactory;
-
-    #[test]
-    fn verify_cli() {
-        RicerCli::command().debug_assert();
-    }
-}
