@@ -51,9 +51,9 @@ impl FakeConfigDir {
     /// let config = FakeConfigDir::builder()
     ///     .config_file("sample config data")
     ///     .build();
-    /// let path = config.path_to_config_file();
+    /// let path = config.config_file_stub();
     /// ```
-    pub fn path_to_config_file(&self) -> &FileStub {
+    pub fn config_file_stub(&self) -> &FileStub {
         match self.file_stubs.get(&self.root_dir.join("config.toml")) {
             Some(file) => file,
             None => panic!("Configuration file is not being tracked by fake directory"),
@@ -85,9 +85,9 @@ impl FakeConfigDir {
     /// let config = FakeConfigDir::builder()
     ///     .ignore_file("fake_ignore", "/*") // Stored as 'fake_ignore.ignore'
     ///     .build();
-    /// let path = config.path_to_ignore_file("fake_ignore");
+    /// let path = config.ignore_file_stub("fake_ignore");
     /// ```
-    pub fn path_to_ignore_file(&self, repo: impl AsRef<Path>) -> &FileStub {
+    pub fn ignore_file_stub(&self, repo: impl AsRef<Path>) -> &FileStub {
         let ignore_file = format!("{}.ignore", repo.as_ref().display());
         match self.file_stubs.get(&self.ignores_dir.join(&ignore_file)) {
             Some(file) => file,
@@ -112,9 +112,9 @@ impl FakeConfigDir {
     /// let config = FakeConfigDir::builder()
     ///     .hook_script("hook.sh", "chmod +x blah")
     ///     .build();
-    /// let path = config.path_to_hook_script("hook.sh");
+    /// let path = config.hook_script_stub("hook.sh");
     /// ```
-    pub fn path_to_hook_script(&self, name: impl AsRef<Path>) -> &FileStub {
+    pub fn hook_script_stub(&self, name: impl AsRef<Path>) -> &FileStub {
         match self.file_stubs.get(&self.hooks_dir.join(name.as_ref())) {
             Some(file) => file,
             None => panic!(
@@ -141,9 +141,9 @@ impl FakeConfigDir {
     /// let config = FakeConfigDir::builder()
     ///     .git_repo("fake_repo")
     ///     .build();
-    /// let path = config.path_to_hook_script("hook.sh");
+    /// let path = config.hook_script_stub("hook.sh");
     /// ```
-    pub fn path_to_git_repo(&self, name: impl AsRef<Path>) -> &GitRepoStub {
+    pub fn git_repo_stub(&self, name: impl AsRef<Path>) -> &GitRepoStub {
         let git_repo = format!("{}.git", name.as_ref().display());
         match self.repo_stubs.get(&self.repos_dir.join(&git_repo)) {
             Some(repo) => repo,
