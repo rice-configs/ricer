@@ -868,7 +868,7 @@ dependencies = [
  "log",
  "mockall",
  "pretty_assertions",
- "ricer_tester",
+ "ricer_test_tools",
  "rstest",
  "serde",
  "shadow-rs",
@@ -879,7 +879,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ricer_tester"
+name = "ricer_test_tools"
 version = "0.2.0"
 dependencies = [
  "ricer",

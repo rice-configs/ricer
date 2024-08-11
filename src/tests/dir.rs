@@ -4,7 +4,7 @@
 use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
 
-use ricer_tester::fakes::FakeConfigDir;
+use ricer_test_tools::fakes::FakeConfigDir;
 
 use crate::config::dir::*;
 use crate::config::locator::MockConfigDirLocator;

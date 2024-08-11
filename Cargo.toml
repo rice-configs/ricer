@@ -1,6 +1,11 @@
 # SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 # SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
+[workspace]
+members = [
+    "crates/*"
+]
+
 [package]
 name = "ricer"
 description = "Experimental rice/dotfile manager"
@@ -37,9 +42,4 @@ pretty_assertions = "1.4"
 tempfile = "3.10"
 rstest = "0.21"
 mockall = "0.13"
-ricer_tester = { path = "crates/ricer_tester" }
-
-[workspace]
-members = [
-    "crates/ricer_tester"
-]
+ricer_test_tools = { path = "crates/ricer_test_tools" }

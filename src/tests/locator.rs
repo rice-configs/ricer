@@ -6,7 +6,7 @@ use rstest::{fixture, rstest};
 use std::path::PathBuf;
 use tempfile::{Builder, TempDir};
 
-use ricer_tester::fakes::FakeConfigDir;
+use ricer_test_tools::fakes::FakeConfigDir;
 
 use crate::config::locator::*;
 use crate::error::RicerError;
