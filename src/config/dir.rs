@@ -123,8 +123,8 @@ impl DefaultConfigDirManager {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
     /// use ricer::config::dir::DefaultConfigDirManager;
     ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
-    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
     /// # Ok(())
     /// # }
@@ -179,8 +179,8 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
     /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
     ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
-    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
     /// let cfg_file_path = cfg_dir_mgr.config_file_path()?;
     /// println!("{}", cfg_file_path.display());
@@ -233,8 +233,8 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
     /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
     ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
-    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
     /// let repo_path = cfg_dir_mgr.git_repo_path("vim")?;
     /// println!("{}", repo_path.display());
@@ -287,8 +287,8 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
     /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
     ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
-    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
     /// let repo_path = cfg_dir_mgr.hook_script_path("vim")?;
     /// println!("{}", repo_path.display());
@@ -341,8 +341,8 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
     /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
     ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::try_new()?;
-    /// let locator = DefaultConfigDirLocator::try_new_locate(&xdg_spec)?;
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
     /// let ignore_path = cfg_dir_mgr.ignore_file_path("vim")?;
     /// println!("{}", ignore_path.display());
