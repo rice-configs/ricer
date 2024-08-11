@@ -3,8 +3,8 @@
 
 use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
-use tempfile::{Builder, TempDir};
 use std::path::PathBuf;
+use tempfile::{Builder, TempDir};
 
 use ricer_tester::fakes::FakeConfigDir;
 
