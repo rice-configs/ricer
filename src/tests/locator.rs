@@ -34,10 +34,22 @@ fn new_locate_gives_correct_path(config_dir_fixture: FakeConfigDir) {
     assert_eq!(expect, result);
 }
 
+#[rstest]
+fn new_locate_gives_absolute_path(config_dir_fixture: FakeConfigDir) {
+    let mut mock_xdg_spec = MockXdgBaseDirSpec::new();
+    mock_xdg_spec
+        .expect_config_home_dir()
+        .return_const(config_dir_fixture.temp_dir().to_path_buf());
+
+    let locator = DefaultConfigDirLocator::new_locate(&mock_xdg_spec).expect("Expect success");
+    let result = locator.config_dir();
+    assert!(result.is_absolute());
+}
+
 #[test]
 fn new_locate_catches_nonexistant_config_dir() {
     let mut mock_xdg_spec = MockXdgBaseDirSpec::new();
-    mock_xdg_spec.expect_config_home_dir().return_const(PathBuf::from("nonexistant"));
+    mock_xdg_spec.expect_config_home_dir().return_const(PathBuf::from("/home/nonexistant"));
 
     let result = DefaultConfigDirLocator::new_locate(&mock_xdg_spec);
     assert!(matches!(result, Err(RicerError::NoConfigDir(..))));

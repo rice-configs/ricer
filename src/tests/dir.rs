@@ -44,7 +44,7 @@ fn new_uses_absolute_paths(full_config_dir_fixture: FakeConfigDir) {
 #[rstest]
 fn config_file_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let expect = full_config_dir_fixture.path_to_config_file().as_path();
+    let expect = full_config_dir_fixture.config_file_stub().as_path();
     let result = cfg_dir_mgr.config_file_path().expect("Expect success");
     assert_eq!(result, expect);
 }
@@ -66,7 +66,7 @@ fn config_file_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfig
 #[rstest]
 fn git_repo_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let expect = full_config_dir_fixture.path_to_git_repo("vim").as_path();
+    let expect = full_config_dir_fixture.git_repo_stub("vim").as_path();
     let result = cfg_dir_mgr.git_repo_path("vim").expect("Expect success");
     assert_eq!(expect, result);
 }
@@ -88,7 +88,7 @@ fn git_repo_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir
 #[rstest]
 fn hook_script_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let expect = full_config_dir_fixture.path_to_hook_script("hook.sh").as_path();
+    let expect = full_config_dir_fixture.hook_script_stub("hook.sh").as_path();
     let result = cfg_dir_mgr.hook_script_path("hook.sh").expect("Expect success");
     assert_eq!(expect, result);
 }
@@ -110,7 +110,7 @@ fn hook_script_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfig
 #[rstest]
 fn ignore_file_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let expect = full_config_dir_fixture.path_to_ignore_file("vim").as_path();
+    let expect = full_config_dir_fixture.ignore_file_stub("vim").as_path();
     let result = cfg_dir_mgr.ignore_file_path("vim").expect("Expect success");
     assert_eq!(expect, result);
 }
