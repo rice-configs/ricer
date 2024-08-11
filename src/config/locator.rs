@@ -46,6 +46,22 @@ impl DefaultXdgBaseDirSpec {
     /// Construct new instance of default XDG Base Directory Specification
     /// handler.
     ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return Default XDG Base Directory Specification handler instance.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
     /// # Errors
     ///
     /// Issues [`RicerError::Unrecoverable`] if it cannot determine home
@@ -68,7 +84,7 @@ impl DefaultXdgBaseDirSpec {
     ///
     /// - <https://docs.rs/directories/latest/directories/struct.BaseDirs.html#method.new>
     pub fn new() -> RicerResult<Self> {
-        trace!("Locate expected path to configuration directory");
+        trace!("Construct default XDG Base Directory Specification handler");
         let xdg_spec = BaseDirs::new().ok_or(RicerError::Unrecoverable(anyhow!(
             "Failed to locate configuration directory"
         )))?;
@@ -78,8 +94,27 @@ impl DefaultXdgBaseDirSpec {
 }
 
 impl XdgBaseDirSpec for DefaultXdgBaseDirSpec {
+    /// Get path of `$XDG_CONFIG_HOME`.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path of `$XDG_CONFIG_HOME`.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Returned path is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     fn config_home_dir(&self) -> &Path {
-        self.xdg_spec.config_dir()
+        let path = self.xdg_spec.config_dir();
+        debug_assert!(path.is_absolute(), "Path of $XDG_CONFIG_HOME is not absolute");
+        path
     }
 }
 
@@ -88,6 +123,10 @@ impl XdgBaseDirSpec for DefaultXdgBaseDirSpec {
 /// Attempts to locate Ricer's configuration directory using an implementation
 /// of [`XdgBaseDirSpec`]. Expects the configuration directory to be at
 /// `$XDG_CONFIG_HOME/ricer`.
+///
+/// # Invariants
+///
+/// 1. Locator provides an absolute path to configuration directory.
 pub struct DefaultConfigDirLocator {
     config_dir: PathBuf,
 }
@@ -99,6 +138,22 @@ impl DefaultConfigDirLocator {
     /// that automatically locates the expected absolute path to Ricer's
     /// configuration directory at `$XDG_CONFIG_HOME/ricer` using an
     /// implementation of [`XdgBaseDirSpec`].
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Valid instance of [`XdgBaseDirSpec`].
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return new default configuration directory locator instance.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Located path to configuration directory is absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     ///
     /// # Errors
     ///
@@ -128,7 +183,9 @@ impl DefaultConfigDirLocator {
     ///
     /// [`RicerError::NoConfigDir`]: crate::error::RicerError::NoConfigDir
     pub fn new_locate(xdg_spec: &dyn XdgBaseDirSpec) -> RicerResult<Self> {
+        trace!("Construct default configuration directory locator");
         let config_dir = xdg_spec.config_home_dir().join("ricer");
+        debug_assert!(config_dir.is_absolute(), "Path to $XDG_CONFIG_HOME/ricer is not absolute");
         if !config_dir.exists() {
             return Err(RicerError::NoConfigDir(anyhow!(
                 "Expected configuration directory at '{}'",
@@ -142,6 +199,23 @@ impl DefaultConfigDirLocator {
 }
 
 impl ConfigDirLocator for DefaultConfigDirLocator {
+    /// Get located path to configuration directory.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path of `$XDG_CONFIG_HOME/ricer`.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Returned path is guaranteed to be absolute.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     fn config_dir(&self) -> &Path {
         self.config_dir.as_path()
     }
@@ -151,6 +225,22 @@ impl ConfigDirLocator for DefaultConfigDirLocator {
 ///
 /// Creates the configuration directory at expected location provided by
 /// [`XdgBaseDirSpec`] as a recovery strategy.
+///
+/// # Preconditions
+///
+/// 1. Valid instance of [`XdgBaseDirSpec`].
+///
+/// # Postconditions
+///
+/// 1. Return instance of [`DefaultConfigDirLocator`].
+///
+/// # Invariants
+///
+/// None.
+///
+/// # Side Effects
+///
+/// None.
 ///
 /// # Errors
 ///
