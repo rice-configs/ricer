@@ -31,6 +31,8 @@
 //! Ricer only bootstrap a repository for a specific user and host.
 
 use log::trace;
+use toml_edit::visit::{visit_table_like_kv, Visit};
+use toml_edit::{Item, Key};
 
 /// Repository entry definition implementation.
 ///
@@ -84,6 +86,21 @@ impl RepoEntry {
     /// ```
     pub fn builder(name: impl AsRef<str>) -> RepoEntryBuilder {
         RepoEntryBuilder::new(name)
+    }
+}
+
+impl<'toml> From<(&'toml Key, &'toml Item)> for RepoEntry {
+    fn from(toml_entry: (&'toml Key, &'toml Item)) -> Self {
+        let (key, value) = toml_entry;
+        let mut target_entry = RepoTargetEntry::builder();
+        let mut repo_entry = RepoEntry::builder(key.get());
+
+        target_entry.visit_item(value);
+        let target = target_entry.build();
+
+        repo_entry.visit_item(value);
+        let repo = repo_entry.target(target).build();
+        repo
     }
 }
 
@@ -275,6 +292,19 @@ impl RepoEntryBuilder {
     }
 }
 
+impl<'toml> Visit<'toml> for RepoEntryBuilder {
+    fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
+        match key {
+            "branch" => self.branch = node.as_str().unwrap_or_default().to_string(),
+            "remote" => self.remote = node.as_str().unwrap_or_default().to_string(),
+            "url" => self.url = node.as_str().unwrap_or_default().to_string(),
+            &_ => visit_table_like_kv(self, key, node),
+        }
+
+        visit_table_like_kv(self, key, node);
+    }
+}
+
 /// Target bootstrap options for repository definition implementation.
 ///
 /// # Invariants
@@ -299,6 +329,20 @@ pub struct RepoTargetEntry {
 impl RepoTargetEntry {
     pub fn builder() -> RepoTargetEntryBuilder {
         RepoTargetEntryBuilder::new()
+    }
+}
+
+impl<'toml> Visit<'toml> for RepoTargetEntryBuilder {
+    fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
+        match key {
+            "home" => self.home = *node.as_bool().get_or_insert(false),
+            "os" => self.os = TargetOsOption::from(node.as_str().unwrap_or_default()),
+            "user" => self.user = node.as_str().map(|str| str.to_string()),
+            "hostname" => self.hostname = node.as_str().map(|str| str.to_string()),
+            &_ => visit_table_like_kv(self, key, node),
+        }
+
+        visit_table_like_kv(self, key, node);
     }
 }
 
@@ -468,12 +512,7 @@ impl RepoTargetEntryBuilder {
     pub fn build(self) -> RepoTargetEntry {
         trace!("Build new target entry for repository entry definition");
 
-        RepoTargetEntry {
-            home: self.home,
-            os: self.os,
-            user: self.user,
-            hostname: self.hostname,
-        }
+        RepoTargetEntry { home: self.home, os: self.os, user: self.user, hostname: self.hostname }
     }
 }
 
@@ -492,4 +531,16 @@ pub enum TargetOsOption {
 
     /// Only target Windows operating systems.
     Windows,
+}
+
+impl From<&str> for TargetOsOption {
+    fn from(data: &str) -> Self {
+        match data {
+            "any" => Self::Any,
+            "unix" => Self::Unix,
+            "macos" => Self::MacOs,
+            "windows" => Self::Windows,
+            &_ =>  Self::Any,
+        }
+    }
 }
