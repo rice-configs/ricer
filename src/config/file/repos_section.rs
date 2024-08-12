@@ -59,9 +59,21 @@ pub struct RepoEntry {
 impl RepoEntry {
     /// Build new repository entry definition.
     ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
     /// # Postconditions
     ///
     /// 1. Return [`RepoEntryBuilder`].
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     ///
     /// # Examples
     ///
@@ -95,15 +107,21 @@ pub struct RepoEntryBuilder {
 impl RepoEntryBuilder {
     /// Construct repository entry builder.
     ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
     /// # Postconditions
     ///
     /// 1. Return new instance of repository entry builder.
     ///
-    /// ```no_run
-    /// use ricer::config::file::repos_section::RepoEntryBuilder;
+    /// # Invariants
     ///
-    /// let repo_builder = RepoEntryBuilder::new("vim");
-    /// ```
+    /// 1. No field is empty.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     pub fn new(name: impl AsRef<str>) -> Self {
         Self {
             name: name.as_ref().to_string(),
@@ -114,27 +132,99 @@ impl RepoEntryBuilder {
         }
     }
 
+    /// Set branch field.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Set [`branch`] field.
+    ///
+    /// Invariants
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// [`branch`]: #member.branch
     pub fn branch(mut self, branch: impl AsRef<str>) -> Self {
         self.branch = branch.as_ref().to_string();
         self
     }
 
+    /// Set remote field.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Set [`remote`] field.
+    ///
+    /// Invariants
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// [`remote`]: #member.remote
     pub fn remote(mut self, remote: impl AsRef<str>) -> Self {
         self.remote = remote.as_ref().to_string();
         self
     }
 
+    /// Set URL field.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Set [`url`] field.
+    ///
+    /// Invariants
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// [`url`]: #member.url
     pub fn url(mut self, url: impl AsRef<str>) -> Self {
         self.url = url.as_ref().to_string();
         self
     }
 
+    /// Set target field.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Set [`target`] field.
+    ///
+    /// Invariants
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// [`target`]: #member.target
     pub fn target(mut self, target: RepoTargetEntry) -> Self {
         self.target = target;
         self
     }
 
     /// Build new [`RepoEntry`].
+    ///
+    /// # Preconditions
+    ///
+    /// None.
     ///
     /// # Postconditions
     ///
@@ -144,26 +234,36 @@ impl RepoEntryBuilder {
     ///
     /// 1. No field is empty.
     ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
     /// # Examples
     ///
     /// ```no_run
-    /// use ricer::config::file::repos_section::RepoEntryBuilder;
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::repos_section::{RepoEntryBuilder, RepoTargetEntry, TargetOsOption};
     ///
-    /// let target = RepoTargetEntryBuilder::new().build();
-    /// let repo_builder = RepoEntryBuilder::new("vim");
+    /// let target = RepoTargetEntry::builder()
+    ///     .home(true)
+    ///     .os(TargetOsOption::Unix)
+    ///     .build();
+    /// let builder = RepoEntryBuilder::new("vim")
     ///     .branch("master")
     ///     .remote("origin")
     ///     .url("https://github.com/awkless/vim.git")
     ///     .target(target)
     ///     .build();
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn build(self) -> RepoEntry {
         trace!("Build new repository entry definition");
-        debug_assert_ne!(self.name, String::default(), "Name of repository entry is empty");
-        debug_assert_ne!(self.branch, String::default(), "Branch of repository entry is empty");
-        debug_assert_ne!(self.remote, String::default(), "Remote of repository entry is empty");
-        debug_assert_ne!(self.url, String::default(), "URL of repository entry is empty");
-        debug_assert_ne!(self.target, RepoTargetEntry::default(), "Target of repository is empty");
+        debug_assert!(!self.name.is_empty(), "Name of repository entry is empty");
+        debug_assert!(!self.branch.is_empty(), "Branch of repository entry is empty");
+        debug_assert!(!self.remote.is_empty(), "Remote of repository entry is empty");
+        debug_assert!(!self.url.is_empty(), "URL of repository entry is empty");
 
         RepoEntry {
             name: self.name,
@@ -175,6 +275,11 @@ impl RepoEntryBuilder {
     }
 }
 
+/// Target bootstrap options for repository definition implementation.
+///
+/// # Invariants
+///
+/// 1. No field is empty.
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct RepoTargetEntry {
     /// Repository will use the user's home directory as the main working tree.
@@ -182,11 +287,209 @@ pub struct RepoTargetEntry {
 
     /// Bootstrap repository if and only if user's is using a specific operating
     /// system.
-    pub os: String,
+    pub os: TargetOsOption,
 
     /// Bootstrap repository for a specific user only on the system.
-    pub user: String,
+    pub user: Option<String>,
 
     /// Bootstrap repository for a specific host only on the system.
-    pub hostname: String,
+    pub hostname: Option<String>,
+}
+
+impl RepoTargetEntry {
+    pub fn builder() -> RepoTargetEntryBuilder {
+        RepoTargetEntryBuilder::new()
+    }
+}
+
+/// Builder for target bootstrap options for repository definition implementation.
+#[derive(Debug, Default, Eq, PartialEq)]
+pub struct RepoTargetEntryBuilder {
+    home: bool,
+    os: TargetOsOption,
+    user: Option<String>,
+    hostname: Option<String>,
+}
+
+impl RepoTargetEntryBuilder {
+    /// Construct new repository target entry builder.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return new repository target entry builder.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Set home target.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Set [`home`] field.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// [`home`]: #member.home
+    pub fn home(mut self, home: bool) -> Self {
+        self.home = home;
+        self
+    }
+
+    /// Set OS target.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Set [`os`] field.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// [`os`]: #member.os
+    pub fn os(mut self, os: TargetOsOption) -> Self {
+        self.os = os;
+        self
+    }
+
+    /// Set user target
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Set [`user`] field.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// [`user`]: #member.user
+    pub fn user(mut self, user: Option<impl AsRef<str>>) -> Self {
+        self.user = user.map(|str| str.as_ref().to_string());
+        self
+    }
+
+    /// Set hostname target.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Set [`hostname`] field.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// [`hostname`]: #member.hostname
+    pub fn hostname(mut self, hostname: Option<impl AsRef<str>>) -> Self {
+        self.hostname = hostname.map(|str| str.as_ref().to_string());
+        self
+    }
+
+    /// Build new [`RepoTargetEntry`].
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return new [`RepoTargetEntry`].
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::repos_section::{RepoTargetEntryBuilder, TargetOsOption};
+    ///
+    /// let builder = RepoTargetEntryBuilder::new()
+    ///     .home(true)
+    ///     .os(TargetOsOption::Unix)
+    ///     .user(Some("awkless"))
+    ///     .hostname(Some("lovelace"))
+    ///     .build();
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`os`]: #member.os
+    pub fn build(self) -> RepoTargetEntry {
+        trace!("Build new target entry for repository entry definition");
+
+        RepoTargetEntry {
+            home: self.home,
+            os: self.os,
+            user: self.user,
+            hostname: self.hostname,
+        }
+    }
+}
+
+/// Target OS option types.
+#[derive(Debug, Default, Eq, PartialEq)]
+pub enum TargetOsOption {
+    /// Target any operating system.
+    #[default]
+    Any,
+
+    /// Only target Unix/Linux operating systems.
+    Unix,
+
+    /// Only target MacOs operating systems.
+    MacOs,
+
+    /// Only target Windows operating systems.
+    Windows,
 }
