@@ -4,23 +4,25 @@
 use rstest::{fixture, rstest};
 use pretty_assertions::assert_eq;
 use toml_edit::DocumentMut;
+use indoc::indoc;
 
 use crate::config::file::repos_section::*;
 
 #[fixture]
 fn toml_doc_fixture() -> DocumentMut {
-    let toml = r#"
-    [repos.full_entry]
-    branch = "master"
-    remote = "origin"
-    url = "https://github.com/awkless/foobar.git"
-    target = { home = true, os = "unix", user = "awkless", hostname = "lovelace" }
+    let toml = indoc! {r#"
+        [repos.full_entry]
+        branch = "master"
+        remote = "origin"
+        url = "https://github.com/awkless/foobar.git"
+        target = { home = true, os = "unix", user = "awkless", hostname = "lovelace" }
 
-    [repos.no_target_entry]
-    branch = "master"
-    remote = "origin"
-    url = "https://github.com/awkless/foobar.git"
-    "#;
+        [repos.no_target_entry]
+        branch = "master"
+        remote = "origin"
+        url = "https://github.com/awkless/foobar.git"
+        "#
+    };
 
     let toml_doc: DocumentMut = toml.parse().expect("Failed to parse toml data");
     toml_doc
@@ -62,5 +64,47 @@ fn deserialize_repo_entry_with_missing_target_entry(toml_doc_fixture: DocumentMu
         .url("https://github.com/awkless/foobar.git")
         .target(target)
         .build();
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn serialize_repo_entry_correctly(mut toml_doc_fixture: DocumentMut) {
+    let target_entry = RepoTargetEntry::builder()
+        .home(true)
+        .os(TargetOsOption::Windows)
+        .user(Some("awkless"))
+        .hostname(Some("lovelace"))
+        .build();
+    let repo_entry = RepoEntry::builder("test")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/foobar.git")
+        .target(target_entry)
+        .build();
+    let (key, value) = repo_entry.to_toml();
+    let repos_table = toml_doc_fixture.get_mut("repos").expect("The 'repos' table does not exist");
+    let repos_table = repos_table.as_table_mut().expect("Cannot convert 'repos' to table");
+    repos_table.insert(&key, value);
+
+    let result = toml_doc_fixture.to_string();
+    let expect = indoc! {r#"
+        [repos.full_entry]
+        branch = "master"
+        remote = "origin"
+        url = "https://github.com/awkless/foobar.git"
+        target = { home = true, os = "unix", user = "awkless", hostname = "lovelace" }
+
+        [repos.no_target_entry]
+        branch = "master"
+        remote = "origin"
+        url = "https://github.com/awkless/foobar.git"
+
+        [repos.test]
+        branch = "master"
+        remote = "upstream"
+        url = "https://github.com/awkless/foobar.git"
+        target = { home = true, os = "windows", user = "awkless", hostname = "lovelace" }
+        "#
+    };
     assert_eq!(expect, result);
 }
