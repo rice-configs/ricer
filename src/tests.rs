@@ -8,3 +8,5 @@ mod dir;
 mod cli;
 
 mod repos_section;
+
+mod hooks_section;

@@ -58,7 +58,7 @@ impl CommandHookEntry {
     /// ```
     /// use ricer::config::file::hooks_section::CommandHookEntry;
     ///
-    /// let cmd_hook = CommandHookEntry::new();
+    /// let cmd_hook = CommandHookEntry::new("commit");
     /// ```
     pub fn new(cmd_name: impl AsRef<str>) -> Self {
         Self { cmd: cmd_name.as_ref().to_string(), hooks: Default::default() }
@@ -87,11 +87,11 @@ impl CommandHookEntry {
     /// ```no_run
     /// use ricer::config::file::hooks_section::{CommandHookEntry, HookEntry};
     ///
-    /// let mut cmd_hook = CommandHookEntry::new();
+    /// let mut cmd_hook = CommandHookEntry::new("commit");
     /// let hook_entry = HookEntry::builder()
-    ///     .pre("hook.sh")
-    ///     .post("hook.sh")
-    ///     .repo("vim")
+    ///     .pre(Some("hook.sh"))
+    ///     .post(Some("hook.sh"))
+    ///     .repo(Some("vim"))
     ///     .build();
     /// cmd_hook.add_hook(hook_entry);
     /// ```
@@ -280,7 +280,7 @@ impl HookEntryBuilder {
     /// # Examples
     ///
     /// ```no_run
-    /// use ricer::config::file::hooks_section::HookEntry;
+    /// use ricer::config::file::hooks_section::HookEntryBuilder;
     ///
     /// let hook_entry = HookEntryBuilder::new()
     ///     .pre(Some("hook.sh"))
