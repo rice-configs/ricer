@@ -21,6 +21,8 @@
 //! repository to execute the current hook entry on only.
 
 use log::trace;
+use toml_edit::visit::{visit_inline_table, Visit};
+use toml_edit::{InlineTable, Item, Key};
 
 /// Command hook entry definition implementation.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -29,7 +31,7 @@ pub struct CommandHookEntry {
     pub cmd: String,
 
     /// Array of hook entries to execute.
-    pub hooks: Vec<HookEntry>
+    pub hooks: Vec<HookEntry>,
 }
 
 impl CommandHookEntry {
@@ -95,6 +97,28 @@ impl CommandHookEntry {
     /// ```
     pub fn add_hook(&mut self, hook: HookEntry) {
         self.hooks.push(hook);
+    }
+}
+
+impl<'toml> From<(&'toml Key, &'toml Item)> for CommandHookEntry {
+    fn from(toml_entry: (&'toml Key, &'toml Item)) -> Self {
+        let (key, value) = toml_entry;
+        let mut entry = CommandHookEntry::new(key.get());
+        entry.visit_item(value);
+        entry
+    }
+}
+
+impl<'toml> Visit<'toml> for CommandHookEntry {
+    fn visit_inline_table(&mut self, node: &'toml InlineTable) {
+        let pre = if let Some(pre) = node.get("pre") { pre.as_str() } else { None };
+        let post = if let Some(post) = node.get("post") { post.as_str() } else { None };
+        let repo = if let Some(repo) = node.get("repo") { repo.as_str() } else { None };
+
+        let hook_entry = HookEntry::builder().pre(pre).post(post).repo(repo).build();
+        self.add_hook(hook_entry);
+
+        visit_inline_table(self, node);
     }
 }
 
@@ -182,8 +206,8 @@ impl HookEntryBuilder {
     /// None.
     ///
     /// [`pre`]: #member.pre
-    pub fn pre(mut self, script_name: impl AsRef<str>) -> Self {
-        self.pre = Some(script_name.as_ref().to_string());
+    pub fn pre(mut self, script_name: Option<impl AsRef<str>>) -> Self {
+        self.pre = script_name.map(|s| s.as_ref().to_string());
         self
     }
 
@@ -206,8 +230,8 @@ impl HookEntryBuilder {
     /// None.
     ///
     /// [`post`]: #member.post
-    pub fn post(mut self, script_name: impl AsRef<str>) -> Self {
-        self.post = Some(script_name.as_ref().to_string());
+    pub fn post(mut self, script_name: Option<impl AsRef<str>>) -> Self {
+        self.post = script_name.map(|s| s.as_ref().to_string());
         self
     }
 
@@ -230,8 +254,8 @@ impl HookEntryBuilder {
     /// None.
     ///
     /// [`repo`]: #member.repo
-    pub fn repo(mut self, repo_name: impl AsRef<str>) -> Self {
-        self.repo = Some(repo_name.as_ref().to_string());
+    pub fn repo(mut self, repo_name: Option<impl AsRef<str>>) -> Self {
+        self.repo = repo_name.map(|s| s.as_ref().to_string());
         self
     }
 
@@ -259,9 +283,9 @@ impl HookEntryBuilder {
     /// use ricer::config::file::hooks_section::HookEntry;
     ///
     /// let hook_entry = HookEntryBuilder::new()
-    ///     .pre("hook.sh")
-    ///     .post("hook.sh")
-    ///     .repo("vim")
+    ///     .pre(Some("hook.sh"))
+    ///     .post(Some("hook.sh"))
+    ///     .repo(Some("vim"))
     ///     .build();
     /// println!("{:#?}", hook_entry);
     /// ```
