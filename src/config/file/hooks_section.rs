@@ -32,6 +32,36 @@ pub struct CommandHookEntry {
     pub hooks: Vec<HookEntry>
 }
 
+impl CommandHookEntry {
+    /// Construct new command hook entry definition.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return valid instance of command hook entry handler.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ricer::config::file::hooks_section::CommandHookEntry;
+    ///
+    /// let cmd_hook = CommandHookEntry::new();
+    /// ```
+    pub fn new(cmd_name: impl AsRef<str>) -> Self {
+        Self { cmd: cmd_name.as_ref().to_string(), hooks: Default::default() }
+    }
+}
 /// Hook entry definition to be added into array of command hook definition.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct HookEntry {
