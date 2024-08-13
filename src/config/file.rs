@@ -13,12 +13,14 @@
 //! [toml-spec]: https://toml.io/en/v1.0.0
 
 use std::path::Path;
+use toml_edit::DocumentMut;
 
 pub mod hooks_section;
 pub mod repos_section;
 
 use crate::error::RicerResult;
 use repos_section::RepoEntry;
+use hooks_section::CommandHookEntry;
 
 /// Configuration file manager representation.
 pub trait ConfigFileManager {
@@ -32,5 +34,63 @@ pub trait ConfigFileManager {
     fn data(&self) -> String;
 
     /// Deserialize repository entry from parsed configuration file data.
-    fn get_repo_entry(&self, repo_name: impl AsRef<str>) -> Option<RepoEntry>;
+    fn get_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry>;
+
+    /// Serialize repository entry into parsed configuration file data.
+    fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()>;
+
+    /// Remove repository entry from configuration file data.
+    fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry>;
+
+    /// Rename repository entry in configuration file data.
+    fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()>;
+
+    /// Deserialize command hook envry from parsed configuration file data.
+    fn get_cmd_hook(&self, cmd_name: impl AsRef<str>) -> RicerResult<CommandHookEntry>;
+}
+
+pub struct DefaultConfigFileManager {
+    doc: DocumentMut,
+}
+
+impl ConfigFileManager for DefaultConfigFileManager {
+    /// Read from configuration file at provided path.
+    fn read(&mut self, path: impl AsRef<Path>) -> RicerResult<()> {
+        todo!();
+    }
+
+    /// Write to configuration file at provided path.
+    fn write(&mut self, path: impl AsRef<Path>) -> RicerResult<()> {
+        todo!();
+    }
+
+    /// Show current configuration file data in string form.
+    fn data(&self) -> String {
+        todo!();
+    }
+
+    /// Deserialize repository entry from parsed configuration file data.
+    fn get_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
+        todo!();
+    }
+
+    /// Serialize repository entry into parsed configuration file data.
+    fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
+        todo!();
+    }
+
+    /// Remove repository entry from configuration file data.
+    fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
+        todo!();
+    }
+
+    /// Rename repository entry in configuration file data.
+    fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()> {
+        todo!();
+    }
+
+    /// Deserialize command hook envry from parsed configuration file data.
+    fn get_cmd_hook(&self, cmd_name: impl AsRef<str>) -> RicerResult<CommandHookEntry> {
+        todo!();
+    }
 }
