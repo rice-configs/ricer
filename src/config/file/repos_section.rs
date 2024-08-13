@@ -89,6 +89,55 @@ impl RepoEntry {
         RepoEntryBuilder::new(name)
     }
 
+    /// Serialize repository entry definition into a TOML item.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return serialized repository entry into TOML document format.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use toml_edit::DocumentMut;
+    ///
+    /// use ricer::config::file::repos_section::{RepoEntry, RepoTargetEntry, TargetOsOption};
+    ///
+    /// let target_entry = RepoTargetEntry::builder()
+    ///    .home(true)
+    ///     .os(TargetOsOption::Windows)
+    ///     .user(Some("awkless"))
+    ///     .hostname(Some("lovelace"))
+    ///     .build();
+    /// let repo_entry = RepoEntry::builder("test")
+    ///     .branch("master")
+    ///     .remote("upstream")
+    ///     .url("https://github.com/awkless/foobar.git")
+    ///     .target(target_entry)
+    ///     .build();
+    /// let (key, value) = repo_entry.to_toml();
+    ///
+    /// let mut toml_doc: DocumentMut = "[repos]".parse()?;
+    /// let repos_table = toml_doc.get_mut("repos").unwrap();
+    /// let repos_table = repos_table.as_table_mut().unwrap();
+    /// repos_table.insert(&key, value);
+    /// println!("{:#?}", repos_table.to_string());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn to_toml(&self) -> (Key, Item) {
         let mut repo_data = Table::new();
         let mut target_data = InlineTable::new();
