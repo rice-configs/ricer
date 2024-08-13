@@ -518,7 +518,7 @@ impl RepoTargetEntryBuilder {
     ///
     /// [`user`]: #member.user
     pub fn user(mut self, user: Option<impl AsRef<str>>) -> Self {
-        self.user = user.map(|str| str.as_ref().to_string());
+        self.user = user.map(|s| s.as_ref().to_string());
         self
     }
 
@@ -542,7 +542,7 @@ impl RepoTargetEntryBuilder {
     ///
     /// [`hostname`]: #member.hostname
     pub fn hostname(mut self, hostname: Option<impl AsRef<str>>) -> Self {
-        self.hostname = hostname.map(|str| str.as_ref().to_string());
+        self.hostname = hostname.map(|s| s.as_ref().to_string());
         self
     }
 
