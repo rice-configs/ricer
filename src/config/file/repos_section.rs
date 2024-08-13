@@ -32,7 +32,8 @@
 
 use log::trace;
 use toml_edit::visit::{visit_table_like_kv, Visit};
-use toml_edit::{Item, Key};
+use toml_edit::{Item, Key, InlineTable, Table, Value};
+use std::fmt::{Display, Formatter, Result};
 
 /// Repository entry definition implementation.
 ///
@@ -86,6 +87,31 @@ impl RepoEntry {
     /// ```
     pub fn builder(name: impl AsRef<str>) -> RepoEntryBuilder {
         RepoEntryBuilder::new(name)
+    }
+
+    pub fn to_toml(&self) -> (Key, Item) {
+        let mut repo_data = Table::new();
+        let mut target_data = InlineTable::new();
+
+        repo_data.insert("branch", Item::Value(Value::from(&self.branch)));
+        repo_data.insert("remote", Item::Value(Value::from(&self.remote)));
+        repo_data.insert("url", Item::Value(Value::from(&self.url)));
+        target_data.insert("home", Value::from(self.target.home));
+        target_data.insert("os", Value::from(self.target.os.to_string()));
+
+        if let Some(user) = &self.target.user {
+            target_data.insert("user", Value::from(user));
+        }
+
+        if let Some(hostname) = &self.target.hostname {
+            target_data.insert("hostname", Value::from(hostname));
+        }
+
+        repo_data.insert("target", Item::Value(Value::InlineTable(target_data)));
+
+        let key = Key::new(&self.name);
+        let value = Item::Table(repo_data);
+        (key, value)
     }
 }
 
@@ -541,6 +567,17 @@ impl From<&str> for TargetOsOption {
             "macos" => Self::MacOs,
             "windows" => Self::Windows,
             &_ =>  Self::Any,
+        }
+    }
+}
+
+impl Display for TargetOsOption {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            TargetOsOption::Any => write!(f, "any"),
+            TargetOsOption::Unix => write!(f, "unix"),
+            TargetOsOption::MacOs => write!(f, "macos"),
+            TargetOsOption::Windows => write!(f, "windows"),
         }
     }
 }
