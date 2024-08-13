@@ -31,9 +31,9 @@
 //! Ricer only bootstrap a repository for a specific user and host.
 
 use log::trace;
-use toml_edit::visit::{visit_table_like_kv, Visit};
-use toml_edit::{Item, Key, InlineTable, Table, Value};
 use std::fmt::{Display, Formatter, Result};
+use toml_edit::visit::{visit_table_like_kv, Visit};
+use toml_edit::{InlineTable, Item, Key, Table, Value};
 
 /// Repository entry definition implementation.
 ///
@@ -120,13 +120,11 @@ impl<'toml> From<(&'toml Key, &'toml Item)> for RepoEntry {
         let (key, value) = toml_entry;
         let mut target_entry = RepoTargetEntry::builder();
         let mut repo_entry = RepoEntry::builder(key.get());
-
         target_entry.visit_item(value);
-        let target = target_entry.build();
-
         repo_entry.visit_item(value);
-        let repo = repo_entry.target(target).build();
-        repo
+
+        let target = target_entry.build();
+        repo_entry.target(target).build()
     }
 }
 
@@ -566,7 +564,7 @@ impl From<&str> for TargetOsOption {
             "unix" => Self::Unix,
             "macos" => Self::MacOs,
             "windows" => Self::Windows,
-            &_ =>  Self::Any,
+            &_ => Self::Any,
         }
     }
 }
