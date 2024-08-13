@@ -15,6 +15,7 @@
 use std::path::Path;
 
 pub mod repos_section;
+pub mod hooks_section;
 
 use crate::error::RicerResult;
 use repos_section::RepoEntry;
