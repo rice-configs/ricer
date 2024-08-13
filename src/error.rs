@@ -35,3 +35,9 @@ impl From<std::io::Error> for RicerError {
         RicerError::Unrecoverable(anyhow!("{}", err))
     }
 }
+
+impl From<toml_edit::TomlError> for RicerError {
+    fn from(err: toml_edit::TomlError) -> RicerError {
+        RicerError::Unrecoverable(anyhow!("{}", err))
+    }
+}
