@@ -61,7 +61,43 @@ impl CommandHookEntry {
     pub fn new(cmd_name: impl AsRef<str>) -> Self {
         Self { cmd: cmd_name.as_ref().to_string(), hooks: Default::default() }
     }
+
+    /// Add hook entry into command hook definition.
+    ///
+    /// # Preconditions
+    ///
+    /// None.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Add hook entry to [`hooks`] field.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::file::hooks_section::{CommandHookEntry, HookEntry};
+    ///
+    /// let mut cmd_hook = CommandHookEntry::new();
+    /// let hook_entry = HookEntry::builder()
+    ///     .pre("hook.sh")
+    ///     .post("hook.sh")
+    ///     .repo("vim")
+    ///     .build();
+    /// cmd_hook.add_hook(hook_entry);
+    /// ```
+    pub fn add_hook(&mut self, hook: HookEntry) {
+        self.hooks.push(hook);
+    }
 }
+
 /// Hook entry definition to be added into array of command hook definition.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct HookEntry {
