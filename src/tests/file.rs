@@ -5,7 +5,7 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
 
-use crate::config::file::repos_section::RepoEntry;
+use crate::config::file::repos_section::{RepoEntry, RepoTargetEntry, TargetOsOption};
 use crate::config::file::{ConfigFileManager, DefaultConfigFileManager};
 use crate::error::RicerError;
 
@@ -80,9 +80,7 @@ fn write_serializes_config_file_correctly(mut config_file_fixture: FakeConfigDir
 #[rstest]
 fn add_repo_serializes_correctly_to_existing_repos_table(config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
-    cfg_file_mgr
-        .read(config_file_fixture.config_file_stub().as_path())
-        .expect("Expect success");
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
     let new_repo = RepoEntry::builder("dwm")
         .branch("master")
         .remote("upstream")
@@ -114,6 +112,54 @@ fn add_repo_serializes_correctly_to_existing_repos_table(config_file_fixture: Fa
 }
 
 #[rstest]
+fn get_repo_deserializes_correctly(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
+    let target = RepoTargetEntry::builder()
+        .home(true)
+        .os(TargetOsOption::Unix)
+        .user("awkless")
+        .hostname("lovelace")
+        .build();
+    let expect = RepoEntry::builder("vim")
+        .branch("main")
+        .remote("origin")
+        .url("https://github.com/awkless/vim.git")
+        .target(target)
+        .build();
+    let result = cfg_file_mgr.get_repo("vim").expect("Expect success");
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn get_repo_catches_inexistent_repo(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
+    let result = cfg_file_mgr.get_repo("nonexistant");
+    assert!(matches!(result, Err(RicerError::NoRepoFound { .. })));
+}
+
+#[rstest]
+fn get_repo_catches_no_repos_section(empty_config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(empty_config_file_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let result = cfg_file_mgr.get_repo("nonexistant");
+    assert!(matches!(result, Err(RicerError::NoReposSection)));
+}
+
+#[rstest]
+fn get_repo_catches_non_table_repos_section(repos_section_not_table_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(repos_section_not_table_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let result = cfg_file_mgr.get_repo("nonexistant");
+    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
+}
+
+#[rstest]
 fn add_repo_serializes_corretly_with_no_repos_table(empty_config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr
@@ -138,7 +184,7 @@ fn add_repo_serializes_corretly_with_no_repos_table(empty_config_file_fixture: F
 
 #[rstest]
 fn add_repo_catches_non_table_repos_section(repos_section_not_table_fixture: FakeConfigDir) {
-    let mut cfg_file_mgr = DefaultConfigFileManager::new(); 
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr
         .read(repos_section_not_table_fixture.config_file_stub().as_path())
         .expect("Expect success");
@@ -148,5 +194,5 @@ fn add_repo_catches_non_table_repos_section(repos_section_not_table_fixture: Fak
         .url("https://github.com/awkless/dwm.git")
         .build();
     let result = cfg_file_mgr.add_repo(&new_repo);
-    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
 }
