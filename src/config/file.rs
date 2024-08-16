@@ -12,15 +12,16 @@
 //!
 //! [toml-spec]: https://toml.io/en/v1.0.0
 
+use anyhow::anyhow;
 use log::debug;
 use std::fs::{read_to_string, write};
 use std::path::Path;
-use toml_edit::DocumentMut;
+use toml_edit::{DocumentMut, Item, Table};
 
 pub mod hooks_section;
 pub mod repos_section;
 
-use crate::error::RicerResult;
+use crate::error::{RicerError, RicerResult};
 use hooks_section::CommandHookEntry;
 use repos_section::RepoEntry;
 
@@ -109,7 +110,19 @@ impl ConfigFileManager for DefaultConfigFileManager {
 
     /// Serialize repository entry into parsed configuration file data.
     fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
-        todo!();
+        let (repo_name, repo_data) = repo_entry.to_toml();
+        if let Some(repos_section) = self.doc.get_mut("repos") {
+            let repos_section = repos_section.as_table_mut().ok_or(RicerError::Unrecoverable(
+                anyhow!("The `repos` section is not defined as a table"),
+            ))?;
+            repos_section.insert(repo_name.get(), repo_data);
+        } else {
+            self.doc.insert("repos", Item::Table(Table::new()));
+            let repos = &mut self.doc["repos"];
+            repos.as_table_mut().unwrap().insert(repo_name.get(), repo_data);
+        }
+
+        Ok(())
     }
 
     /// Remove repository entry from configuration file data.
