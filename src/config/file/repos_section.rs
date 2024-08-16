@@ -29,6 +29,13 @@
 //! is using a specific operating system. Current values for `os` is _unix_,
 //! _macos_, _windows_, or _any_. The `user` and `hostname` fields will make
 //! Ricer only bootstrap a repository for a specific user and host.
+//!
+//! The `branch`, `remote`, and `url` fields are mandatory, while the `target`
+//! field is optional. All fields in the `target` field are optional as well.
+//! If there is no `target` field for a given repository definition, then Ricer
+//! will __always__ default to bootstrapping the repository regardless of OS,
+//! user, and host. Ricer will also make the repository not target the user's
+//! home directory as the primary working tree.
 
 use log::trace;
 use std::fmt::{Display, Formatter, Result};
@@ -56,7 +63,7 @@ pub struct RepoEntry {
     pub url: String,
 
     /// Bootstrapping options.
-    pub target: RepoTargetEntry,
+    pub target: Option<RepoTargetEntry>,
 }
 
 impl RepoEntry {
@@ -117,10 +124,10 @@ impl RepoEntry {
     /// use ricer::config::file::repos_section::{RepoEntry, RepoTargetEntry, TargetOsOption};
     ///
     /// let target_entry = RepoTargetEntry::builder()
-    ///    .home(true)
+    ///     .home(true)
     ///     .os(TargetOsOption::Windows)
-    ///     .user(Some("awkless"))
-    ///     .hostname(Some("lovelace"))
+    ///     .user("awkless")
+    ///     .hostname("lovelace")
     ///     .build();
     /// let repo_entry = RepoEntry::builder("test")
     ///     .branch("master")
@@ -145,17 +152,23 @@ impl RepoEntry {
         repo_data.insert("branch", Item::Value(Value::from(&self.branch)));
         repo_data.insert("remote", Item::Value(Value::from(&self.remote)));
         repo_data.insert("url", Item::Value(Value::from(&self.url)));
-        target_data.insert("home", Value::from(self.target.home));
-        target_data.insert("os", Value::from(self.target.os.to_string()));
+        if let Some(target) = &self.target {
+            if let Some(home) = target.home {
+                target_data.insert("home", Value::from(home));
+            }
 
-        if let Some(user) = &self.target.user {
-            target_data.insert("user", Value::from(user));
+            if let Some(os) = &target.os {
+                target_data.insert("os", Value::from(os.to_string()));
+            }
+
+            if let Some(user) = &target.user {
+                target_data.insert("user", Value::from(user));
+            }
+
+            if let Some(hostname) = &target.hostname {
+                target_data.insert("hostname", Value::from(hostname));
+            }
         }
-
-        if let Some(hostname) = &self.target.hostname {
-            target_data.insert("hostname", Value::from(hostname));
-        }
-
         repo_data.insert("target", Item::Value(Value::InlineTable(target_data)));
 
         let key = Key::new(&self.name);
@@ -191,7 +204,7 @@ pub struct RepoEntryBuilder {
     branch: String,
     remote: String,
     url: String,
-    target: RepoTargetEntry,
+    target: Option<RepoTargetEntry>,
 }
 
 impl RepoEntryBuilder {
@@ -306,7 +319,7 @@ impl RepoEntryBuilder {
     ///
     /// [`target`]: #member.target
     pub fn target(mut self, target: RepoTargetEntry) -> Self {
-        self.target = target;
+        self.target = Some(target);
         self
     }
 
@@ -386,11 +399,11 @@ impl<'toml> Visit<'toml> for RepoEntryBuilder {
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct RepoTargetEntry {
     /// Repository will use the user's home directory as the main working tree.
-    pub home: bool,
+    pub home: Option<bool>,
 
     /// Bootstrap repository if and only if user's is using a specific operating
     /// system.
-    pub os: TargetOsOption,
+    pub os: Option<TargetOsOption>,
 
     /// Bootstrap repository for a specific user only on the system.
     pub user: Option<String>,
@@ -408,8 +421,8 @@ impl RepoTargetEntry {
 impl<'toml> Visit<'toml> for RepoTargetEntryBuilder {
     fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
         match key {
-            "home" => self.home = *node.as_bool().get_or_insert(false),
-            "os" => self.os = TargetOsOption::from(node.as_str().unwrap_or_default()),
+            "home" => self.home = node.as_bool(),
+            "os" => self.os = Some(TargetOsOption::from(node.as_str().unwrap_or_default())),
             "user" => self.user = node.as_str().map(|str| str.to_string()),
             "hostname" => self.hostname = node.as_str().map(|str| str.to_string()),
             &_ => visit_table_like_kv(self, key, node),
@@ -422,8 +435,8 @@ impl<'toml> Visit<'toml> for RepoTargetEntryBuilder {
 /// Builder for target bootstrap options for repository definition implementation.
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct RepoTargetEntryBuilder {
-    home: bool,
-    os: TargetOsOption,
+    home: Option<bool>,
+    os: Option<TargetOsOption>,
     user: Option<String>,
     hostname: Option<String>,
 }
@@ -470,7 +483,7 @@ impl RepoTargetEntryBuilder {
     ///
     /// [`home`]: #member.home
     pub fn home(mut self, home: bool) -> Self {
-        self.home = home;
+        self.home = Some(home);
         self
     }
 
@@ -494,7 +507,7 @@ impl RepoTargetEntryBuilder {
     ///
     /// [`os`]: #member.os
     pub fn os(mut self, os: TargetOsOption) -> Self {
-        self.os = os;
+        self.os = Some(os);
         self
     }
 
@@ -517,8 +530,8 @@ impl RepoTargetEntryBuilder {
     /// None.
     ///
     /// [`user`]: #member.user
-    pub fn user(mut self, user: Option<impl AsRef<str>>) -> Self {
-        self.user = user.map(|s| s.as_ref().to_string());
+    pub fn user(mut self, user: impl Into<String>) -> Self {
+        self.user = Some(user.into());
         self
     }
 
@@ -541,8 +554,8 @@ impl RepoTargetEntryBuilder {
     /// None.
     ///
     /// [`hostname`]: #member.hostname
-    pub fn hostname(mut self, hostname: Option<impl AsRef<str>>) -> Self {
-        self.hostname = hostname.map(|s| s.as_ref().to_string());
+    pub fn hostname(mut self, hostname: impl Into<String>) -> Self {
+        self.hostname = Some(hostname.into());
         self
     }
 
@@ -574,8 +587,8 @@ impl RepoTargetEntryBuilder {
     /// let builder = RepoTargetEntryBuilder::new()
     ///     .home(true)
     ///     .os(TargetOsOption::Unix)
-    ///     .user(Some("awkless"))
-    ///     .hostname(Some("lovelace"))
+    ///     .user("awkless")
+    ///     .hostname("lovelace")
     ///     .build();
     /// # Ok(())
     /// # }
@@ -584,6 +597,14 @@ impl RepoTargetEntryBuilder {
     /// [`os`]: #member.os
     pub fn build(self) -> RepoTargetEntry {
         trace!("Build new target entry for repository entry definition");
+        debug_assert!(
+            self.user.as_ref().is_some_and(|s| !s.is_empty()) || self.user == None,
+            "User target is empty"
+        );
+        debug_assert!(
+            self.hostname.as_ref().is_some_and(|s| !s.is_empty()) || self.hostname == None,
+            "Hostname target is empty"
+        );
 
         RepoTargetEntry { home: self.home, os: self.os, user: self.user, hostname: self.hostname }
     }

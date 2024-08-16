@@ -39,8 +39,8 @@ fn deserialize_full_repo_entry(toml_doc_fixture: DocumentMut) {
     let target = RepoTargetEntry::builder()
         .home(true)
         .os(TargetOsOption::Unix)
-        .user(Some("awkless"))
-        .hostname(Some("lovelace"))
+        .user("awkless")
+        .hostname("lovelace")
         .build();
     let expect = RepoEntry::builder("full_entry")
         .branch("master")
@@ -74,8 +74,6 @@ fn serialize_repo_entry_correctly(mut toml_doc_fixture: DocumentMut) {
     let target_entry = RepoTargetEntry::builder()
         .home(true)
         .os(TargetOsOption::Windows)
-        .user(Some("awkless"))
-        .hostname(Some("lovelace"))
         .build();
     let repo_entry = RepoEntry::builder("test")
         .branch("master")
@@ -105,7 +103,7 @@ fn serialize_repo_entry_correctly(mut toml_doc_fixture: DocumentMut) {
         branch = "master"
         remote = "upstream"
         url = "https://github.com/awkless/foobar.git"
-        target = { home = true, os = "windows", user = "awkless", hostname = "lovelace" }
+        target = { home = true, os = "windows" }
         "#
     };
     assert_eq!(expect, result);
