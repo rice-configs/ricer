@@ -5,6 +5,8 @@ mod locator;
 
 mod dir;
 
+mod file;
+
 mod cli;
 
 mod repos_section;
