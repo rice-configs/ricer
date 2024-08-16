@@ -16,7 +16,7 @@ use anyhow::anyhow;
 use log::debug;
 use std::fs::{read_to_string, write};
 use std::path::Path;
-use toml_edit::{DocumentMut, Item, Table};
+use toml_edit::{DocumentMut, Decor, Item, Table, Key};
 
 pub mod hooks_section;
 pub mod repos_section;
@@ -117,9 +117,10 @@ impl ConfigFileManager for DefaultConfigFileManager {
             ))?;
             repos_section.insert(repo_name.get(), repo_data);
         } else {
-            self.doc.insert("repos", Item::Table(Table::new()));
-            let repos = &mut self.doc["repos"];
-            repos.as_table_mut().unwrap().insert(repo_name.get(), repo_data);
+            let mut repo_section = Table::new();
+            repo_section.insert(repo_name.get(), repo_data);
+            repo_section.set_implicit(true);
+            self.doc.insert("repos", Item::Table(repo_section));
         }
 
         Ok(())
