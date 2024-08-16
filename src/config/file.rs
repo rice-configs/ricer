@@ -13,7 +13,7 @@
 //! [toml-spec]: https://toml.io/en/v1.0.0
 
 use log::debug;
-use std::fs::read_to_string;
+use std::fs::{read_to_string, write};
 use std::path::Path;
 use toml_edit::DocumentMut;
 
@@ -85,14 +85,16 @@ impl ConfigFileManager for DefaultConfigFileManager {
         debug!("Read configuration file from '{}'", path.as_ref().display());
         let buffer = read_to_string(path.as_ref())?;
         let doc: DocumentMut = buffer.parse()?;
-
         self.doc = doc;
         Ok(())
     }
 
     /// Write to configuration file at provided path.
     fn write(&mut self, path: impl AsRef<Path>) -> RicerResult<()> {
-        todo!();
+        debug!("Write configuration file to '{}'", path.as_ref().display());
+        let buffer = self.doc.to_string();
+        write(path.as_ref(), buffer)?;
+        Ok(())
     }
 
     /// Show current configuration file data in string form.
