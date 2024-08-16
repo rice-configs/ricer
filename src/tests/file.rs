@@ -5,6 +5,7 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
 
+use crate::config::file::repos_section::RepoEntry;
 use crate::config::file::{ConfigFileManager, DefaultConfigFileManager};
 use crate::error::RicerError;
 
@@ -37,12 +38,12 @@ fn empty_config_file_fixture() -> FakeConfigDir {
 }
 
 #[rstest]
-fn read_parses_config_file_correctly(config_file_fixture: FakeConfigDir) {
-    let cfg_stub = config_file_fixture.config_file_stub();
+fn read_deserializes_config_file_correctly(config_file_fixture: FakeConfigDir) {
+    let cfg_file_stub = config_file_fixture.config_file_stub();
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
-    cfg_file_mgr.read(cfg_stub.as_path()).expect("Expect succes");
+    cfg_file_mgr.read(cfg_file_stub.as_path()).expect("Expect succes");
 
-    let expect = cfg_stub.data();
+    let expect = cfg_file_stub.data();
     let result = cfg_file_mgr.to_string();
     assert_eq!(expect, result);
 }
@@ -52,4 +53,21 @@ fn read_catches_inexistent_config_file() {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     let result = cfg_file_mgr.read("nonexistant");
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+}
+
+#[rstest]
+fn write_serializes_config_file_correctly(mut config_file_fixture: FakeConfigDir) {
+    let cfg_file_stub = config_file_fixture.config_file_stub_mut();
+    let new_repo = RepoEntry::builder("dwm")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/dwm.git")
+        .build();
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr.add_repo(&new_repo).expect("Expect success");
+    cfg_file_mgr.write(cfg_file_stub.as_path()).expect("Expect success");
+    cfg_file_stub.sync();
+    let expect = cfg_file_stub.data();
+    let result = cfg_file_mgr.to_string();
+    assert_eq!(expect, result);
 }
