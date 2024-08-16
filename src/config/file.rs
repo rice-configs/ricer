@@ -33,7 +33,7 @@ pub trait ConfigFileManager {
     fn write(&mut self, path: impl AsRef<Path>) -> RicerResult<()>;
 
     /// Show current configuration file data in string form.
-    fn data(&self) -> String;
+    fn to_string(&self) -> String;
 
     /// Deserialize repository entry from parsed configuration file data.
     fn get_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry>;
@@ -98,8 +98,8 @@ impl ConfigFileManager for DefaultConfigFileManager {
     }
 
     /// Show current configuration file data in string form.
-    fn data(&self) -> String {
-        todo!();
+    fn to_string(&self) -> String {
+        self.doc.to_string()
     }
 
     /// Deserialize repository entry from parsed configuration file data.
