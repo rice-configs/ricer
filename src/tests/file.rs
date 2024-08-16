@@ -18,7 +18,7 @@ fn config_file_fixture() -> FakeConfigDir {
             # The following should not be overwritten.
             [repos.vim]
             branch = "main"
-            remote = "orign"
+            remote = "origin"
             url = "https://github.com/awkless/vim.git"
             target = { home = true, os = "unix", user = "awkless", hostname = "lovelace" }
 
@@ -35,6 +35,11 @@ fn config_file_fixture() -> FakeConfigDir {
 #[fixture]
 fn empty_config_file_fixture() -> FakeConfigDir {
     FakeConfigDir::builder().config_file("# This comment should not be overwritten\n").build()
+}
+
+#[fixture]
+fn repos_section_not_table_fixture() -> FakeConfigDir {
+    FakeConfigDir::builder().config_file(r#"repos = "not a table!""#).build()
 }
 
 #[rstest]
@@ -70,4 +75,78 @@ fn write_serializes_config_file_correctly(mut config_file_fixture: FakeConfigDir
     let expect = cfg_file_stub.data();
     let result = cfg_file_mgr.to_string();
     assert_eq!(expect, result);
+}
+
+#[rstest]
+fn add_repo_serializes_correctly_to_existing_repos_table(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(config_file_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let new_repo = RepoEntry::builder("dwm")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/dwm.git")
+        .build();
+    cfg_file_mgr.add_repo(&new_repo).expect("Expect success");
+    let expect = indoc! {r#"
+            # The following should not be overwritten.
+            [repos.vim]
+            branch = "main"
+            remote = "origin"
+            url = "https://github.com/awkless/vim.git"
+            target = { home = true, os = "unix", user = "awkless", hostname = "lovelace" }
+
+            [repos.dwm]
+            branch = "master"
+            remote = "upstream"
+            url = "https://github.com/awkless/dwm.git"
+
+            # The following should not be overwritten.
+            [hooks]
+            commit = [
+                { pre = "hook.sh", post = "hook.sh", repo = "vim" },
+                { pre = "hook.sh" }
+            ]
+        "#};
+    let result = cfg_file_mgr.to_string();
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn add_repo_serializes_corretly_with_no_repos_table(empty_config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(empty_config_file_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let new_repo = RepoEntry::builder("dwm")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/dwm.git")
+        .build();
+    cfg_file_mgr.add_repo(&new_repo).expect("Expect success");
+    let expect = indoc! {r#"
+        [repos.dwm]
+        branch = "master"
+        remote = "upstream"
+        url = "https://github.com/awkless/dwm.git"
+        # This comment should not be overwritten
+        "#};
+    let result = cfg_file_mgr.to_string();
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn add_repo_catches_non_table_repos_section(repos_section_not_table_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new(); 
+    cfg_file_mgr
+        .read(repos_section_not_table_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let new_repo = RepoEntry::builder("dwm")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/dwm.git")
+        .build();
+    let result = cfg_file_mgr.add_repo(&new_repo);
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
