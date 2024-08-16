@@ -16,7 +16,7 @@ use anyhow::anyhow;
 use log::debug;
 use std::fs::{read_to_string, write};
 use std::path::Path;
-use toml_edit::{DocumentMut, Decor, Item, Table, Key};
+use toml_edit::{Decor, DocumentMut, Item, Key, Table};
 
 pub mod hooks_section;
 pub mod repos_section;
@@ -105,16 +105,20 @@ impl ConfigFileManager for DefaultConfigFileManager {
 
     /// Deserialize repository entry from parsed configuration file data.
     fn get_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
-        todo!();
+        let repo_toml = self.doc.get("repos").ok_or(RicerError::NoReposSection)?;
+        let repo_toml = repo_toml.as_table().ok_or(RicerError::ReposSectionNotTable)?;
+        let repo_toml = repo_toml
+            .get_key_value(repo_name.as_ref())
+            .ok_or(RicerError::NoRepoFound { repo_name: repo_name.as_ref().to_string() })?;
+        Ok(RepoEntry::from(repo_toml))
     }
 
     /// Serialize repository entry into parsed configuration file data.
     fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
         let (repo_name, repo_data) = repo_entry.to_toml();
         if let Some(repos_section) = self.doc.get_mut("repos") {
-            let repos_section = repos_section.as_table_mut().ok_or(RicerError::Unrecoverable(
-                anyhow!("The `repos` section is not defined as a table"),
-            ))?;
+            let repos_section =
+                repos_section.as_table_mut().ok_or(RicerError::ReposSectionNotTable)?;
             repos_section.insert(repo_name.get(), repo_data);
         } else {
             let mut repo_section = Table::new();
