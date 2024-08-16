@@ -34,9 +34,9 @@ fn deserialize_hook_entry_correctly(toml_doc_fixture: DocumentMut) {
     let result = CommandHookEntry::from(hook_entry);
     let mut expect = CommandHookEntry::new("commit");
     expect.add_hook(
-        HookEntry::builder().pre(Some("hook.sh")).post(Some("hook.sh")).repo(Some("vim")).build(),
+        HookEntry::builder().pre("hook.sh").post("hook.sh").repo("vim").build(),
     );
-    expect.add_hook(HookEntry::builder().pre(Some("hook.sh")).post(Some("hook.sh")).build());
-    expect.add_hook(HookEntry::builder().post(Some("hook.sh")).build());
+    expect.add_hook(HookEntry::builder().pre("hook.sh").post("hook.sh").build());
+    expect.add_hook(HookEntry::builder().post("hook.sh").build());
     assert_eq!(expect, result);
 }

@@ -71,10 +71,7 @@ fn deserialize_repo_entry_with_missing_target_entry(toml_doc_fixture: DocumentMu
 
 #[rstest]
 fn serialize_repo_entry_correctly(mut toml_doc_fixture: DocumentMut) {
-    let target_entry = RepoTargetEntry::builder()
-        .home(true)
-        .os(TargetOsOption::Windows)
-        .build();
+    let target_entry = RepoTargetEntry::builder().home(true).os(TargetOsOption::Windows).build();
     let repo_entry = RepoEntry::builder("test")
         .branch("master")
         .remote("upstream")
