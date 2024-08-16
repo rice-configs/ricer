@@ -12,6 +12,8 @@
 //!
 //! [toml-spec]: https://toml.io/en/v1.0.0
 
+use log::debug;
+use std::fs::read_to_string;
 use std::path::Path;
 use toml_edit::DocumentMut;
 
@@ -19,8 +21,8 @@ pub mod hooks_section;
 pub mod repos_section;
 
 use crate::error::RicerResult;
-use repos_section::RepoEntry;
 use hooks_section::CommandHookEntry;
+use repos_section::RepoEntry;
 
 /// Configuration file manager representation.
 pub trait ConfigFileManager {
@@ -49,14 +51,43 @@ pub trait ConfigFileManager {
     fn get_cmd_hook(&self, cmd_name: impl AsRef<str>) -> RicerResult<CommandHookEntry>;
 }
 
+#[derive(Debug, Default)]
 pub struct DefaultConfigFileManager {
     doc: DocumentMut,
 }
 
+impl DefaultConfigFileManager {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
 impl ConfigFileManager for DefaultConfigFileManager {
     /// Read from configuration file at provided path.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Configuration file exists at provided path.
+    /// 2. Configuration file contains valid TOML formatting.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Parse TOML data for future manipulation.
+    ///
+    /// # Invariants
+    ///
+    /// None.
+    ///
+    /// # Side Effects
+    ///
+    /// None.
     fn read(&mut self, path: impl AsRef<Path>) -> RicerResult<()> {
-        todo!();
+        debug!("Read configuration file from '{}'", path.as_ref().display());
+        let buffer = read_to_string(path.as_ref())?;
+        let doc: DocumentMut = buffer.parse()?;
+
+        self.doc = doc;
+        Ok(())
     }
 
     /// Write to configuration file at provided path.
