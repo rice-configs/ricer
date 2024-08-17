@@ -104,7 +104,7 @@ impl ConfigFileManager for DefaultConfigFileManager {
 
     /// Deserialize repository entry from parsed configuration file data.
     fn get_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
-        debug!("Get repository definition '{}' from configuration file", repo_name.as_ref());
+        debug!("Get repository '{}' from configuration file", repo_name.as_ref());
         let repo_toml = self.doc.get("repos").ok_or(RicerError::NoReposSection)?;
         let repo_toml = repo_toml.as_table().ok_or(RicerError::ReposSectionNotTable)?;
         let repo_toml = repo_toml
@@ -115,7 +115,7 @@ impl ConfigFileManager for DefaultConfigFileManager {
 
     /// Serialize repository entry into parsed configuration file data.
     fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
-        debug!("Add repository definition '{}' too configuration file", &repo_entry.name);
+        debug!("Add repository '{}' too configuration file", &repo_entry.name);
         let (repo_name, repo_data) = repo_entry.to_toml();
         if let Some(repos) = self.doc.get_mut("repos") {
             trace!("The 'repos' section exists, add to it");
@@ -135,7 +135,7 @@ impl ConfigFileManager for DefaultConfigFileManager {
 
     /// Remove repository entry from configuration file data.
     fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
-        debug!("Remove repository definition '{}' from configuration file", repo_name.as_ref());
+        debug!("Remove repository '{}' from configuration file", repo_name.as_ref());
         let repos = self.doc.get_mut("repos").ok_or(RicerError::NoReposSection)?;
         let repos = repos.as_table_mut().ok_or(RicerError::ReposSectionNotTable)?;
         let (repo_key, repo_data) = repos.remove_entry(repo_name.as_ref()).ok_or(
@@ -146,7 +146,11 @@ impl ConfigFileManager for DefaultConfigFileManager {
 
     /// Rename repository entry in configuration file data.
     fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()> {
-        todo!();
+        debug!("Rename repository '{}' to '{}' in configuration file", from.as_ref(), to.as_ref());
+        let mut repo = self.remove_repo(from.as_ref())?;
+        repo.name = to.as_ref().to_string();
+        self.add_repo(&repo)?;
+        Ok(())
     }
 
     /// Deserialize command hook envry from parsed configuration file data.
