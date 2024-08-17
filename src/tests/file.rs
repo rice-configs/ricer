@@ -5,6 +5,7 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
 
+use crate::config::file::hooks_section::{CommandHookEntry, HookEntry};
 use crate::config::file::repos_section::{RepoEntry, RepoTargetEntry, TargetOsOption};
 use crate::config::file::{ConfigFileManager, DefaultConfigFileManager};
 use crate::error::RicerError;
@@ -38,8 +39,13 @@ fn empty_config_file_fixture() -> FakeConfigDir {
 }
 
 #[fixture]
-fn repos_section_not_table_fixture() -> FakeConfigDir {
-    FakeConfigDir::builder().config_file(r#"repos = "not a table!""#).build()
+fn non_table_sections_fixture() -> FakeConfigDir {
+    FakeConfigDir::builder()
+        .config_file(indoc! {r#"
+            repos = "not a table!"
+            hooks = "not a table!"
+        "#})
+        .build()
 }
 
 #[rstest]
@@ -150,10 +156,10 @@ fn get_repo_catches_no_repos_section(empty_config_file_fixture: FakeConfigDir) {
 }
 
 #[rstest]
-fn get_repo_catches_non_table_repos_section(repos_section_not_table_fixture: FakeConfigDir) {
+fn get_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr
-        .read(repos_section_not_table_fixture.config_file_stub().as_path())
+        .read(non_table_sections_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.get_repo("nonexistant");
     assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
@@ -183,10 +189,10 @@ fn add_repo_serializes_corretly_with_no_repos_table(empty_config_file_fixture: F
 }
 
 #[rstest]
-fn add_repo_catches_non_table_repos_section(repos_section_not_table_fixture: FakeConfigDir) {
+fn add_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr
-        .read(repos_section_not_table_fixture.config_file_stub().as_path())
+        .read(non_table_sections_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let new_repo = RepoEntry::builder("dwm")
         .branch("master")
@@ -200,9 +206,7 @@ fn add_repo_catches_non_table_repos_section(repos_section_not_table_fixture: Fak
 #[rstest]
 fn remove_repo_removes_repo_from_toml_data(config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
-    cfg_file_mgr
-        .read(config_file_fixture.config_file_stub().as_path())
-        .expect("Expect success");
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
     let expect = indoc! {r#"
 
         # The following should not be overwritten.
@@ -220,9 +224,7 @@ fn remove_repo_removes_repo_from_toml_data(config_file_fixture: FakeConfigDir) {
 #[rstest]
 fn remove_repo_provides_correct_repo_data(config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
-    cfg_file_mgr
-        .read(config_file_fixture.config_file_stub().as_path())
-        .expect("Expect success");
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
     let target = RepoTargetEntry::builder()
         .home(true)
         .os(TargetOsOption::Unix)
@@ -250,10 +252,10 @@ fn remove_repo_catches_no_repos_section(empty_config_file_fixture: FakeConfigDir
 }
 
 #[rstest]
-fn remove_repo_catches_non_table_repos_section(repos_section_not_table_fixture: FakeConfigDir) {
+fn remove_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr
-        .read(repos_section_not_table_fixture.config_file_stub().as_path())
+        .read(non_table_sections_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.remove_repo("nonexistant");
     assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
@@ -262,9 +264,44 @@ fn remove_repo_catches_non_table_repos_section(repos_section_not_table_fixture: 
 #[rstest]
 fn remove_repo_catches_inexistent_repo(config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
-    cfg_file_mgr
-        .read(config_file_fixture.config_file_stub().as_path())
-        .expect("Expect success");
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
     let result = cfg_file_mgr.remove_repo("nonexistant");
     assert!(matches!(result, Err(RicerError::NoRepoFound { .. })));
+}
+
+#[rstest]
+fn get_cmd_hook_deserializes_correctly(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
+    let mut expect = CommandHookEntry::new("commit");
+    let full_hook_entry = HookEntry::builder().pre("hook.sh").post("hook.sh").repo("vim").build();
+    let small_hook_entry = HookEntry::builder().pre("hook.sh").build();
+    expect.add_hook(full_hook_entry);
+    expect.add_hook(small_hook_entry);
+    let result = cfg_file_mgr.get_cmd_hook("commit").expect("Expect success");
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn get_cmd_hook_catches_catches_no_hooks_section(empty_config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr.read(empty_config_file_fixture.config_file_stub().as_path()).expect("Expect success");
+    let result = cfg_file_mgr.get_cmd_hook("nonexistant");
+    assert!(matches!(result, Err(RicerError::NoHooksSection)));
+}
+
+#[rstest]
+fn get_cmd_hook_catches_non_table_hooks_section(non_table_sections_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr.read(non_table_sections_fixture.config_file_stub().as_path()).expect("Expect success");
+    let result = cfg_file_mgr.get_cmd_hook("nonexistant");
+    assert!(matches!(result, Err(RicerError::HooksSectionNotTable)));
+}
+
+#[rstest]
+fn get_cmd_hook_catches_inexistent_cmd_hook(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
+    let result = cfg_file_mgr.get_cmd_hook("nonexistant");
+    assert!(matches!(result, Err(RicerError::NoHookFound { .. })));
 }
