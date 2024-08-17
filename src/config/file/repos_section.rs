@@ -168,8 +168,8 @@ impl RepoEntry {
             if let Some(hostname) = &target.hostname {
                 target_data.insert("hostname", Value::from(hostname));
             }
+            repo_data.insert("target", Item::Value(Value::InlineTable(target_data)));
         }
-        repo_data.insert("target", Item::Value(Value::InlineTable(target_data)));
 
         let key = Key::new(&self.name);
         let value = Item::Table(repo_data);
