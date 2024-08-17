@@ -196,3 +196,75 @@ fn add_repo_catches_non_table_repos_section(repos_section_not_table_fixture: Fak
     let result = cfg_file_mgr.add_repo(&new_repo);
     assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
 }
+
+#[rstest]
+fn remove_repo_removes_repo_from_toml_data(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(config_file_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let expect = indoc! {r#"
+
+        # The following should not be overwritten.
+        [hooks]
+        commit = [
+            { pre = "hook.sh", post = "hook.sh", repo = "vim" },
+            { pre = "hook.sh" }
+        ]
+    "#};
+    cfg_file_mgr.remove_repo("vim").expect("Expect success");
+    let result = cfg_file_mgr.to_string();
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn remove_repo_provides_correct_repo_data(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(config_file_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let target = RepoTargetEntry::builder()
+        .home(true)
+        .os(TargetOsOption::Unix)
+        .user("awkless")
+        .hostname("lovelace")
+        .build();
+    let expect = RepoEntry::builder("vim")
+        .branch("main")
+        .remote("origin")
+        .url("https://github.com/awkless/vim.git")
+        .target(target)
+        .build();
+    let result = cfg_file_mgr.remove_repo("vim").expect("Expect success");
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn remove_repo_catches_no_repos_section(empty_config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(empty_config_file_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let result = cfg_file_mgr.remove_repo("nonexistant");
+    assert!(matches!(result, Err(RicerError::NoReposSection)));
+}
+
+#[rstest]
+fn remove_repo_catches_non_table_repos_section(repos_section_not_table_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(repos_section_not_table_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let result = cfg_file_mgr.remove_repo("nonexistant");
+    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
+}
+
+#[rstest]
+fn remove_repo_catches_inexistent_repo(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(config_file_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let result = cfg_file_mgr.remove_repo("nonexistant");
+    assert!(matches!(result, Err(RicerError::NoRepoFound { .. })));
+}
