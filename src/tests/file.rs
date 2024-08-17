@@ -285,7 +285,9 @@ fn get_cmd_hook_deserializes_correctly(config_file_fixture: FakeConfigDir) {
 #[rstest]
 fn get_cmd_hook_catches_catches_no_hooks_section(empty_config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
-    cfg_file_mgr.read(empty_config_file_fixture.config_file_stub().as_path()).expect("Expect success");
+    cfg_file_mgr
+        .read(empty_config_file_fixture.config_file_stub().as_path())
+        .expect("Expect success");
     let result = cfg_file_mgr.get_cmd_hook("nonexistant");
     assert!(matches!(result, Err(RicerError::NoHooksSection)));
 }
@@ -293,7 +295,9 @@ fn get_cmd_hook_catches_catches_no_hooks_section(empty_config_file_fixture: Fake
 #[rstest]
 fn get_cmd_hook_catches_non_table_hooks_section(non_table_sections_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
-    cfg_file_mgr.read(non_table_sections_fixture.config_file_stub().as_path()).expect("Expect success");
+    cfg_file_mgr
+        .read(non_table_sections_fixture.config_file_stub().as_path())
+        .expect("Expect success");
     let result = cfg_file_mgr.get_cmd_hook("nonexistant");
     assert!(matches!(result, Err(RicerError::HooksSectionNotTable)));
 }
