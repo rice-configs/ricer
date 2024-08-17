@@ -105,12 +105,12 @@ impl ConfigFileManager for DefaultConfigFileManager {
     /// Deserialize repository entry from parsed configuration file data.
     fn get_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
         debug!("Get repository '{}' from configuration file", repo_name.as_ref());
-        let repo_toml = self.doc.get("repos").ok_or(RicerError::NoReposSection)?;
-        let repo_toml = repo_toml.as_table().ok_or(RicerError::ReposSectionNotTable)?;
-        let repo_toml = repo_toml
+        let repos = self.doc.get("repos").ok_or(RicerError::NoReposSection)?;
+        let repos = repos.as_table().ok_or(RicerError::ReposSectionNotTable)?;
+        let repo = repos
             .get_key_value(repo_name.as_ref())
             .ok_or(RicerError::NoRepoFound { repo_name: repo_name.as_ref().to_string() })?;
-        Ok(RepoEntry::from(repo_toml))
+        Ok(RepoEntry::from(repo))
     }
 
     /// Serialize repository entry into parsed configuration file data.
@@ -119,8 +119,7 @@ impl ConfigFileManager for DefaultConfigFileManager {
         let (repo_name, repo_data) = repo_entry.to_toml();
         if let Some(repos) = self.doc.get_mut("repos") {
             trace!("The 'repos' section exists, add to it");
-            let repos =
-                repos.as_table_mut().ok_or(RicerError::ReposSectionNotTable)?;
+            let repos = repos.as_table_mut().ok_or(RicerError::ReposSectionNotTable)?;
             repos.insert(repo_name.get(), repo_data);
         } else {
             trace!("The 'repos' section does not exist, set it up and add to it");
@@ -138,9 +137,9 @@ impl ConfigFileManager for DefaultConfigFileManager {
         debug!("Remove repository '{}' from configuration file", repo_name.as_ref());
         let repos = self.doc.get_mut("repos").ok_or(RicerError::NoReposSection)?;
         let repos = repos.as_table_mut().ok_or(RicerError::ReposSectionNotTable)?;
-        let (repo_key, repo_data) = repos.remove_entry(repo_name.as_ref()).ok_or(
-            RicerError::NoRepoFound { repo_name: repo_name.as_ref().to_string() }
-        )?;
+        let (repo_key, repo_data) = repos
+            .remove_entry(repo_name.as_ref())
+            .ok_or(RicerError::NoRepoFound { repo_name: repo_name.as_ref().to_string() })?;
         Ok(RepoEntry::from((&repo_key, &repo_data)))
     }
 
@@ -155,6 +154,11 @@ impl ConfigFileManager for DefaultConfigFileManager {
 
     /// Deserialize command hook envry from parsed configuration file data.
     fn get_cmd_hook(&self, cmd_name: impl AsRef<str>) -> RicerResult<CommandHookEntry> {
-        todo!();
+        let hooks = self.doc.get("hooks").ok_or(RicerError::NoHooksSection)?;
+        let hooks = hooks.as_table().ok_or(RicerError::HooksSectionNotTable)?;
+        let hook = hooks
+            .get_key_value(cmd_name.as_ref())
+            .ok_or(RicerError::NoHookFound { cmd_name: cmd_name.as_ref().to_string() })?;
+        Ok(CommandHookEntry::from(hook))
     }
 }
