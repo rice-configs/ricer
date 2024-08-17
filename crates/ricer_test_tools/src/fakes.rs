@@ -36,7 +36,7 @@ impl FakeConfigDir {
         FakeConfigDirBuilder::new()
     }
 
-    /// Get stored path to target fake configuration file at top-level.
+    /// Get stored stub to target fake configuration file at top-level.
     ///
     /// # Errors
     ///
@@ -45,13 +45,13 @@ impl FakeConfigDir {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use ricer_test_tools::fakes::FakeConfigDir;
     ///
     /// let config = FakeConfigDir::builder()
     ///     .config_file("sample config data")
     ///     .build();
-    /// let path = config.config_file_stub();
+    /// let stub = config.config_file_stub();
     /// ```
     pub fn config_file_stub(&self) -> &FileStub {
         match self.file_stubs.get(&self.root_dir.join("config.toml")) {
@@ -60,7 +60,31 @@ impl FakeConfigDir {
         }
     }
 
-    /// Get stored path to target fake ignore file in 'ignores' directory.
+    /// Get stored mutable stub to target fake configuration file at top-level.
+    ///
+    /// # Errors
+    ///
+    /// Panics if ignore file is not being tracked by fake configuration
+    /// directory.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer_test_tools::fakes::FakeConfigDir;
+    ///
+    /// let config = FakeConfigDir::builder()
+    ///     .config_file("sample config data")
+    ///     .build();
+    /// let stub = config.config_file_stub_mut();
+    /// ```
+    pub fn config_file_stub_mut(&mut self) -> &mut FileStub {
+        match self.file_stubs.get_mut(&self.root_dir.join("config.toml")) {
+            Some(file) => file,
+            None => panic!("Configuration file is not being tracked by fake directory"),
+        }
+    }
+
+    /// Get stored stub to target fake ignore file in 'ignores' directory.
     ///
     /// Ignore files in Ricer are named after repositories in the `repos`
     /// directory with a '.ignore' extension. However, not all repositories will
@@ -85,7 +109,7 @@ impl FakeConfigDir {
     /// let config = FakeConfigDir::builder()
     ///     .ignore_file("fake_ignore", "/*") // Stored as 'fake_ignore.ignore'
     ///     .build();
-    /// let path = config.ignore_file_stub("fake_ignore");
+    /// let stub = config.ignore_file_stub("fake_ignore");
     /// ```
     pub fn ignore_file_stub(&self, repo: impl AsRef<Path>) -> &FileStub {
         let ignore_file = format!("{}.ignore", repo.as_ref().display());
@@ -95,7 +119,42 @@ impl FakeConfigDir {
         }
     }
 
-    /// Get path to stored hook script in fake 'hooks' directory.
+    /// Get stored mutable stub to target fake ignore file in 'ignores' directory.
+    ///
+    /// Ignore files in Ricer are named after repositories in the `repos`
+    /// directory with a '.ignore' extension. However, not all repositories will
+    /// have a corresponding ignore file. Usually, repositories without ignore
+    /// files are ones who do not target the user's home directory as their
+    /// working tree.
+    ///
+    /// Regardless, to get an absolute path to fake ignore file, the caller
+    /// just needs to provide the name of the file without the `.ignore`
+    /// extension.
+    ///
+    /// # Errors
+    ///
+    /// Panics if ignore file is not being tracked by fake configuration
+    /// directory.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ricer_test_tools::fakes::FakeConfigDir;
+    ///
+    /// let config = FakeConfigDir::builder()
+    ///     .ignore_file("fake_ignore", "/*") // Stored as 'fake_ignore.ignore'
+    ///     .build();
+    /// let stub = config.ignore_file_stub_mut("fake_ignore");
+    /// ```
+    pub fn ignore_file_stub_mut(&mut self, repo: impl AsRef<Path>) -> &mut FileStub {
+        let ignore_file = format!("{}.ignore", repo.as_ref().display());
+        match self.file_stubs.get_mut(&self.ignores_dir.join(&ignore_file)) {
+            Some(file) => file,
+            None => panic!("Ignore file '{}' is not being tracked by fake directory", &ignore_file),
+        }
+    }
+
+    /// Get stub to stored hook script in fake 'hooks' directory.
     ///
     /// Caller needs to provide full filename of hook to obtain its path.
     ///
@@ -112,7 +171,7 @@ impl FakeConfigDir {
     /// let config = FakeConfigDir::builder()
     ///     .hook_script("hook.sh", "chmod +x blah")
     ///     .build();
-    /// let path = config.hook_script_stub("hook.sh");
+    /// let stub = config.hook_script_stub("hook.sh");
     /// ```
     pub fn hook_script_stub(&self, name: impl AsRef<Path>) -> &FileStub {
         match self.file_stubs.get(&self.hooks_dir.join(name.as_ref())) {
@@ -124,7 +183,36 @@ impl FakeConfigDir {
         }
     }
 
-    /// Get path to stored Git repository in fake 'repos' directory.
+    /// Get mutable stub to stored hook script in fake 'hooks' directory.
+    ///
+    /// Caller needs to provide full filename of hook to obtain its path.
+    ///
+    /// # Errors
+    ///
+    /// Panics if named hook script is not being tracked by fake configuration
+    /// directory.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ricer_test_tools::fakes::FakeConfigDir;
+    ///
+    /// let config = FakeConfigDir::builder()
+    ///     .hook_script("hook.sh", "chmod +x blah")
+    ///     .build();
+    /// let stub = config.hook_script_stub_mut("hook.sh");
+    /// ```
+    pub fn hook_script_stub_mut(&mut self, name: impl AsRef<Path>) -> &mut FileStub {
+        match self.file_stubs.get_mut(&self.hooks_dir.join(name.as_ref())) {
+            Some(file) => file,
+            None => panic!(
+                "Hook script '{}' is not being tracked by fake directory",
+                &name.as_ref().display()
+            ),
+        }
+    }
+
+    /// Get stub to stored Git repository in fake 'repos' directory.
     ///
     /// Caller needs to provide full filename of hook to obtain its path.
     ///
@@ -141,11 +229,38 @@ impl FakeConfigDir {
     /// let config = FakeConfigDir::builder()
     ///     .git_repo("fake_repo")
     ///     .build();
-    /// let path = config.hook_script_stub("hook.sh");
+    /// let stub = config.hook_script_stub("hook.sh");
     /// ```
     pub fn git_repo_stub(&self, name: impl AsRef<Path>) -> &GitRepoStub {
         let git_repo = format!("{}.git", name.as_ref().display());
         match self.repo_stubs.get(&self.repos_dir.join(&git_repo)) {
+            Some(repo) => repo,
+            None => panic!("Repository '{}' is not being tracked by fake directory", &git_repo),
+        }
+    }
+
+    /// Get mutable stub to stored Git repository in fake 'repos' directory.
+    ///
+    /// Caller needs to provide full filename of hook to obtain its path.
+    ///
+    /// # Errors
+    ///
+    /// Panics if named Git repository is not being tracked by fake configuration
+    /// directory.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer_test_tools::fakes::FakeConfigDir;
+    ///
+    /// let config = FakeConfigDir::builder()
+    ///     .git_repo("fake_repo")
+    ///     .build();
+    /// let stub = config.hook_script_stub_mut("hook.sh");
+    /// ```
+    pub fn git_repo_stub_mut(&mut self, name: impl AsRef<Path>) -> &mut GitRepoStub {
+        let git_repo = format!("{}.git", name.as_ref().display());
+        match self.repo_stubs.get_mut(&self.repos_dir.join(&git_repo)) {
             Some(repo) => repo,
             None => panic!("Repository '{}' is not being tracked by fake directory", &git_repo),
         }
