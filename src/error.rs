@@ -8,6 +8,7 @@
 //! are not. It all depends upon the API of a given module.
 
 use anyhow::anyhow;
+use std::path::PathBuf;
 
 /// Specify result type that uses [`RicerError`] for `Err`.
 pub type RicerResult<T> = Result<T, RicerError>;
@@ -26,6 +27,34 @@ pub enum RicerError {
     /// can simply be created at that location.
     #[error("Configuration directory located at expected path, but does not exist")]
     NoConfigDir(#[source] anyhow::Error),
+
+    /// Configuration file does not exist at expected path.
+    ///
+    /// Recoverable since the path is known, and can just be created at any
+    /// time.
+    #[error("Configuration file does not exist at '{path}'")]
+    NoConfigFile { path: PathBuf },
+
+    /// Git repository does not exist at expected path.
+    ///
+    /// Recoverable since the path is known, and can just be created at any
+    /// time.
+    #[error("Git repository does not exist at '{path}'")]
+    NoGitRepo { path: PathBuf },
+
+    /// Hook script does not exist at expected path.
+    ///
+    /// Recoverable since the path is known, and can just be created at any
+    /// time.
+    #[error("Hook script does not exist at '{path}'")]
+    NoHookScript { path: PathBuf },
+
+    /// Ignore file does not exist at expected path.
+    ///
+    /// Recoverable since the path is known, and can just be created at any
+    /// time.
+    #[error("Ignore file does not exist at '{path}'")]
+    NoIgnoreFile { path: PathBuf },
 
     /// Configuration file does not have a `repos` section.
     ///
