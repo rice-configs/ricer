@@ -7,11 +7,13 @@
 //! configuration data housed in Ricer's configuration directory. This includes
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
+use log::warn;
+
 pub mod dir;
 pub mod file;
 pub mod locator;
 
-use crate::error::RicerResult;
+use crate::error::{RicerError, RicerResult};
 use dir::ConfigDirManager;
 use file::ConfigFileManager;
 
@@ -112,6 +114,13 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// 1. Read and parse configuration file for later manipulation.
     ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::NoConfigFile`] if configuration file does not
+    ///    exist.
+    /// 2. Return [`RicerError::Unrecoverable`] if configuration file contains
+    ///    invalid TOML formatting.
+    ///
     /// # Examples
     ///
     /// ```no_run
@@ -131,9 +140,65 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// [`RicerError::NoConfigFile`]: crate::error::RicerError::NoConfigFile
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     pub fn read_config_file(&mut self) -> RicerResult<()> {
         let path = self.dir_manager.config_file_path()?;
         self.file_manager.read(path)?;
+        Ok(())
+    }
+
+    /// Write configuration file.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Full path to configuration file exists, i.e., no sub-directories are
+    ///    _not_ missing.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. If file does not exist, but all sub-directories do exist, then create
+    ///    it and write to it.
+    /// 2. Preserve original formatting and comments that existed before
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if sub-directories in provided
+    ///    path do not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    /// use ricer::config::file::DefaultConfigFileManager;
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::ConfigManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_manager = DefaultConfigFileManager::new();
+    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
+    /// config.write_config_file()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    pub fn write_config_file(&mut self) -> RicerResult<()> {
+        let path = match self.dir_manager.config_file_path() {
+            Ok(path) => path,
+            Err(RicerError::NoConfigFile { path }) => {
+                warn!("Create non-existant configuration file at '{}'", path.display());
+                path
+            }
+            Err(err) => return Err(err),
+        };
+
+        self.file_manager.write(path)?;
         Ok(())
     }
 }
