@@ -270,6 +270,58 @@ fn remove_repo_catches_inexistent_repo(config_file_fixture: FakeConfigDir) {
 }
 
 #[rstest]
+fn rename_repo_works_correctly(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
+    cfg_file_mgr.rename_repo("vim", "vimrc").expect("Expect success");
+    let expect = indoc! {r#"
+        # The following should not be overwritten.
+        [repos.vimrc]
+        branch = "main"
+        remote = "origin"
+        url = "https://github.com/awkless/vim.git"
+        target = { home = true, os = "unix", user = "awkless", hostname = "lovelace" }
+
+        # The following should not be overwritten.
+        [hooks]
+        commit = [
+            { pre = "hook.sh", post = "hook.sh", repo = "vim" },
+            { pre = "hook.sh" }
+        ]
+        "#};
+    let result = cfg_file_mgr.to_string();
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn rename_repo_catches_no_repos_section(empty_config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(empty_config_file_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let result = cfg_file_mgr.rename_repo("nope", "nada");
+    assert!(matches!(result, Err(RicerError::NoReposSection)));
+}
+
+#[rstest]
+fn rename_repo_catches_inexistent_repo(config_file_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
+    let result = cfg_file_mgr.rename_repo("nope", "nada");
+    assert!(matches!(result, Err(RicerError::NoRepoFound { .. })));
+}
+
+#[rstest]
+fn rename_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeConfigDir) {
+    let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    cfg_file_mgr
+        .read(non_table_sections_fixture.config_file_stub().as_path())
+        .expect("Expect success");
+    let result = cfg_file_mgr.rename_repo("nope", "nada");
+    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
+}
+
+#[rstest]
 fn get_cmd_hook_deserializes_correctly(config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
@@ -283,7 +335,7 @@ fn get_cmd_hook_deserializes_correctly(config_file_fixture: FakeConfigDir) {
 }
 
 #[rstest]
-fn get_cmd_hook_catches_catches_no_hooks_section(empty_config_file_fixture: FakeConfigDir) {
+fn get_cmd_hook_catches_no_hooks_section(empty_config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr
         .read(empty_config_file_fixture.config_file_stub().as_path())
