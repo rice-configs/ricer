@@ -60,7 +60,7 @@ fn config_file_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir
 fn config_file_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
     let result = cfg_dir_mgr.config_file_path();
-    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+    assert!(matches!(result, Err(RicerError::NoConfigFile { .. })));
 }
 
 #[rstest]
@@ -82,7 +82,7 @@ fn git_repo_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir) {
 fn git_repo_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
     let result = cfg_dir_mgr.git_repo_path("nonexistant");
-    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+    assert!(matches!(result, Err(RicerError::NoGitRepo { .. })));
 }
 
 #[rstest]
@@ -104,7 +104,7 @@ fn hook_script_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir
 fn hook_script_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
     let result = cfg_dir_mgr.hook_script_path("nonexistant");
-    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+    assert!(matches!(result, Err(RicerError::NoHookScript { .. })));
 }
 
 #[rstest]
@@ -126,5 +126,5 @@ fn ignore_file_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir
 fn ignore_file_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
     let result = cfg_dir_mgr.ignore_file_path("nonexistant");
-    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+    assert!(matches!(result, Err(RicerError::NoIgnoreFile{ .. })));
 }

@@ -50,7 +50,6 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
-use anyhow::anyhow;
 use log::trace;
 use std::path::{Path, PathBuf};
 
@@ -160,7 +159,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
     ///
     /// # Errors
     ///
-    /// 1. Returns [`RicerError::Unrecoverable`] if configuration file does not
+    /// 1. Returns [`RicerError::NoConfigFile`] if configuration file does not
     ///    exist at `$XDG_CONFIG_HOME/ricer/config.toml`.
     ///
     /// # Examples
@@ -180,15 +179,12 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # }
     /// ```
     ///
-    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// [`RicerError::NoConfigFile`]: crate::error::RicerError::NoConfigFile
     fn config_file_path(&self) -> RicerResult<PathBuf> {
         let cfg_file_path = self.root_dir.join("config.toml");
         debug_assert!(cfg_file_path.is_absolute(), "Configuration file path is not absolute");
         if !cfg_file_path.exists() {
-            return Err(RicerError::Unrecoverable(anyhow!(
-                "Configuration file does not exist at '{}'",
-                cfg_file_path.display()
-            )));
+            return Err(RicerError::NoConfigFile { path: cfg_file_path });
         }
 
         Ok(cfg_file_path)
@@ -210,7 +206,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
     ///
     /// # Errors
     ///
-    /// 1. Returns `RicerError::Unrecoverable` if Git repository does not exist
+    /// 1. Returns `RicerError::NoGitRepo` if Git repository does not exist
     ///    in `$XDG_CONFIG_HOME/ricer/repos` directory.
     ///
     /// # Examples
@@ -230,15 +226,12 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # }
     /// ```
     ///
-    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// [`RicerError::NoGitRepo`]: crate::error::RicerError::NoGitRepo
     fn git_repo_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
         let repo_path = self.repos_dir.join(format!("{}.git", repo_name.as_ref()));
         debug_assert!(repo_path.is_absolute(), "Git repository path is not absolute");
         if !repo_path.exists() {
-            return Err(RicerError::Unrecoverable(anyhow!(
-                "Git repository '{}' does not exist",
-                repo_path.display()
-            )));
+            return Err(RicerError::NoGitRepo { path: repo_path });
         }
 
         Ok(repo_path)
@@ -260,7 +253,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
     ///
     /// # Errors
     ///
-    /// 1. Returns `RicerError::Unrecoverable` if hook script does not exist
+    /// 1. Returns `RicerError::NoHookScript` if hook script does not exist
     ///    in `$XDG_CONFIG_HOME/ricer/hooks` directory.
     ///
     /// # Examples
@@ -280,15 +273,12 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # }
     /// ```
     ///
-    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// [`RicerError::NoHookScript`]: crate::error::RicerError::NoHookScript
     fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf> {
         let hook_path = self.hooks_dir.join(hook_name.as_ref());
         debug_assert!(hook_path.is_absolute(), "Hook script path is not absolute");
         if !hook_path.exists() {
-            return Err(RicerError::Unrecoverable(anyhow!(
-                "Hook script '{}' does not exist",
-                hook_path.display()
-            )));
+            return Err(RicerError::NoHookScript { path: hook_path });
         }
 
         Ok(hook_path)
@@ -310,7 +300,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
     ///
     /// # Errors
     ///
-    /// 1. Returns `RicerError::Unrecoverable` if ignore file does not exist
+    /// 1. Returns `RicerError::NoIgnoreFile` if ignore file does not exist
     ///    in `$XDG_CONFIG_HOME/ricer/ignores` directory.
     ///
     /// # Examples
@@ -330,15 +320,12 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # }
     /// ```
     ///
-    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// [`RicerError::NoIgnoreFile`]: crate::error::RicerError::NoIgnoreFile
     fn ignore_file_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
         let ignore_path = self.ignores_dir.join(format!("{}.ignore", repo_name.as_ref()));
         debug_assert!(ignore_path.is_absolute(), "Ignore file path is not absolute");
         if !ignore_path.exists() {
-            return Err(RicerError::Unrecoverable(anyhow!(
-                "Ignore file '{}' does not exist",
-                ignore_path.display()
-            )));
+            return Err(RicerError::NoIgnoreFile { path: ignore_path });
         }
 
         Ok(ignore_path)
