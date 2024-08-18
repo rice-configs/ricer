@@ -452,11 +452,11 @@ impl RepoTargetEntryBuilder {
     pub fn build(self) -> RepoTargetEntry {
         trace!("Build new target entry for repository entry definition");
         debug_assert!(
-            self.user.as_ref().is_some_and(|s| !s.is_empty()) || self.user == None,
+            self.user.as_ref().is_some_and(|s| !s.is_empty()) || self.user.is_none(),
             "User target is empty"
         );
         debug_assert!(
-            self.hostname.as_ref().is_some_and(|s| !s.is_empty()) || self.hostname == None,
+            self.hostname.as_ref().is_some_and(|s| !s.is_empty()) || self.hostname.is_none(),
             "Hostname target is empty"
         );
 
