@@ -15,7 +15,7 @@
 use log::{debug, trace};
 use std::fs::{read_to_string, write};
 use std::path::Path;
-use toml_edit::{DocumentMut, Item, Table};
+use toml_edit::{DocumentMut, Item, Key, Table};
 
 pub mod hooks_section;
 pub mod repos_section;
@@ -47,16 +47,34 @@ pub trait ConfigFileManager {
     /// Rename repository entry in configuration file data.
     fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()>;
 
-    /// Deserialize command hook envry from parsed configuration file data.
+    /// Deserialize command hook entry from parsed configuration file data.
     fn get_cmd_hook(&self, cmd_name: impl AsRef<str>) -> RicerResult<CommandHookEntry>;
 }
 
+/// Default implementation of configuration file manager.
+///
+/// # Invariants
+///
+/// 1. Preserve original formatting and comments of user's configuration file.
 #[derive(Debug, Default)]
 pub struct DefaultConfigFileManager {
     doc: DocumentMut,
 }
 
 impl DefaultConfigFileManager {
+    /// Construct new default configuration file manager.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Obtain new valid instance of configuration file manager.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::file::DefaultConfigFileManager;
+    ///
+    /// let cfg_file_mgr = DefaultConfigFileManager::new();
+    /// ```
     pub fn new() -> Self {
         Default::default()
     }
@@ -74,13 +92,25 @@ impl ConfigFileManager for DefaultConfigFileManager {
     ///
     /// 1. Parse TOML data for future manipulation.
     ///
-    /// # Invariants
+    /// # Errors
     ///
-    /// None.
+    /// 1. Returns [`RicerError::Unrecoverable`] if configuration file does not
+    ///    exist at provided path, or it contains invalid TOML formatting.
     ///
-    /// # Side Effects
+    /// # Examples
     ///
-    /// None.
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
+    ///
+    /// let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    /// cfg_file_mgr.read("/path/to/config.toml")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     fn read(&mut self, path: impl AsRef<Path>) -> RicerResult<()> {
         debug!("Read configuration file from '{}'", path.as_ref().display());
         let buffer = read_to_string(path.as_ref())?;
@@ -90,6 +120,38 @@ impl ConfigFileManager for DefaultConfigFileManager {
     }
 
     /// Write to configuration file at provided path.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Full path to configuration file exists, i.e., no sub-directories are
+    ///    _not_ missing.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. If file does not exist, but all sub-directories do exist, then create
+    ///    it and write to it.
+    /// 2. Preserve original formatting and comments that existed before
+    ///    writing.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if sub-directories in provided
+    ///    path do not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
+    ///
+    /// let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    /// cfg_file_mgr.write("/path/to/config.toml")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     fn write(&mut self, path: impl AsRef<Path>) -> RicerResult<()> {
         debug!("Write configuration file to '{}'", path.as_ref().display());
         let buffer = self.doc.to_string();
@@ -98,11 +160,69 @@ impl ConfigFileManager for DefaultConfigFileManager {
     }
 
     /// Show current configuration file data in string form.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return contents of parsed configuration file data in string form.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
+    ///
+    /// let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    /// cfg_file_mgr.read("/path/to/config.toml")?;
+    /// println!("{}", cfg_file_mgr.to_string());
+    /// # Ok(())
+    /// # }
+    /// ```
     fn to_string(&self) -> String {
         self.doc.to_string()
     }
 
     /// Deserialize repository entry from parsed configuration file data.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. The `repos` section exists.
+    /// 2. The `repos` section is defined as a table.
+    /// 3. Repository definition exists in `repos` section.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return deserialized [`RepoEntry`].
+    /// 2. Will not modify configuration file data.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::NoReposSection`] if `repos` section does not
+    ///    exist.
+    /// 2. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
+    ///    not defined as a table.
+    /// 3. Return [`RicerError::NoRepoFound`] if target repository definition
+    ///    does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
+    ///
+    /// let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    /// cfg_file_mgr.read("/path/to/config.toml")?;
+    /// let repo = cfg_file_mgr.get_repo("vim")?;
+    /// println!("{:#?}", repo);
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RepoEntry`]: crate::config::file::repos_section::RepoEntry
+    /// [`RicerError::NoReposSection`]: crate::error::RicerError::NoReposSection
+    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
+    /// [`RicerError::NoRepoFound`]: crate::error::RicerError::NoRepoFound
     fn get_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
         debug!("Get repository '{}' from configuration file", repo_name.as_ref());
         let repos = self.doc.get("repos").ok_or(RicerError::NoReposSection)?;
@@ -114,6 +234,48 @@ impl ConfigFileManager for DefaultConfigFileManager {
     }
 
     /// Serialize repository entry into parsed configuration file data.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. The `repos` section is defined as a table.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Add repository definition into configuration file data.
+    ///     - Will add repository entry to existing `repos` section.
+    ///     - Will create `repos` section and add repository entry  if and only
+    ///       if `repos` section did not exist before.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Preserve original comments and formatting that existed beforehand.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
+    ///    not defined as a table.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
+    /// use ricer::config::file::repos_section::RepoEntry;
+    ///
+    /// let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    /// cfg_file_mgr.read("/path/to/config.toml")?;
+    /// let repo = RepoEntry::builder("vim")
+    ///     .branch("main")
+    ///     .remote("origin")
+    ///     .url("https://github.com/awkless/vim.git")
+    ///     .build();
+    /// cfg_file_mgr.add_repo(&repo)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
     fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
         debug!("Add repository '{}' too configuration file", &repo_entry.name);
         let (repo_name, repo_data) = repo_entry.to_toml();
@@ -133,6 +295,50 @@ impl ConfigFileManager for DefaultConfigFileManager {
     }
 
     /// Remove repository entry from configuration file data.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. The `repos` section exists.
+    /// 2. The `repos` section is defined as a table.
+    /// 3. Repository definition exists in `repos` section.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Remove target repository definition from configuration file data.
+    /// 2. Return removed target repository definition as a [`RepoEntry`].
+    ///
+    /// # Invariants
+    ///
+    /// 1. Preserve original comments and formatting that existed beforehand.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::NoReposSection`] if `repos` section does not
+    ///    exist.
+    /// 2. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
+    ///    not defined as a table.
+    /// 3. Return [`RicerError::NoRepoFound`] if target repository definition
+    ///    does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
+    ///
+    /// let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    /// cfg_file_mgr.read("/path/to/config.toml")?;
+    /// let repo = cfg_file_mgr.remove_repo("vim")?;
+    /// println!("{:#?}", repo);
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RepoEntry`]: crate::config::file::repos_section::RepoEntry
+    /// [`RicerError::NoReposSection`]: crate::error::RicerError::NoReposSection
+    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
+    /// [`RicerError::NoRepoFound`]: crate::error::RicerError::NoRepoFound
     fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
         debug!("Remove repository '{}' from configuration file", repo_name.as_ref());
         let repos = self.doc.get_mut("repos").ok_or(RicerError::NoReposSection)?;
@@ -144,15 +350,102 @@ impl ConfigFileManager for DefaultConfigFileManager {
     }
 
     /// Rename repository entry in configuration file data.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. The `repos` section exists.
+    /// 2. The `repos` section is defined as a table.
+    /// 3. Repository definition exists in `repos` section.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Rename target repository with provided new name.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Preserve original formatting and comments that existed beforehand.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::NoReposSection`] if `repos` section does not
+    ///    exist.
+    /// 2. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
+    ///    not defined as a table.
+    /// 3. Return [`RicerError::NoRepoFound`] if target repository definition
+    ///    does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
+    ///
+    /// let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    /// cfg_file_mgr.read("/path/to/config.toml")?;
+    /// cfg_file_mgr.rename_repo("vi", "vim")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::NoReposSection`]: crate::error::RicerError::NoReposSection
+    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
+    /// [`RicerError::NoRepoFound`]: crate::error::RicerError::NoRepoFound
     fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()> {
         debug!("Rename repository '{}' to '{}' in configuration file", from.as_ref(), to.as_ref());
-        let mut repo = self.remove_repo(from.as_ref())?;
-        repo.name = to.as_ref().to_string();
-        self.add_repo(&repo)?;
+        let repos = self.doc.get_mut("repos").ok_or(RicerError::NoReposSection)?;
+        let repos = repos.as_table_mut().ok_or(RicerError::ReposSectionNotTable)?;
+        let (key, value) = repos
+            .remove_entry(from.as_ref())
+            .ok_or(RicerError::NoRepoFound { repo_name: from.as_ref().to_string() })?;
+
+        // Preserve decor (comments and formatting) from original key...
+        let key = Key::new(to.as_ref()).with_leaf_decor(key.leaf_decor().clone());
+        repos.insert_formatted(&key, value);
         Ok(())
     }
 
-    /// Deserialize command hook envry from parsed configuration file data.
+    /// Deserialize command hook entry from parsed configuration file data.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. The `hooks` section exists.
+    /// 2. The `hooks` section is defined as a table.
+    /// 3. Command hook definition exists in `hooks` section.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return deserialized [`CommandHookEntry`].
+    /// 2. Will not modify configuration file data.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::NoHooksSection`] if `hooks` section does not
+    ///    exist.
+    /// 2. Return [`RicerError::HooksSectionNotTable`] if `hooks` section is
+    ///    not defined as a table.
+    /// 3. Return [`RicerError::NoHookFound`] if target command hook definition
+    ///    does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
+    ///
+    /// let mut cfg_file_mgr = DefaultConfigFileManager::new();
+    /// cfg_file_mgr.read("/path/to/config.toml")?;
+    /// let hook = cfg_file_mgr.get_cmd_hook("commit")?;
+    /// println!("{:#?}", hook);
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`CommandHookEntry`]: crate::config::file::hooks_section::CommandHookEntry
+    /// [`RicerError::NoHooksSection`]: crate::error::RicerError::NoHooksSection
+    /// [`RicerError::HooksSectionNotTable`]: crate::error::RicerError::HooksSectionNotTable
+    /// [`RicerError::NoHookFound`]: crate::error::RicerError::NoHookFound
     fn get_cmd_hook(&self, cmd_name: impl AsRef<str>) -> RicerResult<CommandHookEntry> {
         let hooks = self.doc.get("hooks").ok_or(RicerError::NoHooksSection)?;
         let hooks = hooks.as_table().ok_or(RicerError::HooksSectionNotTable)?;
