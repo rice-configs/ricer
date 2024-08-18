@@ -71,6 +71,8 @@ impl CommandHookEntry {
     ///     .build();
     /// cmd_hook.add_hook(hook_entry);
     /// ```
+    ///
+    /// [`hooks`]: #member.hooks
     pub fn add_hook(&mut self, hook: HookEntry) {
         self.hooks.push(hook);
     }
