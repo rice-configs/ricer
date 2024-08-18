@@ -16,8 +16,8 @@ use dir::ConfigDirManager;
 use file::ConfigFileManager;
 
 pub struct ConfigManager<D: ConfigDirManager, F: ConfigFileManager> {
-    dir_mgr: D,
-    file_mgr: F,
+    dir_manager: D,
+    file_manager: F,
 }
 
 impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
@@ -44,17 +44,61 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
     /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
-    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
-    /// let cfg_file_mgr = DefaultConfigFileManager::new();
-    /// let config = ConfigManager::new(cfg_dir_mgr, cfg_file_mgr);
+    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_manager = DefaultConfigFileManager::new();
+    /// let config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
     /// # Ok(())
     /// # }
     /// ```
     ///
     /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
     /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
-    pub fn new(dir_mgr: D, file_mgr: F) -> Self {
-        Self { dir_mgr, file_mgr }
+    pub fn new(dir_manager: D, file_manager: F) -> Self {
+        Self { dir_manager, file_manager }
+    }
+
+    /// Get current configuration directory manager.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Immutable reference to [`ConfigDirManager`] instance.
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    pub fn dir_manager(&self) -> &D {
+        &self.dir_manager
+    }
+
+    /// Get current mutable configuration directory manager.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Mutable reference to [`ConfigDirManager`] instance.
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    pub fn dir_manager_mut(&mut self) -> &mut D {
+        &mut self.dir_manager
+    }
+
+    /// Get current configuration file manager.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Immutable reference to [`ConfigFileManager`].
+    ///
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
+    pub fn file_manager(&self) -> &F {
+        &self.file_manager
+    }
+
+    /// Get current mutable configuration file manager.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Mutable reference to [`ConfigFileManager`].
+    ///
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
+    pub fn file_manager_mut(&mut self) -> &mut F {
+        &mut self.file_manager
     }
 
     /// Read configuration file.
@@ -80,16 +124,16 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
     /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
-    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
-    /// let cfg_file_mgr = DefaultConfigFileManager::new();
-    /// let mut config = ConfigManager::new(cfg_dir_mgr, cfg_file_mgr);
+    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_manager = DefaultConfigFileManager::new();
+    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
     /// config.read_config_file()?;
     /// # Ok(())
     /// # }
     /// ```
     pub fn read_config_file(&mut self) -> RicerResult<()> {
-        let path = self.dir_mgr.config_file_path()?;
-        self.file_mgr.read(path)?;
+        let path = self.dir_manager.config_file_path()?;
+        self.file_manager.read(path)?;
         Ok(())
     }
 }
