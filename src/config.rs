@@ -11,6 +11,7 @@ pub mod dir;
 pub mod file;
 pub mod locator;
 
+use crate::error::RicerResult;
 use dir::ConfigDirManager;
 use file::ConfigFileManager;
 
@@ -54,5 +55,41 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn new(dir_mgr: D, file_mgr: F) -> Self {
         Self { dir_mgr, file_mgr }
+    }
+
+    /// Read configuration file.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Configuration file exists at `$XDG_CONFIG_HOME/ricer/config.toml`.
+    /// 2. Configuration file contains valid TOML formatting.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Read and parse configuration file for later manipulation.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    /// use ricer::config::file::DefaultConfigFileManager;
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::ConfigManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_mgr = DefaultConfigFileManager::new();
+    /// let mut config = ConfigManager::new(cfg_dir_mgr, cfg_file_mgr);
+    /// config.read_config_file()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn read_config_file(&mut self) -> RicerResult<()> {
+        let path = self.dir_mgr.config_file_path()?;
+        self.file_mgr.read(path)?;
+        Ok(())
     }
 }
