@@ -69,21 +69,9 @@ pub struct RepoEntry {
 impl RepoEntry {
     /// Build new repository entry definition.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return [`RepoEntryBuilder`].
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Examples
     ///
@@ -98,21 +86,9 @@ impl RepoEntry {
 
     /// Serialize repository entry definition into a TOML item.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return serialized repository entry into TOML document format.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Examples
     ///
@@ -210,10 +186,6 @@ pub struct RepoEntryBuilder {
 impl RepoEntryBuilder {
     /// Construct repository entry builder.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return new instance of repository entry builder.
@@ -221,10 +193,6 @@ impl RepoEntryBuilder {
     /// # Invariants
     ///
     /// 1. No field is empty.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     pub fn new(name: impl AsRef<str>) -> Self {
         Self {
             name: name.as_ref().to_string(),
@@ -237,19 +205,11 @@ impl RepoEntryBuilder {
 
     /// Set branch field.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`branch`] field.
     ///
     /// Invariants
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`branch`]: #member.branch
     pub fn branch(mut self, branch: impl AsRef<str>) -> Self {
@@ -259,19 +219,11 @@ impl RepoEntryBuilder {
 
     /// Set remote field.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`remote`] field.
     ///
     /// Invariants
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`remote`]: #member.remote
     pub fn remote(mut self, remote: impl AsRef<str>) -> Self {
@@ -281,19 +233,11 @@ impl RepoEntryBuilder {
 
     /// Set URL field.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`url`] field.
     ///
     /// Invariants
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`url`]: #member.url
     pub fn url(mut self, url: impl AsRef<str>) -> Self {
@@ -303,19 +247,9 @@ impl RepoEntryBuilder {
 
     /// Set target field.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`target`] field.
-    ///
-    /// Invariants
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`target`]: #member.target
     pub fn target(mut self, target: RepoTargetEntry) -> Self {
@@ -325,10 +259,6 @@ impl RepoEntryBuilder {
 
     /// Build new [`RepoEntry`].
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Valid instance of [`RepoEntry`].
@@ -336,10 +266,6 @@ impl RepoEntryBuilder {
     /// # Invariants
     ///
     /// 1. No field is empty.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Examples
     ///
@@ -444,42 +370,18 @@ pub struct RepoTargetEntryBuilder {
 impl RepoTargetEntryBuilder {
     /// Construct new repository target entry builder.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return new repository target entry builder.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     pub fn new() -> Self {
         Default::default()
     }
 
     /// Set home target.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`home`] field.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`home`]: #member.home
     pub fn home(mut self, home: bool) -> Self {
@@ -489,21 +391,9 @@ impl RepoTargetEntryBuilder {
 
     /// Set OS target.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`os`] field.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`os`]: #member.os
     pub fn os(mut self, os: TargetOsOption) -> Self {
@@ -513,21 +403,9 @@ impl RepoTargetEntryBuilder {
 
     /// Set user target
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`user`] field.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`user`]: #member.user
     pub fn user(mut self, user: impl Into<String>) -> Self {
@@ -537,21 +415,9 @@ impl RepoTargetEntryBuilder {
 
     /// Set hostname target.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`hostname`] field.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`hostname`]: #member.hostname
     pub fn hostname(mut self, hostname: impl Into<String>) -> Self {
@@ -561,21 +427,9 @@ impl RepoTargetEntryBuilder {
 
     /// Build new [`RepoTargetEntry`].
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return new [`RepoTargetEntry`].
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Examples
     ///

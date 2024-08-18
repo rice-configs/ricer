@@ -37,21 +37,9 @@ pub struct CommandHookEntry {
 impl CommandHookEntry {
     /// Construct new command hook entry definition.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return valid instance of command hook entry handler.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Examples
     ///
@@ -66,21 +54,9 @@ impl CommandHookEntry {
 
     /// Add hook entry into command hook definition.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Add hook entry to [`hooks`] field.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Examples
     ///
@@ -141,21 +117,9 @@ pub struct HookEntry {
 impl HookEntry {
     /// Build a new hook entry definition.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return hook entry builder instance.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     pub fn builder() -> HookEntryBuilder {
         HookEntryBuilder::new()
     }
@@ -171,42 +135,18 @@ pub struct HookEntryBuilder {
 impl HookEntryBuilder {
     /// Construct new hook entry builder.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return new instance of hook entry builder.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     pub fn new() -> Self {
         Default::default()
     }
 
     /// Set pre-script to run _before_ target command.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`pre`] field.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`pre`]: #member.pre
     pub fn pre(mut self, script_name: impl Into<String>) -> Self {
@@ -216,21 +156,9 @@ impl HookEntryBuilder {
 
     /// Set post-script to run _before_ target command.
     ///
-    /// # postconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`post`] field.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`post`]: #member.post
     pub fn post(mut self, script_name: impl Into<String>) -> Self {
@@ -240,21 +168,9 @@ impl HookEntryBuilder {
 
     /// Set repo-script to run _before_ target command.
     ///
-    /// # repoconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Set [`repo`] field.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// [`repo`]: #member.repo
     pub fn repo(mut self, repo_name: impl Into<String>) -> Self {
@@ -264,21 +180,9 @@ impl HookEntryBuilder {
 
     /// Build new [`HookEntry`].
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return new instance of [`HookEntry`].
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Examples
     ///
