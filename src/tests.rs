@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
-mod locator;
+mod default_cfg_dir_locator;
 
-mod dir;
+mod default_cfg_dir_mgr;
 
-mod file;
+mod default_cfg_file_mgr;
 
 mod cli;
 
-mod repos_section;
+mod repo_entry;
 
-mod hooks_section;
+mod cmd_hook_entry;
