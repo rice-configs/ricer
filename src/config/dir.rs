@@ -111,10 +111,6 @@ impl DefaultConfigDirManager {
     ///
     /// 1. All stored paths must be absolute.
     ///
-    /// # Side Effects
-    ///
-    /// None.
-    ///
     /// # Examples
     ///
     /// ```no_run
@@ -162,13 +158,9 @@ impl ConfigDirManager for DefaultConfigDirManager {
     ///
     /// 1. Path returned is guaranteed to be absolute.
     ///
-    /// # Side Effects
-    ///
-    /// None.
-    ///
     /// # Errors
     ///
-    /// 1. Returns `RicerError::Unrecoverable` if configuration file does not
+    /// 1. Returns [`RicerError::Unrecoverable`] if configuration file does not
     ///    exist at `$XDG_CONFIG_HOME/ricer/config.toml`.
     ///
     /// # Examples
@@ -215,10 +207,6 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # Invariants
     ///
     /// 1. Path returned is guaranteed to be absolute.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Errors
     ///
@@ -270,10 +258,6 @@ impl ConfigDirManager for DefaultConfigDirManager {
     ///
     /// 1. Path returned is guaranteed to be absolute.
     ///
-    /// # Side Effects
-    ///
-    /// None.
-    ///
     /// # Errors
     ///
     /// 1. Returns `RicerError::Unrecoverable` if hook script does not exist
@@ -324,10 +308,6 @@ impl ConfigDirManager for DefaultConfigDirManager {
     ///
     /// 1. Path returned is guaranteed to be absolute.
     ///
-    /// # Side Effects
-    ///
-    /// None.
-    ///
     /// # Errors
     ///
     /// 1. Returns `RicerError::Unrecoverable` if ignore file does not exist
@@ -366,10 +346,6 @@ impl ConfigDirManager for DefaultConfigDirManager {
 
     /// Get path to root of configuration directory.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return path to root of configuration directory.
@@ -377,19 +353,11 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # Invariants
     ///
     /// 1. Path returned is guaranteed to be absolute.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     fn root_dir(&self) -> &Path {
         self.root_dir.as_path()
     }
 
     /// Get path to `repos` sub-directory in configuration directory.
-    ///
-    /// # Preconditions
-    ///
-    /// None.
     ///
     /// # Postconditions
     ///
@@ -398,19 +366,11 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # Invariants
     ///
     /// 1. Path returned is guaranteed to be absolute.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     fn repos_dir(&self) -> &Path {
         self.repos_dir.as_path()
     }
 
     /// Get path to `hooks` sub-directory in configuration directory.
-    ///
-    /// # Preconditions
-    ///
-    /// None.
     ///
     /// # Postconditions
     ///
@@ -419,19 +379,11 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # Invariants
     ///
     /// 1. Path returned is guaranteed to be absolute.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     fn hooks_dir(&self) -> &Path {
         self.hooks_dir.as_path()
     }
 
     /// Get path to `ignores` sub-directory in configuration directory.
-    ///
-    /// # Preconditions
-    ///
-    /// None.
     ///
     /// # Postconditions
     ///
@@ -440,10 +392,6 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// # Invariants
     ///
     /// 1. Path returned is guaranteed to be absolute.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     fn ignores_dir(&self) -> &Path {
         self.ignores_dir.as_path()
     }

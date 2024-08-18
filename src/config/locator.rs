@@ -46,21 +46,9 @@ impl DefaultXdgBaseDirSpec {
     /// Construct new instance of default XDG Base Directory Specification
     /// handler.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return Default XDG Base Directory Specification handler instance.
-    ///
-    /// # Invariants
-    ///
-    /// None.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Errors
     ///
@@ -96,10 +84,6 @@ impl DefaultXdgBaseDirSpec {
 impl XdgBaseDirSpec for DefaultXdgBaseDirSpec {
     /// Get path of `$XDG_CONFIG_HOME`.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return path of `$XDG_CONFIG_HOME`.
@@ -108,9 +92,6 @@ impl XdgBaseDirSpec for DefaultXdgBaseDirSpec {
     ///
     /// 1. Returned path is guaranteed to be absolute.
     ///
-    /// # Side Effects
-    ///
-    /// None.
     fn config_home_dir(&self) -> &Path {
         let path = self.xdg_spec.config_dir();
         debug_assert!(path.is_absolute(), "Path of $XDG_CONFIG_HOME is not absolute");
@@ -150,10 +131,6 @@ impl DefaultConfigDirLocator {
     /// # Invariants
     ///
     /// 1. Located path to configuration directory is absolute.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     ///
     /// # Errors
     ///
@@ -201,10 +178,6 @@ impl DefaultConfigDirLocator {
 impl ConfigDirLocator for DefaultConfigDirLocator {
     /// Get located path to configuration directory.
     ///
-    /// # Preconditions
-    ///
-    /// None.
-    ///
     /// # Postconditions
     ///
     /// 1. Return path of `$XDG_CONFIG_HOME/ricer`.
@@ -212,10 +185,6 @@ impl ConfigDirLocator for DefaultConfigDirLocator {
     /// # Invariants
     ///
     /// 1. Returned path is guaranteed to be absolute.
-    ///
-    /// # Side Effects
-    ///
-    /// None.
     fn config_dir(&self) -> &Path {
         self.config_dir.as_path()
     }
@@ -233,14 +202,6 @@ impl ConfigDirLocator for DefaultConfigDirLocator {
 /// # Postconditions
 ///
 /// 1. Return instance of [`DefaultConfigDirLocator`].
-///
-/// # Invariants
-///
-/// None.
-///
-/// # Side Effects
-///
-/// None.
 ///
 /// # Errors
 ///
