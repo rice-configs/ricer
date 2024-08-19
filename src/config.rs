@@ -190,4 +190,58 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     pub fn file_manager_to_string(&self) -> String {
         self.file_manager.to_string()
     }
+
+    /// Add new Git repository into configuration data.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Create new Git repository directory in `$XDG_CONFIG_HOME/ricer/repos`.
+    ///     - Create sub-directories in path if needed.
+    /// 2. Write Git repository entry data into configuration file.
+    ///     - Preserve original formatting of configuration file that existed
+    ///       beforehand.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if Git repository directory
+    ///    could not be created at `$XDG_CONFIG_HOME/ricer/repos`.
+    /// 2. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
+    ///    not defined as a table.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    /// use ricer::config::file::DefaultConfigFileManager;
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::ConfigManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_manager = DefaultConfigFileManager::new();
+    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
+    /// config.read_config_file()?;
+    /// println!("{}", config.file_manager_to_string());
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
+    pub fn add_git_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
+        match self.dir_manager.git_repo_path(&repo_entry.name) {
+            Ok(path) => debug!("Repository '{}' exists at '{}'", &repo_entry.name, path.display()),
+            Err(RicerError::NoGitRepo { path }) => {
+                warn!("Create Git repository '{}' at '{}'", &repo_entry.name, path.display());
+                create_dir_all(path)?;
+            }
+            Err(err) => return Err(err),
+        };
+
+        self.file_manager.add_repo(repo_entry)?;
+        Ok(())
+    }
 }
