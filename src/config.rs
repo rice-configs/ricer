@@ -7,7 +7,8 @@
 //! configuration data housed in Ricer's configuration directory. This includes
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
-use log::warn;
+use log::{debug, warn};
+use std::fs::create_dir_all;
 
 pub mod dir;
 pub mod file;
@@ -15,6 +16,7 @@ pub mod locator;
 
 use crate::error::{RicerError, RicerResult};
 use dir::ConfigDirManager;
+use file::repos_section::RepoEntry;
 use file::ConfigFileManager;
 
 pub struct ConfigManager<D: ConfigDirManager, F: ConfigFileManager> {
@@ -57,50 +59,6 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn new(dir_manager: D, file_manager: F) -> Self {
         Self { dir_manager, file_manager }
-    }
-
-    /// Get current configuration directory manager.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Immutable reference to [`ConfigDirManager`] instance.
-    ///
-    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
-    pub fn dir_manager(&self) -> &D {
-        &self.dir_manager
-    }
-
-    /// Get current mutable configuration directory manager.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Mutable reference to [`ConfigDirManager`] instance.
-    ///
-    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
-    pub fn dir_manager_mut(&mut self) -> &mut D {
-        &mut self.dir_manager
-    }
-
-    /// Get current configuration file manager.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Immutable reference to [`ConfigFileManager`].
-    ///
-    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
-    pub fn file_manager(&self) -> &F {
-        &self.file_manager
-    }
-
-    /// Get current mutable configuration file manager.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Mutable reference to [`ConfigFileManager`].
-    ///
-    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
-    pub fn file_manager_mut(&mut self) -> &mut F {
-        &mut self.file_manager
     }
 
     /// Read configuration file.
@@ -200,5 +158,36 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
 
         self.file_manager.write(path)?;
         Ok(())
+    }
+
+    /// Get config file manager data in string form.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Get valid string representation of parsed configuration file data
+    ///    provided by  current configuraiton file manager.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    /// use ricer::config::file::DefaultConfigFileManager;
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::ConfigManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_manager = DefaultConfigFileManager::new();
+    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
+    /// config.read_config_file()?;
+    /// println!("{}", config.file_manager_to_string());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn file_manager_to_string(&self) -> String {
+        self.file_manager.to_string()
     }
 }
