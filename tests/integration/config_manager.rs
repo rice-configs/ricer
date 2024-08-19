@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
 use std::path::{Path, PathBuf};
 
 use ricer::config::dir::DefaultConfigDirManager;
-use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
+use ricer::config::file::repos_section::RepoEntry;
+use ricer::config::file::DefaultConfigFileManager;
 use ricer::config::locator::{DefaultConfigDirLocator, XdgBaseDirSpec};
 use ricer::config::ConfigManager;
 use ricer::error::RicerError;
@@ -44,10 +46,14 @@ fn setup_config_manager(
 fn config_dir_fixture() -> FakeConfigDir {
     FakeConfigDir::builder()
         .config_file(indoc! {r#"
-            # This should not be overwritten
-            [repos]
-            vim = { target_home = true, branch = "main", remote = "origin" }
+            # This should not be overwritten.
+            [repos.vim]
+            branch = "main"
+            remote = "remote"
+            url = "https://github.com/awkless/vim.git"
+            target = { home = true, os = "any", user = "awkless", hostname = "lovelace" }
 
+            # This should not be overwritten.
             [hooks]
             commit = [
                 { pre = "hooks.sh", post = "hook.sh", repo = "vim" },
@@ -81,7 +87,7 @@ fn read_config_file_reads_correctly(config_dir_fixture: FakeConfigDir) {
     config.read_config_file().expect("Expect success");
 
     let expect = cfg_file_stub.data();
-    let result = config.file_manager().to_string();
+    let result = config.file_manager_to_string();
     assert_eq!(expect, result);
 }
 
@@ -97,4 +103,41 @@ fn read_config_file_catches_bad_formatting(bad_config_file_fixture: FakeConfigDi
     let mut config = setup_config_manager(&bad_config_file_fixture);
     let result = config.read_config_file();
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+}
+
+#[rstest]
+fn write_config_file_writes_to_existing_config_file(mut config_dir_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&config_dir_fixture);
+    let new_repo = RepoEntry::builder("dwm")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/dwm.git")
+        .build();
+    config.add_git_repo(&new_repo).expect("Expect success");
+    config.write_config_file().expect("Expect success");
+    config_dir_fixture.sync_files();
+    let expect = config_dir_fixture.config_file_stub().data();
+    let result = config.file_manager_to_string();
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn write_config_file_writes_new_config_file(empty_config_dir_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&empty_config_dir_fixture);
+    let new_repo = RepoEntry::builder("dwm")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/dwm.git")
+        .build();
+    config.add_git_repo(&new_repo).expect("Expect success");
+    config.write_config_file().expect("Expect success");
+    config.read_config_file().expect("Expect success");
+    let expect = indoc! {r#"
+        [repos.dwm]
+        branch = "master"
+        remote = "upstream"
+        url = "https://github.com/awkless/dwm.git"
+    "#};
+    let result = config.file_manager_to_string();
+    assert_eq!(expect, result);
 }
