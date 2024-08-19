@@ -49,7 +49,7 @@ fn config_dir_fixture() -> FakeConfigDir {
             # This should not be overwritten.
             [repos.vim]
             branch = "main"
-            remote = "remote"
+            remote = "origin"
             url = "https://github.com/awkless/vim.git"
             target = { home = true, os = "any", user = "awkless", hostname = "lovelace" }
 
@@ -66,6 +66,37 @@ fn config_dir_fixture() -> FakeConfigDir {
 }
 
 #[fixture]
+fn desynced_config_dir_fixture() -> FakeConfigDir {
+    FakeConfigDir::builder()
+        .config_file(indoc! {r#"
+            # Entry and dir exists!
+            [repos.vim]
+            branch = "main"
+            remote = "origin"
+            url = "https://github.com/awkless/vim.git"
+            target = { home = true, os = "any", user = "awkless", hostname = "lovelace" }
+
+            # Entry exists, but not dir!
+            [repos.dwm]
+            branch = "master"
+            remote = "upstream"
+            url = "https://github.com/awkless/dwm.git"
+
+            # No repo entry for dmenu, but dir does exist!
+
+            [hooks]
+            commit = [
+                { pre = "hooks.sh", post = "hook.sh", repo = "vim" },
+                { pre = "hook.sh", post = "hook.sh" },
+                { post = "hook.sh" }
+            ]
+            "#})
+        .git_repo("vim")
+        .git_repo("dmenu")
+        .build()
+}
+
+#[fixture]
 fn bad_config_file_fixture() -> FakeConfigDir {
     FakeConfigDir::builder()
         .config_file(indoc! {r#"
@@ -78,6 +109,16 @@ fn bad_config_file_fixture() -> FakeConfigDir {
 #[fixture]
 fn empty_config_dir_fixture() -> FakeConfigDir {
     FakeConfigDir::builder().build()
+}
+
+#[fixture]
+fn non_table_sections_fixture() -> FakeConfigDir {
+    FakeConfigDir::builder()
+        .config_file(indoc! {r#"
+            repos = "not a table!"
+            hooks = "not a table!"
+        "#})
+        .build()
 }
 
 #[rstest]
@@ -140,4 +181,116 @@ fn write_config_file_writes_new_config_file(empty_config_dir_fixture: FakeConfig
     "#};
     let result = config.file_manager_to_string();
     assert_eq!(expect, result);
+}
+
+#[rstest]
+fn add_git_repo_adds_repo_entry_to_existing_repos_section(config_dir_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&config_dir_fixture);
+    config.read_config_file().expect("Expect success");
+    let new_repo = RepoEntry::builder("dwm")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/dwm.git")
+        .build();
+    config.add_git_repo(&new_repo).expect("Expect success");
+    let expect = indoc! {r#"
+        # This should not be overwritten.
+        [repos.vim]
+        branch = "main"
+        remote = "origin"
+        url = "https://github.com/awkless/vim.git"
+        target = { home = true, os = "any", user = "awkless", hostname = "lovelace" }
+
+        [repos.dwm]
+        branch = "master"
+        remote = "upstream"
+        url = "https://github.com/awkless/dwm.git"
+
+        # This should not be overwritten.
+        [hooks]
+        commit = [
+            { pre = "hooks.sh", post = "hook.sh", repo = "vim" },
+            { pre = "hook.sh", post = "hook.sh" },
+            { post = "hook.sh" }
+        ]
+        "#};
+    let result = config.file_manager_to_string();
+    assert_eq!(expect, result);
+    assert!(config_dir_fixture.repos_dir().join("dwm.git").exists());
+}
+
+#[rstest]
+fn add_git_repo_adds_repo_entry_with_new_repos_section(empty_config_dir_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&empty_config_dir_fixture);
+    let new_repo = RepoEntry::builder("dwm")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/dwm.git")
+        .build();
+    config.add_git_repo(&new_repo).expect("Expect success");
+    let expect = indoc! {r#"
+        [repos.dwm]
+        branch = "master"
+        remote = "upstream"
+        url = "https://github.com/awkless/dwm.git"
+        "#};
+    let result = config.file_manager_to_string();
+    assert_eq!(expect, result);
+    assert!(empty_config_dir_fixture.repos_dir().join("dwm.git").exists());
+}
+
+#[rstest]
+fn add_git_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&non_table_sections_fixture);
+    config.read_config_file().expect("Expect success");
+    let new_repo = RepoEntry::builder("dwm")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/dwm.git")
+        .build();
+    let result = config.add_git_repo(&new_repo);
+    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
+}
+
+#[rstest]
+fn add_git_repo_does_not_fail_if_git_repo_dir_exists(desynced_config_dir_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&desynced_config_dir_fixture);
+    config.read_config_file().expect("Expect success");
+    let new_repo = RepoEntry::builder("st")
+        .branch("master")
+        .remote("upstream")
+        .url("https://github.com/awkless/st.git")
+        .build();
+    config.add_git_repo(&new_repo).expect("Expect success");
+    let expect = indoc! {r#"
+        # Entry and dir exists!
+        [repos.vim]
+        branch = "main"
+        remote = "origin"
+        url = "https://github.com/awkless/vim.git"
+        target = { home = true, os = "any", user = "awkless", hostname = "lovelace" }
+
+        # Entry exists, but not dir!
+        [repos.dwm]
+        branch = "master"
+        remote = "upstream"
+        url = "https://github.com/awkless/dwm.git"
+
+        [repos.st]
+        branch = "master"
+        remote = "upstream"
+        url = "https://github.com/awkless/st.git"
+
+        # No repo entry for dmenu, but dir does exist!
+
+        [hooks]
+        commit = [
+            { pre = "hooks.sh", post = "hook.sh", repo = "vim" },
+            { pre = "hook.sh", post = "hook.sh" },
+            { post = "hook.sh" }
+        ]
+        "#};
+    let result = config.file_manager_to_string();
+    assert_eq!(expect, result);
+    assert!(desynced_config_dir_fixture.repos_dir().join("st.git").exists());
 }
