@@ -42,25 +42,20 @@ fn new_uses_absolute_paths(full_config_dir_fixture: FakeConfigDir) {
 }
 
 #[rstest]
-fn config_file_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
+fn setup_config_file_creates_root_dir_and_config_file(empty_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
+    let expect = empty_config_dir_fixture.root_dir().join("config.toml");
+    let result = cfg_dir_mgr.setup_config_file().expect("Expect success");
+    assert_eq!(expect, result);
+    assert!(expect.exists());
+}
+
+#[rstest]
+fn setup_config_file_does_not_fail_if_config_file_exists(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
     let expect = full_config_dir_fixture.config_file_stub().as_path();
-    let result = cfg_dir_mgr.config_file_path().expect("Expect success");
-    assert_eq!(result, expect);
-}
-
-#[rstest]
-fn config_file_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir) {
-    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let result = cfg_dir_mgr.config_file_path().expect("Expect success");
-    assert!(result.is_absolute());
-}
-
-#[rstest]
-fn config_file_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
-    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
-    let result = cfg_dir_mgr.config_file_path();
-    assert!(matches!(result, Err(RicerError::NoConfigFile { .. })));
+    let result = cfg_dir_mgr.setup_config_file().expect("Expect success");
+    assert_eq!(expect, result);
 }
 
 #[rstest]
@@ -126,5 +121,5 @@ fn ignore_file_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir
 fn ignore_file_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
     let result = cfg_dir_mgr.ignore_file_path("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoIgnoreFile{ .. })));
+    assert!(matches!(result, Err(RicerError::NoIgnoreFile { .. })));
 }
