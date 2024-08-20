@@ -7,7 +7,7 @@ use rstest::{fixture, rstest};
 use std::path::{Path, PathBuf};
 
 use ricer::config::dir::DefaultConfigDirManager;
-use ricer::config::file::repos_section::RepoEntry;
+use ricer::config::file::repos_section::{RepoEntry, RepoTargetEntry, TargetOsOption};
 use ricer::config::file::DefaultConfigFileManager;
 use ricer::config::locator::{DefaultConfigDirLocator, XdgBaseDirSpec};
 use ricer::config::ConfigManager;
@@ -109,6 +109,11 @@ fn bad_config_file_fixture() -> FakeConfigDir {
 #[fixture]
 fn empty_config_dir_fixture() -> FakeConfigDir {
     FakeConfigDir::builder().build()
+}
+
+#[fixture]
+fn empty_config_file_fixture() -> FakeConfigDir {
+    FakeConfigDir::builder().config_file("# Nothing in here!").build()
 }
 
 #[fixture]
@@ -293,4 +298,97 @@ fn add_git_repo_does_not_fail_if_git_repo_dir_exists(desynced_config_dir_fixture
     let result = config.file_manager_to_string();
     assert_eq!(expect, result);
     assert!(desynced_config_dir_fixture.repos_dir().join("st.git").exists());
+}
+
+#[rstest]
+fn remove_git_repo_removes_all_repo_data(config_dir_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&config_dir_fixture);
+    config.read_config_file().expect("Expect success");
+    config.remove_git_repo("vim").expect("Expect success");
+    let expect = indoc! {r#"
+
+        # This should not be overwritten.
+        [hooks]
+        commit = [
+            { pre = "hooks.sh", post = "hook.sh", repo = "vim" },
+            { pre = "hook.sh", post = "hook.sh" },
+            { post = "hook.sh" }
+        ]
+        "#};
+    let result = config.file_manager_to_string();
+    assert_eq!(expect, result);
+    assert!(!config_dir_fixture.repos_dir().join("vim.git").exists());
+}
+
+#[rstest]
+fn remove_git_repo_removes_returns_correct_repo_entry(config_dir_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&config_dir_fixture);
+    config.read_config_file().expect("Expect success");
+    let target = RepoTargetEntry::builder()
+        .home(true)
+        .os(TargetOsOption::Any)
+        .user("awkless")
+        .hostname("lovelace")
+        .build();
+    let expect = RepoEntry::builder("vim")
+        .branch("main")
+        .remote("origin")
+        .url("https://github.com/awkless/vim.git")
+        .target(target)
+        .build();
+    let result = config.remove_git_repo("vim").expect("Expect success");
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn remove_git_repo_does_not_fail_if_git_repo_dir_inexistent(
+    desynced_config_dir_fixture: FakeConfigDir
+) {
+    let mut config = setup_config_manager(&desynced_config_dir_fixture);
+    config.read_config_file().expect("Expect success");
+    config.remove_git_repo("dwm").expect("Expect success");
+    let expect = indoc! {r#"
+            # Entry and dir exists!
+            [repos.vim]
+            branch = "main"
+            remote = "origin"
+            url = "https://github.com/awkless/vim.git"
+            target = { home = true, os = "any", user = "awkless", hostname = "lovelace" }
+
+            # No repo entry for dmenu, but dir does exist!
+
+            [hooks]
+            commit = [
+                { pre = "hooks.sh", post = "hook.sh", repo = "vim" },
+                { pre = "hook.sh", post = "hook.sh" },
+                { post = "hook.sh" }
+            ]
+        "#};
+    let result = config.file_manager_to_string();
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn remove_git_repo_catches_inexistent_repo_entry(desynced_config_dir_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&desynced_config_dir_fixture);
+    config.read_config_file().expect("Expect success");
+    let result = config.remove_git_repo("dmenu");
+    assert!(matches!(result, Err(RicerError::NoRepoFound { .. })));
+    assert!(!desynced_config_dir_fixture.repos_dir().join("dmenu.git").exists());
+}
+
+#[rstest]
+fn remove_git_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&non_table_sections_fixture);
+    config.read_config_file().expect("Expect success");
+    let result = config.remove_git_repo("vim");
+    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
+}
+
+#[rstest]
+fn remove_git_repo_catches_no_repos_section(empty_config_file_fixture: FakeConfigDir) {
+    let mut config = setup_config_manager(&empty_config_file_fixture);
+    config.read_config_file().expect("Expect success");
+    let result = config.remove_git_repo("fail_here");
+    assert!(matches!(result, Err(RicerError::NoReposSection)));
 }
