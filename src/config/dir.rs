@@ -50,16 +50,17 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
-use log::trace;
+use log::{debug, trace};
 use std::path::{Path, PathBuf};
+use std::fs::{File, create_dir_all};
 
 use crate::config::locator::ConfigDirLocator;
 use crate::error::{RicerError, RicerResult};
 
 /// Configuration directory manager representation.
 pub trait ConfigDirManager {
-    /// Get absolute path to configuration file.
-    fn config_file_path(&self) -> RicerResult<PathBuf>;
+    /// Setup configuration file at expected location if needed.
+    fn setup_config_file(&self) -> RicerResult<PathBuf>;
 
     /// Find absolute path to Git repository.
     fn git_repo_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
@@ -143,24 +144,24 @@ impl DefaultConfigDirManager {
 }
 
 impl ConfigDirManager for DefaultConfigDirManager {
-    /// Get path to configuration file.
-    ///
-    /// # Preconditions
-    ///
-    /// 1. Configuration file exists at `$XDG_CONFIG_HOME/ricer/config.toml`.
+    /// Setup configuration file at `$XDG_CONFIG_HOME/ricer/config.toml`.
     ///
     /// # Postconditions
     ///
-    /// 1. Return path to configuration file.
+    /// 1. Create new empty configuration file at `$XDG_CONFIG_HOME/ricer/config.toml`
+    ///    if it does not exist.
+    ///    - Will also create all sub-directories in `$XDG_CONFIG_HOME` if they
+    ///      do not already exist.
+    /// 2. Return absolute path to configuration file.
     ///
     /// # Invariants
     ///
-    /// 1. Path returned is guaranteed to be absolute.
+    /// 1. Returned path to configuration file is guaranteed to be absolute.
     ///
     /// # Errors
     ///
-    /// 1. Returns [`RicerError::NoConfigFile`] if configuration file does not
-    ///    exist at `$XDG_CONFIG_HOME/ricer/config.toml`.
+    /// 1. Return [`RicerError::Unrecoverable`] if sub-directories to
+    ///    configuration file or configuration file itself could not be created.
     ///
     /// # Examples
     ///
@@ -173,21 +174,28 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
     /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
-    /// let cfg_file_path = cfg_dir_mgr.config_file_path()?;
-    /// println!("{}", cfg_file_path.display());
+    /// let path = cfg_dir_mgr.setup_config_file()?;
+    /// println!("{}", path.display());
     /// # Ok(())
     /// # }
     /// ```
     ///
-    /// [`RicerError::NoConfigFile`]: crate::error::RicerError::NoConfigFile
-    fn config_file_path(&self) -> RicerResult<PathBuf> {
-        let cfg_file_path = self.root_dir.join("config.toml");
-        debug_assert!(cfg_file_path.is_absolute(), "Configuration file path is not absolute");
-        if !cfg_file_path.exists() {
-            return Err(RicerError::NoConfigFile { path: cfg_file_path });
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn setup_config_file(&self) -> RicerResult<PathBuf> {
+        trace!("Setup configuration file at '$XDG_CONFIG_HOME/ricer/config.toml'");
+        let file_path  = self.root_dir.join("config.toml");
+        if !self.root_dir().exists() {
+            debug!("Create root directory of configuration at '{}'", self.root_dir.display());
+            create_dir_all(self.root_dir())?;
         }
 
-        Ok(cfg_file_path)
+        if !file_path.exists() {
+            debug!("Create configuration file at '{}'", file_path.display());
+            File::create_new(&file_path)?;
+        }
+
+        debug_assert!(file_path.is_absolute(), "Configuration file path is not absolute");
+        Ok(file_path)
     }
 
     /// Get path to Git repository.
