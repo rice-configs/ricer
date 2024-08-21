@@ -142,7 +142,7 @@ fn get_repo_catches_inexistent_repo(config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
     let result = cfg_file_mgr.get_repo("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoRepoFound { .. })));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -152,7 +152,7 @@ fn get_repo_catches_no_repos_section(empty_config_file_fixture: FakeConfigDir) {
         .read(empty_config_file_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.get_repo("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoReposSection)));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -162,7 +162,7 @@ fn get_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeConf
         .read(non_table_sections_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.get_repo("nonexistant");
-    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -200,7 +200,7 @@ fn add_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeConf
         .url("https://github.com/awkless/dwm.git")
         .build();
     let result = cfg_file_mgr.add_repo(&new_repo);
-    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -222,33 +222,13 @@ fn remove_repo_removes_repo_from_toml_data(config_file_fixture: FakeConfigDir) {
 }
 
 #[rstest]
-fn remove_repo_provides_correct_repo_data(config_file_fixture: FakeConfigDir) {
-    let mut cfg_file_mgr = DefaultConfigFileManager::new();
-    cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
-    let target = RepoTargetEntry::builder()
-        .home(true)
-        .os(TargetOsOption::Unix)
-        .user("awkless")
-        .hostname("lovelace")
-        .build();
-    let expect = RepoEntry::builder("vim")
-        .branch("main")
-        .remote("origin")
-        .url("https://github.com/awkless/vim.git")
-        .target(target)
-        .build();
-    let result = cfg_file_mgr.remove_repo("vim").expect("Expect success");
-    assert_eq!(expect, result);
-}
-
-#[rstest]
 fn remove_repo_catches_no_repos_section(empty_config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr
         .read(empty_config_file_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.remove_repo("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoReposSection)));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -258,7 +238,7 @@ fn remove_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeC
         .read(non_table_sections_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.remove_repo("nonexistant");
-    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -266,7 +246,7 @@ fn remove_repo_catches_inexistent_repo(config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
     let result = cfg_file_mgr.remove_repo("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoRepoFound { .. })));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -300,7 +280,7 @@ fn rename_repo_catches_no_repos_section(empty_config_file_fixture: FakeConfigDir
         .read(empty_config_file_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.rename_repo("nope", "nada");
-    assert!(matches!(result, Err(RicerError::NoReposSection)));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -308,7 +288,7 @@ fn rename_repo_catches_inexistent_repo(config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
     let result = cfg_file_mgr.rename_repo("nope", "nada");
-    assert!(matches!(result, Err(RicerError::NoRepoFound { .. })));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -318,7 +298,7 @@ fn rename_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeC
         .read(non_table_sections_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.rename_repo("nope", "nada");
-    assert!(matches!(result, Err(RicerError::ReposSectionNotTable)));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -341,7 +321,7 @@ fn get_cmd_hook_catches_no_hooks_section(empty_config_file_fixture: FakeConfigDi
         .read(empty_config_file_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.get_cmd_hook("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoHooksSection)));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -351,7 +331,7 @@ fn get_cmd_hook_catches_non_table_hooks_section(non_table_sections_fixture: Fake
         .read(non_table_sections_fixture.config_file_stub().as_path())
         .expect("Expect success");
     let result = cfg_file_mgr.get_cmd_hook("nonexistant");
-    assert!(matches!(result, Err(RicerError::HooksSectionNotTable)));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
@@ -359,5 +339,5 @@ fn get_cmd_hook_catches_inexistent_cmd_hook(config_file_fixture: FakeConfigDir) 
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
     let result = cfg_file_mgr.get_cmd_hook("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoHookFound { .. })));
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }

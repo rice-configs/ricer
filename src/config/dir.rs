@@ -52,7 +52,7 @@
 
 use anyhow::anyhow;
 use log::{debug, trace, warn};
-use std::fs::{write, read_to_string, create_dir_all, remove_dir_all, rename, File};
+use std::fs::{create_dir_all, read_to_string, remove_dir_all, rename, write, File};
 use std::path::{Path, PathBuf};
 
 use crate::config::locator::ConfigDirLocator;
@@ -391,7 +391,6 @@ impl ConfigDirManager for DefaultConfigDirManager {
 
         Ok(())
     }
-
 
     /// Get contents of hook script at `$XDG_CONFIG_HOME/ricer/hooks`.
     ///
