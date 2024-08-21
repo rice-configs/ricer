@@ -128,3 +128,11 @@ fn get_cmd_hook_catches_inexistent_hook(empty_config_dir_fixture: FakeConfigDir)
     let result = cfg_dir_mgr.get_cmd_hook("nonexistent.sh");
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
+
+#[rstest]
+fn write_ignore_file_writes_ignore_file(empty_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
+    let result = cfg_dir_mgr.write_ignore_file("vim", "Ignore stuff here!");
+    assert!(result.is_ok());
+    assert!(empty_config_dir_fixture.ignores_dir().join("vim.ignore").exists());
+}
