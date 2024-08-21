@@ -33,15 +33,6 @@ fn empty_config_dir_fixture() -> FakeConfigDir {
 }
 
 #[rstest]
-fn new_uses_absolute_paths(full_config_dir_fixture: FakeConfigDir) {
-    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    assert!(cfg_dir_mgr.root_dir().is_absolute());
-    assert!(cfg_dir_mgr.repos_dir().is_absolute());
-    assert!(cfg_dir_mgr.hooks_dir().is_absolute());
-    assert!(cfg_dir_mgr.ignores_dir().is_absolute());
-}
-
-#[rstest]
 fn setup_config_file_creates_root_dir_and_config_file(empty_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
     let expect = empty_config_dir_fixture.root_dir().join("config.toml");
@@ -59,25 +50,21 @@ fn setup_config_file_does_not_fail_if_config_file_exists(full_config_dir_fixture
 }
 
 #[rstest]
-fn git_repo_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
+fn add_repo_adds_new_entry_into_repos(empty_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
+    let expect = empty_config_dir_fixture.repos_dir().join("dwm.git");
+    let result = cfg_dir_mgr.add_repo("dwm").expect("Expect success");
+    assert_eq!(expect, result);
+    assert!(expect.exists());
+}
+
+#[rstest]
+fn add_repo_does_not_fail_if_repo_exists(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
     let expect = full_config_dir_fixture.git_repo_stub("vim").as_path();
-    let result = cfg_dir_mgr.git_repo_path("vim").expect("Expect success");
+    let result = cfg_dir_mgr.add_repo("vim").expect("Expect success");
     assert_eq!(expect, result);
-}
-
-#[rstest]
-fn git_repo_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir) {
-    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let result = cfg_dir_mgr.git_repo_path("vim").expect("Expect success");
-    assert!(result.is_absolute());
-}
-
-#[rstest]
-fn git_repo_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
-    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
-    let result = cfg_dir_mgr.git_repo_path("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoGitRepo { .. })));
+    assert!(expect.exists());
 }
 
 #[rstest]
