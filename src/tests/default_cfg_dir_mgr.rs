@@ -68,6 +68,21 @@ fn add_repo_does_not_fail_if_repo_exists(full_config_dir_fixture: FakeConfigDir)
 }
 
 #[rstest]
+fn get_repo_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
+    let expect = full_config_dir_fixture.git_repo_stub("vim").as_path();
+    let result = cfg_dir_mgr.get_repo("vim").expect("Expect success");
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn get_repo_catches_inexistent_repo(empty_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
+    let result = cfg_dir_mgr.get_repo("nada");
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+}
+
+#[rstest]
 fn hook_script_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
     let expect = full_config_dir_fixture.hook_script_stub("hook.sh").as_path();
