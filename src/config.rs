@@ -72,11 +72,6 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// 1. Read and parse configuration file for later manipulation.
     ///
-    /// # Errors
-    ///
-    /// 1. Return [`RicerError::Unrecoverable`] if configuration file contains
-    ///    invalid TOML formatting.
-    ///
     /// # Examples
     ///
     /// ```no_run
@@ -97,7 +92,13 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # }
     /// ```
     ///
-    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// # See
+    ///
+    /// - [`ConfigDirManager`]
+    /// - [`ConfigFileManager`]
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn read_config_file(&mut self) -> RicerResult<()> {
         let path = self.dir_manager.setup_config_file()?;
         self.file_manager.read(path)?;
@@ -116,11 +117,6 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// 1. If file does not exist, but all sub-directories do exist, then create
     ///    it and write to it.
     /// 2. Preserve original formatting and comments that existed before
-    ///
-    /// # Errors
-    ///
-    /// 1. Return [`RicerError::Unrecoverable`] if sub-directories in provided
-    ///    path do not exist.
     ///
     /// # Examples
     ///
@@ -142,7 +138,13 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # }
     /// ```
     ///
-    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// # See
+    ///
+    /// - [`ConfigDirManager`]
+    /// - [`ConfigFileManager`]
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn write_config_file(&mut self) -> RicerResult<()> {
         let path = self.dir_manager.setup_config_file()?;
         self.file_manager.write(path)?;
@@ -176,6 +178,14 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # See
+    ///
+    /// - [`ConfigDirManager`]
+    /// - [`ConfigFileManager`]
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn file_manager_to_string(&self) -> String {
         self.file_manager.to_string()
     }
@@ -189,11 +199,6 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// 2. Add repository entry data into configuration file.
     ///     - Preserve original formatting of configuration file that existed
     ///       beforehand.
-    ///
-    /// # Errors
-    ///
-    /// 1. Return [`RicerError::Unrecoverable`] if Git repository directory
-    ///    could not be created at `$XDG_CONFIG_HOME/ricer/repos`.
     ///
     /// # Examples
     ///
@@ -222,7 +227,13 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # }
     /// ```
     ///
-    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// # See
+    ///
+    /// - [`ConfigDirManager`]
+    /// - [`ConfigFileManager`]
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
         self.dir_manager.add_repo(&repo_entry.name)?;
         self.file_manager.add_repo(repo_entry)?;
@@ -240,11 +251,6 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// 1. Return path to target repository.
     /// 2. Return configuration file entry data of repository.
-    ///
-    /// # Errors
-    ///
-    /// 1. Return [`RicerError::Unrecoverable`] if repository does not exist in
-    ///    configuration file or `$XDG_CONFIG_HOME/ricer/repos`.
     ///
     /// # Examples
     ///
@@ -268,7 +274,13 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # }
     /// ```
     ///
-    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// # See
+    ///
+    /// - [`ConfigDirManager`]
+    /// - [`ConfigFileManager`]
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn get_repo(&self, name: impl AsRef<str>) -> RicerResult<(PathBuf, RepoEntry)> {
         let path = self.dir_manager.get_repo(name.as_ref())?;
         let repo = self.file_manager.get_repo(name.as_ref())?;
@@ -281,11 +293,6 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// 1. Remove Git repository directory entry from `$XDG_CONFIG_HOME/ricer/repos`.
     /// 2. Remove configuration file repository entry.
-    ///
-    /// # Errors
-    ///
-    /// 1. Return [`RicerError::Unrecoverable`] if repository entry could not
-    ///    be removed fro configuration file or `$XDG_CONFIG_HOME/ricer/repos`.
     ///
     /// # Examples
     ///
@@ -308,7 +315,13 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # }
     /// ```
     ///
-    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// # See
+    ///
+    /// - [`ConfigDirManager`]
+    /// - [`ConfigFileManager`]
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<()> {
         self.dir_manager.remove_repo(repo_name.as_ref())?;
         self.file_manager.remove_repo(repo_name.as_ref())?;
@@ -342,6 +355,14 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # See
+    ///
+    /// - [`ConfigDirManager`]
+    /// - [`ConfigFileManager`]
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()> {
         self.dir_manager.rename_repo(from.as_ref(), to.as_ref())?;
         self.file_manager.rename_repo(from.as_ref(), to.as_ref())?;
@@ -375,6 +396,14 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # See
+    ///
+    /// - [`ConfigDirManager`]
+    /// - [`ConfigFileManager`]
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn get_cmd_hook(&self, name: impl AsRef<str>) -> RicerResult<(CommandHookEntry, String)> {
         let entry = self.file_manager.get_cmd_hook(name.as_ref())?;
         let data = self.dir_manager.get_cmd_hook(name.as_ref())?;
@@ -408,6 +437,14 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # See
+    ///
+    /// - [`ConfigDirManager`]
+    /// - [`ConfigFileManager`]
+    ///
+    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
+    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn write_ignore_file(
         &self,
         repo: impl AsRef<str>,
