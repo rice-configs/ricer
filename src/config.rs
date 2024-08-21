@@ -7,9 +7,6 @@
 //! configuration data housed in Ricer's configuration directory. This includes
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
-use log::{debug, warn};
-use std::fs::create_dir_all;
-
 pub mod dir;
 pub mod file;
 pub mod locator;
@@ -102,7 +99,7 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// [`RicerError::NoConfigFile`]: crate::error::RicerError::NoConfigFile
     /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     pub fn read_config_file(&mut self) -> RicerResult<()> {
-        let path = self.dir_manager.config_file_path()?;
+        let path = self.dir_manager.setup_config_file()?;
         self.file_manager.read(path)?;
         Ok(())
     }
@@ -147,15 +144,7 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     pub fn write_config_file(&mut self) -> RicerResult<()> {
-        let path = match self.dir_manager.config_file_path() {
-            Ok(path) => path,
-            Err(RicerError::NoConfigFile { path }) => {
-                warn!("Create non-existant configuration file at '{}'", path.display());
-                path
-            }
-            Err(err) => return Err(err),
-        };
-
+        let path = self.dir_manager.setup_config_file()?;
         self.file_manager.write(path)?;
         Ok(())
     }
@@ -214,6 +203,7 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
     /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    /// use ricer::config::file::repos_section::RepoEntry;
     /// use ricer::config::file::DefaultConfigFileManager;
     /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
     /// use ricer::config::ConfigManager;
@@ -224,24 +214,71 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// let cfg_file_manager = DefaultConfigFileManager::new();
     /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
     /// config.read_config_file()?;
-    /// println!("{}", config.file_manager_to_string());
+    /// let new_repo = RepoEntry::builder("vim")
+    ///     .branch("main")
+    ///     .remote("master")
+    ///     .url("https://github.com/awkless/vim.git")
+    ///     .build();
+    /// config.add_repo(&new_repo)?;
     /// # Ok(())
     /// # }
     /// ```
     ///
     /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
-    pub fn add_git_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
-        match self.dir_manager.git_repo_path(&repo_entry.name) {
-            Ok(path) => debug!("Repository '{}' exists at '{}'", &repo_entry.name, path.display()),
-            Err(RicerError::NoGitRepo { path }) => {
-                warn!("Create Git repository '{}' at '{}'", &repo_entry.name, path.display());
-                create_dir_all(path)?;
-            }
-            Err(err) => return Err(err),
-        };
-
+    pub fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
+        self.dir_manager.add_repo(&repo_entry.name)?;
         self.file_manager.add_repo(repo_entry)?;
+        Ok(())
+    }
+
+    /// Remove Git repository from configuration data.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Remove Git repository directory entry from `$XDG_CONFIG_HOME/ricer/repos`.
+    /// 2. Remove configuration file repository entry.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if Git repository directory
+    ///    entry could not be removed.
+    /// 2. Return [`RicerError::NoReposSection`] if `repos` section does not
+    ///    exist.
+    /// 3. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
+    ///    not defined as a table.
+    /// 4. Return [`RicerError::NoRepoFound`] if target repository definition
+    ///    does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    /// use ricer::config::file::DefaultConfigFileManager;
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::ConfigManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_manager = DefaultConfigFileManager::new();
+    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
+    /// config.read_config_file()?;
+    /// let repo = config.remove_git_repo("vim")?;
+    /// println!("{:#?}", repo);
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    /// [`RicerError::NoReposSection`]: crate::error::RicerError::NoReposSection
+    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
+    /// [`RicerError::NoRepoFound`]: crate::error::RicerError::NoRepoFound
+    pub fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<()> {
+        self.dir_manager.remove_repo(repo_name.as_ref())?;
+        self.file_manager.remove_repo(repo_name.as_ref())?;
         Ok(())
     }
 }
