@@ -83,6 +83,21 @@ fn get_repo_catches_inexistent_repo(empty_config_dir_fixture: FakeConfigDir) {
 }
 
 #[rstest]
+fn remove_repo_removes_git_repo(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
+    let result = cfg_dir_mgr.remove_repo("vim");
+    assert!(result.is_ok());
+    assert!(!full_config_dir_fixture.git_repo_stub("vim").as_path().exists());
+}
+
+#[rstest]
+fn remove_repo_does_not_fail_if_git_repo_does_not_exist(empty_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
+    let result = cfg_dir_mgr.remove_repo("vim");
+    assert!(result.is_ok());
+}
+
+#[rstest]
 fn hook_script_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
     let expect = full_config_dir_fixture.hook_script_stub("hook.sh").as_path();
