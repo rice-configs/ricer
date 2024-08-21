@@ -53,6 +53,7 @@
 use log::{debug, trace, warn};
 use std::path::{Path, PathBuf};
 use std::fs::{File, create_dir_all};
+use anyhow::anyhow;
 
 use crate::config::locator::ConfigDirLocator;
 use crate::error::{RicerError, RicerResult};
@@ -64,6 +65,9 @@ pub trait ConfigDirManager {
 
     /// Add Git repository entry at `$XDG_CONFIG_HOME/ricer/repos`.
     fn add_repo(&self, name: impl AsRef<str>) -> RicerResult<PathBuf>;
+
+    /// Get path to Git repository entry at `$XDG_CONFIG_HOME/ricer/repos`.
+    fn get_repo(&self, name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Find absolute path to hook script.
     fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
@@ -248,6 +252,50 @@ impl ConfigDirManager for DefaultConfigDirManager {
         }
 
         debug_assert!(repo_path.is_absolute(), "Path to Git repository is not absolute");
+        Ok(repo_path)
+    }
+
+    /// Get path Git repository entry into `$XDG_CONFIG_HOME/ricer/repos`.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return path to target Git repository.
+    ///
+    /// # Invariants
+    ///
+    /// 1. Returned path to Git repository is guaranteed to be absolute.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if Git repository entry could
+    ///    not be created.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// let path = cfg_dir_mgr.get_repo("vim")?;
+    /// println!("{}", path.display());
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn get_repo(&self, name: impl AsRef<str>) -> RicerResult<PathBuf> {
+        debug!("Get Git repository '{}'", name.as_ref());
+        let repo_path = self.repos_dir.join(format!("{}.git", name.as_ref()));
+        if !repo_path.exists() {
+            return Err(anyhow!("Git repository '{}' does not exist", name.as_ref()).into());
+        }
+
+        debug_assert!(repo_path.is_absolute(), "Git repository path is not absolute");
         Ok(repo_path)
     }
 
