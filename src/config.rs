@@ -179,13 +179,13 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
         self.file_manager.to_string()
     }
 
-    /// Add new Git repository into configuration data.
+    /// Add new repository into configuration data.
     ///
     /// # Postconditions
     ///
-    /// 1. Create new Git repository directory in `$XDG_CONFIG_HOME/ricer/repos`.
+    /// 1. Create new repository directory in `$XDG_CONFIG_HOME/ricer/repos`.
     ///     - Create sub-directories in path if needed.
-    /// 2. Write Git repository entry data into configuration file.
+    /// 2. Add repository entry data into configuration file.
     ///     - Preserve original formatting of configuration file that existed
     ///       beforehand.
     ///
@@ -302,8 +302,7 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// let cfg_file_manager = DefaultConfigFileManager::new();
     /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
     /// config.read_config_file()?;
-    /// let repo = config.remove_repo("vim")?;
-    /// println!("{:#?}", repo);
+    /// config.remove_repo("vim")?;
     /// # Ok(())
     /// # }
     /// ```
@@ -312,6 +311,39 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     pub fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<()> {
         self.dir_manager.remove_repo(repo_name.as_ref())?;
         self.file_manager.remove_repo(repo_name.as_ref())?;
+        Ok(())
+    }
+
+    /// Rename repository in configuration data.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Rename repository entry in `$XDG_CONFIG_HOME/ricer/repos`.
+    /// 2. Rename repository entry in configuration file.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    /// use ricer::config::file::DefaultConfigFileManager;
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::ConfigManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_manager = DefaultConfigFileManager::new();
+    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
+    /// config.read_config_file()?;
+    /// config.rename_repo("vim", "vimrc")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()> {
+        self.dir_manager.rename_repo(from.as_ref(), to.as_ref())?;
+        self.file_manager.rename_repo(from.as_ref(), to.as_ref())?;
         Ok(())
     }
 }
