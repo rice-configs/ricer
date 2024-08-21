@@ -16,6 +16,7 @@ pub mod locator;
 use crate::error::RicerResult;
 use dir::ConfigDirManager;
 use file::repos_section::RepoEntry;
+use file::hooks_section::CommandHookEntry;
 use file::ConfigFileManager;
 
 pub struct ConfigManager<D: ConfigDirManager, F: ConfigFileManager> {
@@ -345,5 +346,38 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
         self.dir_manager.rename_repo(from.as_ref(), to.as_ref())?;
         self.file_manager.rename_repo(from.as_ref(), to.as_ref())?;
         Ok(())
+    }
+
+    /// Get command hook entry from configuration data.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return data from hook script.
+    /// 2. Return entry data from configuration file.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    /// use ricer::config::file::DefaultConfigFileManager;
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::ConfigManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_manager = DefaultConfigFileManager::new();
+    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
+    /// config.read_config_file()?;
+    /// let hook = config.get_cmd_hook("commit")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_cmd_hook(&self, name: impl AsRef<str>) -> RicerResult<(CommandHookEntry, String)> {
+        let entry = self.file_manager.get_cmd_hook(name.as_ref())?;
+        let data = self.dir_manager.get_cmd_hook(name.as_ref())?;
+        Ok((entry, data))
     }
 }
