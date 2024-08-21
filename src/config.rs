@@ -380,4 +380,36 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
         let data = self.dir_manager.get_cmd_hook(name.as_ref())?;
         Ok((entry, data))
     }
+
+    /// Write ignore file in `$XDG_CONFIG_HOME/ricer/ignores`.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Write given data into target ignore file in
+    ///    `$XDG_CONFIG_HOME/ricer/ignores`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    /// use ricer::config::file::DefaultConfigFileManager;
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::ConfigManager;
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
+    /// let cfg_file_manager = DefaultConfigFileManager::new();
+    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
+    /// config.read_config_file()?;
+    /// config.write_ignore_file("vim", "data goes here!")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn write_ignore_file(&self, repo: impl AsRef<str>, data: impl AsRef<[u8]>) ->RicerResult<()> {
+        self.dir_manager.write_ignore_file(repo.as_ref(), data.as_ref())?;
+        Ok(())
+    }
 }
