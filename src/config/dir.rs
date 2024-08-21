@@ -427,7 +427,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
     fn get_cmd_hook(&self, name: impl AsRef<str>) -> RicerResult<String> {
         debug!("Get hook '{}' contents", name.as_ref());
         let hook_path = self.hooks_dir.join(name.as_ref());
-        let buffer = read_to_string(&hook_path)?;
+        let buffer = read_to_string(hook_path)?;
         Ok(buffer)
     }
 
@@ -468,7 +468,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
             create_dir_all(&self.ignores_dir)?;
         }
 
-        write(&ignore_path, data.as_ref())?;
+        write(ignore_path, data.as_ref())?;
         Ok(())
     }
 
