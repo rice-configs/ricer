@@ -398,7 +398,7 @@ impl ConfigFileManager for DefaultConfigFileManager {
         debug!("Remove repository '{}' from configuration file", repo_name.as_ref());
         let repos = self.get_section_mut("repos")?;
         let repo = repos.remove_entry(repo_name.as_ref());
-        if !repo.is_none() {
+        if repo.is_some() {
             warn!("Repository '{}' does not exist in configuration file", repo_name.as_ref());
         }
 

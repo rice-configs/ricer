@@ -15,8 +15,8 @@ pub mod locator;
 
 use crate::error::RicerResult;
 use dir::ConfigDirManager;
-use file::repos_section::RepoEntry;
 use file::hooks_section::CommandHookEntry;
+use file::repos_section::RepoEntry;
 use file::ConfigFileManager;
 
 pub struct ConfigManager<D: ConfigDirManager, F: ConfigFileManager> {
@@ -408,7 +408,11 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write_ignore_file(&self, repo: impl AsRef<str>, data: impl AsRef<[u8]>) ->RicerResult<()> {
+    pub fn write_ignore_file(
+        &self,
+        repo: impl AsRef<str>,
+        data: impl AsRef<[u8]>,
+    ) -> RicerResult<()> {
         self.dir_manager.write_ignore_file(repo.as_ref(), data.as_ref())?;
         Ok(())
     }
