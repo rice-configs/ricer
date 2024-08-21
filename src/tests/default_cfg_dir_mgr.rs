@@ -113,3 +113,18 @@ fn rename_repo_creates_inexistent_repo(empty_config_dir_fixture: FakeConfigDir) 
     assert!(result.is_ok());
     assert!(empty_config_dir_fixture.repos_dir().join("vimrc.git").exists());
 }
+
+#[rstest]
+fn get_cmd_hook_gets_correct_hook_data(full_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
+    let expect = full_config_dir_fixture.hook_script_stub("hook.sh").data();
+    let result = cfg_dir_mgr.get_cmd_hook("hook.sh").expect("Expect success");
+    assert_eq!(expect, result);
+}
+
+#[rstest]
+fn get_cmd_hook_catches_inexistent_hook(empty_config_dir_fixture: FakeConfigDir) {
+    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
+    let result = cfg_dir_mgr.get_cmd_hook("nonexistent.sh");
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+}
