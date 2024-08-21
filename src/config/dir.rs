@@ -50,7 +50,7 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
-use log::{debug, trace};
+use log::{debug, trace, warn};
 use std::path::{Path, PathBuf};
 use std::fs::{File, create_dir_all};
 
@@ -59,11 +59,11 @@ use crate::error::{RicerError, RicerResult};
 
 /// Configuration directory manager representation.
 pub trait ConfigDirManager {
-    /// Setup configuration file at expected location if needed.
+    /// Setup configuration file at `$XDG_CONFIG_HOME/ricer/config.toml`.
     fn setup_config_file(&self) -> RicerResult<PathBuf>;
 
-    /// Find absolute path to Git repository.
-    fn git_repo_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+    /// Add Git repository entry at `$XDG_CONFIG_HOME/ricer/repos`.
+    fn add_repo(&self, name: impl AsRef<str>) -> RicerResult<PathBuf>;
 
     /// Find absolute path to hook script.
     fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
@@ -187,35 +187,37 @@ impl ConfigDirManager for DefaultConfigDirManager {
         if !self.root_dir().exists() {
             debug!("Create root directory of configuration at '{}'", self.root_dir.display());
             create_dir_all(self.root_dir())?;
+        } else {
+            trace!("Root directory already exists");
         }
 
         if !file_path.exists() {
             debug!("Create configuration file at '{}'", file_path.display());
             File::create_new(&file_path)?;
+        } else {
+            trace!("Coniguration file already exists");
         }
 
         debug_assert!(file_path.is_absolute(), "Configuration file path is not absolute");
         Ok(file_path)
     }
 
-    /// Get path to Git repository.
-    ///
-    /// # Preconditions
-    ///
-    /// 1. Git repository exists in `$XDG_CONFIG_HOME/ricer/repos` directory.
+    /// Add Git repository entry into `$XDG_CONFIG_HOME/ricer/repos`.
     ///
     /// # Postconditions
     ///
-    /// 1. Return path to Git repository.
+    /// 1. Create new Git repository in `$XDG_CONFIG_HOME/ricer/repos`.
+    ///    - Skip Git repository creation if it already exists.
+    /// 2. Return path to new Git repository.
     ///
     /// # Invariants
     ///
-    /// 1. Path returned is guaranteed to be absolute.
+    /// 1. Returned path to Git repository is guaranteed to be absolute.
     ///
     /// # Errors
     ///
-    /// 1. Returns `RicerError::NoGitRepo` if Git repository does not exist
-    ///    in `$XDG_CONFIG_HOME/ricer/repos` directory.
+    /// 1. Return [`RicerError::Unrecoverable`] if Git repository entry could
+    ///    not be created.
     ///
     /// # Examples
     ///
@@ -228,20 +230,24 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
     /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
-    /// let repo_path = cfg_dir_mgr.git_repo_path("vim")?;
-    /// println!("{}", repo_path.display());
+    /// let path = cfg_dir_mgr.add_repo("vim")?;
+    /// println!("{}", path.display());
     /// # Ok(())
     /// # }
     /// ```
     ///
-    /// [`RicerError::NoGitRepo`]: crate::error::RicerError::NoGitRepo
-    fn git_repo_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
-        let repo_path = self.repos_dir.join(format!("{}.git", repo_name.as_ref()));
-        debug_assert!(repo_path.is_absolute(), "Git repository path is not absolute");
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn add_repo(&self, name: impl AsRef<str>) -> RicerResult<PathBuf> {
+        trace!("Add new Git repository into '$XDG_CONFIG_HOME/ricer/repos'");
+        let repo_path = self.repos_dir.join(format!("{}.git", name.as_ref()));
         if !repo_path.exists() {
-            return Err(RicerError::NoGitRepo { path: repo_path });
+            debug!("Create Git repository at '{}'", repo_path.display());
+            create_dir_all(&repo_path)?;
+        } else {
+            warn!("Git repository already exists at '{}'", repo_path.display());
         }
 
+        debug_assert!(repo_path.is_absolute(), "Path to Git repository is not absolute");
         Ok(repo_path)
     }
 
