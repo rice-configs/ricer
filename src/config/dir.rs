@@ -50,10 +50,10 @@
 //! repository the user is tracking through Ricer attempts to track their
 //! entire home directory.
 
-use log::{debug, trace, warn};
-use std::path::{Path, PathBuf};
-use std::fs::{File, create_dir_all, remove_dir_all};
 use anyhow::anyhow;
+use log::{debug, trace, warn};
+use std::fs::{create_dir_all, remove_dir_all, rename, File};
+use std::path::{Path, PathBuf};
 
 use crate::config::locator::ConfigDirLocator;
 use crate::error::{RicerError, RicerResult};
@@ -71,6 +71,9 @@ pub trait ConfigDirManager {
 
     /// Remove Git repository at `$XDG_CONFIG_HOME/ricer/repos`.
     fn remove_repo(&self, name: impl AsRef<str>) -> RicerResult<()>;
+
+    /// Rename Git repository entry at `$XDG_CONFIG_HOME/ricer/repos`.
+    fn rename_repo(&self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()>;
 
     /// Find absolute path to hook script.
     fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
@@ -190,7 +193,7 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     fn setup_config_file(&self) -> RicerResult<PathBuf> {
         trace!("Setup configuration file at '$XDG_CONFIG_HOME/ricer/config.toml'");
-        let file_path  = self.root_dir.join("config.toml");
+        let file_path = self.root_dir.join("config.toml");
         if !self.root_dir().exists() {
             debug!("Create root directory of configuration at '{}'", self.root_dir.display());
             create_dir_all(self.root_dir())?;
@@ -340,6 +343,50 @@ impl ConfigDirManager for DefaultConfigDirManager {
         } else {
             warn!("Git repository '{}' already removed", name.as_ref());
             return Ok(());
+        }
+
+        Ok(())
+    }
+
+    /// Rename Git repository entry from `$XDG_CONFIG_HOME/ricer/repos`.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Rename Git repository entry in `$XDG_CONFIG_HOME/ricer/repos`.
+    ///    - Create empty Git repository entry if it does not exist.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if Git repository could not be
+    ///    renamed or created.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// cfg_dir_mgr.rename_repo("vi", "vim")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn rename_repo(&self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()> {
+        trace!("Rename Git repository");
+        let from_path = self.repos_dir.join(format!("{}.git", from.as_ref()));
+        let to_path = self.repos_dir.join(format!("{}.git", to.as_ref()));
+        if from_path.exists() {
+            debug!("Rename Git repository from '{}' to '{}'", from.as_ref(), to.as_ref());
+            rename(&from_path, to_path)?;
+        } else {
+            warn!("Git repository '{}' does not exist; create '{}'", from.as_ref(), to.as_ref());
+            create_dir_all(&to_path)?;
         }
 
         Ok(())
