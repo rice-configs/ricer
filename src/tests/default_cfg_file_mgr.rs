@@ -242,11 +242,11 @@ fn remove_repo_catches_non_table_repos_section(non_table_sections_fixture: FakeC
 }
 
 #[rstest]
-fn remove_repo_catches_inexistent_repo(config_file_fixture: FakeConfigDir) {
+fn remove_repo_does_not_fail_if_repo_is_missing(config_file_fixture: FakeConfigDir) {
     let mut cfg_file_mgr = DefaultConfigFileManager::new();
     cfg_file_mgr.read(config_file_fixture.config_file_stub().as_path()).expect("Expect success");
     let result = cfg_file_mgr.remove_repo("nonexistant");
-    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+    assert!(result.is_ok());
 }
 
 #[rstest]
