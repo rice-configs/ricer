@@ -52,7 +52,7 @@
 
 use anyhow::anyhow;
 use log::{debug, trace, warn};
-use std::fs::{create_dir_all, remove_dir_all, rename, File};
+use std::fs::{read_to_string, create_dir_all, remove_dir_all, rename, File};
 use std::path::{Path, PathBuf};
 
 use crate::config::locator::ConfigDirLocator;
@@ -75,11 +75,8 @@ pub trait ConfigDirManager {
     /// Rename Git repository entry at `$XDG_CONFIG_HOME/ricer/repos`.
     fn rename_repo(&self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()>;
 
-    /// Find absolute path to hook script.
-    fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
-
-    /// Find absolute path to ignore file.
-    fn ignore_file_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf>;
+    /// Get contents of hook script at `$XDG_CONFIG_HOME/ricer/hooks`.
+    fn get_cmd_hook(&self, name: impl AsRef<str>) -> RicerResult<String>;
 
     /// Absolute path to root/top-level configuration directory.
     fn root_dir(&self) -> &Path;
@@ -392,24 +389,21 @@ impl ConfigDirManager for DefaultConfigDirManager {
         Ok(())
     }
 
-    /// Get path to hook script.
+
+    /// Get contents of hook script at `$XDG_CONFIG_HOME/ricer/hooks`.
     ///
     /// # Preconditions
     ///
-    /// 1. Hook script exists in `$XDG_CONFIG_HOME/ricer/hooks` directory.
+    /// 1. Hook script exists in `$XDG_CONFIG_HOME/ricer/hooks`.
     ///
     /// # Postconditions
     ///
-    /// 1. Return path to hook script.
-    ///
-    /// # Invariants
-    ///
-    /// 1. Path returned is guaranteed to be absolute.
+    /// 1. Obtain contents of hook script in string form.
     ///
     /// # Errors
     ///
-    /// 1. Returns `RicerError::NoHookScript` if hook script does not exist
-    ///    in `$XDG_CONFIG_HOME/ricer/hooks` directory.
+    /// 1. Return [`RicerError::Unrecoverable`] if hook script does not exist
+    ///    or cannot be read into a string for whatever reason.
     ///
     /// # Examples
     ///
@@ -422,68 +416,17 @@ impl ConfigDirManager for DefaultConfigDirManager {
     /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
     /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
-    /// let repo_path = cfg_dir_mgr.hook_script_path("vim")?;
-    /// println!("{}", repo_path.display());
+    /// cfg_dir_mgr.rename_repo("vi", "vim")?;
     /// # Ok(())
     /// # }
     /// ```
     ///
-    /// [`RicerError::NoHookScript`]: crate::error::RicerError::NoHookScript
-    fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf> {
-        let hook_path = self.hooks_dir.join(hook_name.as_ref());
-        debug_assert!(hook_path.is_absolute(), "Hook script path is not absolute");
-        if !hook_path.exists() {
-            return Err(RicerError::NoHookScript { path: hook_path });
-        }
-
-        Ok(hook_path)
-    }
-
-    /// Get path to ignore file.
-    ///
-    /// # Preconditions
-    ///
-    /// 1. Ignore file exists in `$XDG_CONFIG_HOME/ricer/ignores` directory.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Return path to ignore file.
-    ///
-    /// # Invariants
-    ///
-    /// 1. Path returned is guaranteed to be absolute.
-    ///
-    /// # Errors
-    ///
-    /// 1. Returns `RicerError::NoIgnoreFile` if ignore file does not exist
-    ///    in `$XDG_CONFIG_HOME/ricer/ignores` directory.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use anyhow::Result;
-    /// # fn main() -> Result<()> {
-    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
-    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
-    ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
-    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
-    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
-    /// let ignore_path = cfg_dir_mgr.ignore_file_path("vim")?;
-    /// println!("{}", ignore_path.display());
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// [`RicerError::NoIgnoreFile`]: crate::error::RicerError::NoIgnoreFile
-    fn ignore_file_path(&self, repo_name: impl AsRef<str>) -> RicerResult<PathBuf> {
-        let ignore_path = self.ignores_dir.join(format!("{}.ignore", repo_name.as_ref()));
-        debug_assert!(ignore_path.is_absolute(), "Ignore file path is not absolute");
-        if !ignore_path.exists() {
-            return Err(RicerError::NoIgnoreFile { path: ignore_path });
-        }
-
-        Ok(ignore_path)
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn get_cmd_hook(&self, name: impl AsRef<str>) -> RicerResult<String> {
+        debug!("Get hook '{}' contents", name.as_ref());
+        let hook_path = self.hooks_dir.join(name.as_ref());
+        let buffer = read_to_string(&hook_path)?;
+        Ok(buffer)
     }
 
     /// Get path to root of configuration directory.
