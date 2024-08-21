@@ -98,45 +98,18 @@ fn remove_repo_does_not_fail_if_git_repo_does_not_exist(empty_config_dir_fixture
 }
 
 #[rstest]
-fn hook_script_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
+fn rename_repo_renames_git_repo(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let expect = full_config_dir_fixture.hook_script_stub("hook.sh").as_path();
-    let result = cfg_dir_mgr.hook_script_path("hook.sh").expect("Expect success");
-    assert_eq!(expect, result);
+    let result = cfg_dir_mgr.rename_repo("vim", "vimrc");
+    assert!(result.is_ok());
+    assert!(full_config_dir_fixture.repos_dir().join("vimrc.git").exists());
+    assert!(!full_config_dir_fixture.repos_dir().join("vim.git").exists());
 }
 
 #[rstest]
-fn hook_script_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir) {
-    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let result = cfg_dir_mgr.hook_script_path("hook.sh").expect("Expect success");
-    assert!(result.is_absolute());
-}
-
-#[rstest]
-fn hook_script_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
+fn rename_repo_creates_inexistent_repo(empty_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
-    let result = cfg_dir_mgr.hook_script_path("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoHookScript { .. })));
-}
-
-#[rstest]
-fn ignore_file_path_gets_correct_path(full_config_dir_fixture: FakeConfigDir) {
-    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let expect = full_config_dir_fixture.ignore_file_stub("vim").as_path();
-    let result = cfg_dir_mgr.ignore_file_path("vim").expect("Expect success");
-    assert_eq!(expect, result);
-}
-
-#[rstest]
-fn ignore_file_path_returns_absolute_path(full_config_dir_fixture: FakeConfigDir) {
-    let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
-    let result = cfg_dir_mgr.ignore_file_path("vim").expect("Expect success");
-    assert!(result.is_absolute());
-}
-
-#[rstest]
-fn ignore_file_path_catches_inexistent_path(empty_config_dir_fixture: FakeConfigDir) {
-    let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
-    let result = cfg_dir_mgr.ignore_file_path("nonexistant");
-    assert!(matches!(result, Err(RicerError::NoIgnoreFile { .. })));
+    let result = cfg_dir_mgr.rename_repo("vim", "vimrc");
+    assert!(result.is_ok());
+    assert!(empty_config_dir_fixture.repos_dir().join("vimrc.git").exists());
 }
