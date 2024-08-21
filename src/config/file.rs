@@ -12,7 +12,8 @@
 //!
 //! [toml-spec]: https://toml.io/en/v1.0.0
 
-use log::{debug, trace};
+use anyhow::anyhow;
+use log::{debug, trace, warn};
 use std::fs::{read_to_string, write};
 use std::path::Path;
 use toml_edit::{DocumentMut, Item, Key, Table};
@@ -20,7 +21,7 @@ use toml_edit::{DocumentMut, Item, Key, Table};
 pub mod hooks_section;
 pub mod repos_section;
 
-use crate::error::{RicerError, RicerResult};
+use crate::error::RicerResult;
 use hooks_section::CommandHookEntry;
 use repos_section::RepoEntry;
 
@@ -42,7 +43,7 @@ pub trait ConfigFileManager {
     fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()>;
 
     /// Remove repository entry from configuration file data.
-    fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry>;
+    fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<()>;
 
     /// Rename repository entry in configuration file data.
     fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()>;
@@ -77,6 +78,68 @@ impl DefaultConfigFileManager {
     /// ```
     pub fn new() -> Self {
         Default::default()
+    }
+
+    /// Get section of configuration file as a table.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Section exists in configuration file.
+    /// 2. Section is actually defined as a table.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return target section as a table.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if section could not be found,
+    ///    or was not defined as a table.
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    #[rustfmt::skip]
+    fn get_section(&self, name: impl AsRef<str>) -> RicerResult<&Table> {
+        let repos = self.doc.get(name.as_ref()).ok_or(anyhow!(
+            "Configuration file does not define a '{}' section",
+            name.as_ref()
+        ))?;
+        let repos = repos.as_table().ok_or(anyhow!(
+            "Configuration file does not define '{}' section as a table",
+            name.as_ref()
+        ))?;
+
+        Ok(repos)
+    }
+
+    /// Get section of configuration file as a mutable table.
+    ///
+    /// # Preconditions
+    ///
+    /// 1. Section exists in configuration file.
+    /// 2. Section is actually defined as a table.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return target section as a mutable table.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if section could not be found,
+    ///    or was not defined as a table.
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    #[rustfmt::skip]
+    fn get_section_mut(&mut self, name: impl AsRef<str>) -> RicerResult<&mut Table> {
+        let repos = self.doc.get_mut(name.as_ref()).ok_or(anyhow!(
+            "Configuration file does not define a '{}' section",
+            name.as_ref()
+        ))?;
+        let repos = repos.as_table_mut().ok_or(anyhow!(
+            "Configuration file does not define '{}' section as a table",
+            name.as_ref()
+        ))?;
+
+        Ok(repos)
     }
 }
 
@@ -197,12 +260,9 @@ impl ConfigFileManager for DefaultConfigFileManager {
     ///
     /// # Errors
     ///
-    /// 1. Return [`RicerError::NoReposSection`] if `repos` section does not
-    ///    exist.
-    /// 2. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
-    ///    not defined as a table.
-    /// 3. Return [`RicerError::NoRepoFound`] if target repository definition
-    ///    does not exist.
+    /// 1. Return [`RicerError::Unrecoverable`] if target repository does not
+    ///    exist, 'repos' section does not exist, or 'repos' section was not
+    ///    defined as a table.
     ///
     /// # Examples
     ///
@@ -220,16 +280,14 @@ impl ConfigFileManager for DefaultConfigFileManager {
     /// ```
     ///
     /// [`RepoEntry`]: crate::config::file::repos_section::RepoEntry
-    /// [`RicerError::NoReposSection`]: crate::error::RicerError::NoReposSection
-    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
-    /// [`RicerError::NoRepoFound`]: crate::error::RicerError::NoRepoFound
-    fn get_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
-        debug!("Get repository '{}' from configuration file", repo_name.as_ref());
-        let repos = self.doc.get("repos").ok_or(RicerError::NoReposSection)?;
-        let repos = repos.as_table().ok_or(RicerError::ReposSectionNotTable)?;
-        let repo = repos
-            .get_key_value(repo_name.as_ref())
-            .ok_or(RicerError::NoRepoFound { repo_name: repo_name.as_ref().to_string() })?;
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn get_repo(&self, name: impl AsRef<str>) -> RicerResult<RepoEntry> {
+        debug!("Get repository '{}' from configuration file", name.as_ref());
+        let repos = self.get_section("repos")?;
+        let repo = repos.get_key_value(name.as_ref()).ok_or(anyhow!(
+            "Repository '{}' does not exist in 'repos' section of configuration file",
+            name.as_ref()
+        ))?;
         Ok(RepoEntry::from(repo))
     }
 
@@ -252,7 +310,7 @@ impl ConfigFileManager for DefaultConfigFileManager {
     ///
     /// # Errors
     ///
-    /// 1. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
+    /// 1. Return [`RicerError::Unrecoverable`] if `repos` section is
     ///    not defined as a table.
     ///
     /// # Examples
@@ -275,13 +333,15 @@ impl ConfigFileManager for DefaultConfigFileManager {
     /// # }
     /// ```
     ///
-    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     fn add_repo(&mut self, repo_entry: &RepoEntry) -> RicerResult<()> {
         debug!("Add repository '{}' too configuration file", &repo_entry.name);
         let (repo_name, repo_data) = repo_entry.to_toml();
         if let Some(repos) = self.doc.get_mut("repos") {
             trace!("The 'repos' section exists, add to it");
-            let repos = repos.as_table_mut().ok_or(RicerError::ReposSectionNotTable)?;
+            let repos = repos.as_table_mut().ok_or(anyhow!(
+                "The 'repos' section in configuration file not defined as a table"
+            ))?;
             repos.insert(repo_name.get(), repo_data);
         } else {
             trace!("The 'repos' section does not exist, set it up and add to it");
@@ -313,12 +373,9 @@ impl ConfigFileManager for DefaultConfigFileManager {
     ///
     /// # Errors
     ///
-    /// 1. Return [`RicerError::NoReposSection`] if `repos` section does not
-    ///    exist.
-    /// 2. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
-    ///    not defined as a table.
-    /// 3. Return [`RicerError::NoRepoFound`] if target repository definition
-    ///    does not exist.
+    /// 1. Return [`RicerError::Unrecoverable`] if target repository does not
+    ///    exist, 'repos' section does not exist, or 'repos' section was not
+    ///    defined as a table.
     ///
     /// # Examples
     ///
@@ -336,17 +393,16 @@ impl ConfigFileManager for DefaultConfigFileManager {
     /// ```
     ///
     /// [`RepoEntry`]: crate::config::file::repos_section::RepoEntry
-    /// [`RicerError::NoReposSection`]: crate::error::RicerError::NoReposSection
-    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
-    /// [`RicerError::NoRepoFound`]: crate::error::RicerError::NoRepoFound
-    fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry> {
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn remove_repo(&mut self, repo_name: impl AsRef<str>) -> RicerResult<()> {
         debug!("Remove repository '{}' from configuration file", repo_name.as_ref());
-        let repos = self.doc.get_mut("repos").ok_or(RicerError::NoReposSection)?;
-        let repos = repos.as_table_mut().ok_or(RicerError::ReposSectionNotTable)?;
-        let (repo_key, repo_data) = repos
-            .remove_entry(repo_name.as_ref())
-            .ok_or(RicerError::NoRepoFound { repo_name: repo_name.as_ref().to_string() })?;
-        Ok(RepoEntry::from((&repo_key, &repo_data)))
+        let repos = self.get_section_mut("repos")?;
+        let repo = repos.remove_entry(repo_name.as_ref());
+        if !repo.is_none() {
+            warn!("Repository '{}' does not exist in configuration file", repo_name.as_ref());
+        }
+
+        Ok(())
     }
 
     /// Rename repository entry in configuration file data.
@@ -367,12 +423,8 @@ impl ConfigFileManager for DefaultConfigFileManager {
     ///
     /// # Errors
     ///
-    /// 1. Return [`RicerError::NoReposSection`] if `repos` section does not
-    ///    exist.
-    /// 2. Return [`RicerError::ReposSectionNotTable`] if `repos` section is
-    ///    not defined as a table.
-    /// 3. Return [`RicerError::NoRepoFound`] if target repository definition
-    ///    does not exist.
+    /// 1. Return [`RicerError::Unrecoverable`] if 'repos' section was not
+    ///    defined as a table.
     ///
     /// # Examples
     ///
@@ -388,16 +440,14 @@ impl ConfigFileManager for DefaultConfigFileManager {
     /// # }
     /// ```
     ///
-    /// [`RicerError::NoReposSection`]: crate::error::RicerError::NoReposSection
-    /// [`RicerError::ReposSectionNotTable`]: crate::error::RicerError::ReposSectionNotTable
-    /// [`RicerError::NoRepoFound`]: crate::error::RicerError::NoRepoFound
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()> {
         debug!("Rename repository '{}' to '{}' in configuration file", from.as_ref(), to.as_ref());
-        let repos = self.doc.get_mut("repos").ok_or(RicerError::NoReposSection)?;
-        let repos = repos.as_table_mut().ok_or(RicerError::ReposSectionNotTable)?;
-        let (key, value) = repos
-            .remove_entry(from.as_ref())
-            .ok_or(RicerError::NoRepoFound { repo_name: from.as_ref().to_string() })?;
+        let repos = self.get_section_mut("repos")?;
+        let (key, value) = repos.remove_entry(from.as_ref()).ok_or(anyhow!(
+            "Repository '{}' does not exist in 'repos' section of configuration file",
+            from.as_ref()
+        ))?;
 
         // Preserve decor (comments and formatting) from original key...
         let key = Key::new(to.as_ref()).with_leaf_decor(key.leaf_decor().clone());
@@ -420,12 +470,9 @@ impl ConfigFileManager for DefaultConfigFileManager {
     ///
     /// # Errors
     ///
-    /// 1. Return [`RicerError::NoHooksSection`] if `hooks` section does not
-    ///    exist.
-    /// 2. Return [`RicerError::HooksSectionNotTable`] if `hooks` section is
-    ///    not defined as a table.
-    /// 3. Return [`RicerError::NoHookFound`] if target command hook definition
-    ///    does not exist.
+    /// 1. Return [`RicerError::Unrecoverable`] if target command hook does not
+    ///    exist, 'hooks' section does not exist, or 'hooks' section was not
+    ///    defined as a table.
     ///
     /// # Examples
     ///
@@ -443,15 +490,13 @@ impl ConfigFileManager for DefaultConfigFileManager {
     /// ```
     ///
     /// [`CommandHookEntry`]: crate::config::file::hooks_section::CommandHookEntry
-    /// [`RicerError::NoHooksSection`]: crate::error::RicerError::NoHooksSection
-    /// [`RicerError::HooksSectionNotTable`]: crate::error::RicerError::HooksSectionNotTable
-    /// [`RicerError::NoHookFound`]: crate::error::RicerError::NoHookFound
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     fn get_cmd_hook(&self, cmd_name: impl AsRef<str>) -> RicerResult<CommandHookEntry> {
-        let hooks = self.doc.get("hooks").ok_or(RicerError::NoHooksSection)?;
-        let hooks = hooks.as_table().ok_or(RicerError::HooksSectionNotTable)?;
-        let hook = hooks
-            .get_key_value(cmd_name.as_ref())
-            .ok_or(RicerError::NoHookFound { cmd_name: cmd_name.as_ref().to_string() })?;
+        let hooks = self.get_section("hooks")?;
+        let hook = hooks.get_key_value(cmd_name.as_ref()).ok_or(anyhow!(
+            "Command hook '{}' does not exist in 'hooks' section of configuration file",
+            cmd_name.as_ref()
+        ))?;
         Ok(CommandHookEntry::from(hook))
     }
 }
