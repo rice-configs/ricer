@@ -52,11 +52,11 @@
 
 use anyhow::anyhow;
 use log::{debug, trace, warn};
-use std::fs::{read_to_string, create_dir_all, remove_dir_all, rename, File};
+use std::fs::{write, read_to_string, create_dir_all, remove_dir_all, rename, File};
 use std::path::{Path, PathBuf};
 
 use crate::config::locator::ConfigDirLocator;
-use crate::error::{RicerError, RicerResult};
+use crate::error::RicerResult;
 
 /// Configuration directory manager representation.
 pub trait ConfigDirManager {
@@ -77,6 +77,9 @@ pub trait ConfigDirManager {
 
     /// Get contents of hook script at `$XDG_CONFIG_HOME/ricer/hooks`.
     fn get_cmd_hook(&self, name: impl AsRef<str>) -> RicerResult<String>;
+
+    /// Write ignore file in `$XDG_CONFIG_HOME/ricer/ignores`.
+    fn write_ignore_file(&self, name: impl AsRef<str>, data: impl AsRef<[u8]>) -> RicerResult<()>;
 
     /// Absolute path to root/top-level configuration directory.
     fn root_dir(&self) -> &Path;
@@ -427,6 +430,47 @@ impl ConfigDirManager for DefaultConfigDirManager {
         let hook_path = self.hooks_dir.join(name.as_ref());
         let buffer = read_to_string(&hook_path)?;
         Ok(buffer)
+    }
+
+    /// Write ignore file in `$XDG_CONFIG_HOME/ricer/ignores`.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Write data into target ignore file.
+    ///     - Create `$XDG_CONFIG_HOME/ricer/ignores` if it does not exist.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if ignore file cannot be
+    ///    created and/or written too.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// cfg_dir_mgr.write_ignore_file("vim", "hello world!")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn write_ignore_file(&self, name: impl AsRef<str>, data: impl AsRef<[u8]>) -> RicerResult<()> {
+        debug!("Write ignore file for repository '{}'", name.as_ref());
+        let ignore_path = self.ignores_dir.join(format!("{}.ignore", name.as_ref()));
+        if !self.ignores_dir.exists() {
+            debug!("Create ignores directory at '{}'", self.ignores_dir.display());
+            create_dir_all(&self.ignores_dir)?;
+        }
+
+        write(&ignore_path, data.as_ref())?;
+        Ok(())
     }
 
     /// Get path to root of configuration directory.
