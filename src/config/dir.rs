@@ -52,7 +52,7 @@
 
 use log::{debug, trace, warn};
 use std::path::{Path, PathBuf};
-use std::fs::{File, create_dir_all};
+use std::fs::{File, create_dir_all, remove_dir_all};
 use anyhow::anyhow;
 
 use crate::config::locator::ConfigDirLocator;
@@ -68,6 +68,9 @@ pub trait ConfigDirManager {
 
     /// Get path to Git repository entry at `$XDG_CONFIG_HOME/ricer/repos`.
     fn get_repo(&self, name: impl AsRef<str>) -> RicerResult<PathBuf>;
+
+    /// Remove Git repository at `$XDG_CONFIG_HOME/ricer/repos`.
+    fn remove_repo(&self, name: impl AsRef<str>) -> RicerResult<()>;
 
     /// Find absolute path to hook script.
     fn hook_script_path(&self, hook_name: impl AsRef<str>) -> RicerResult<PathBuf>;
@@ -297,6 +300,49 @@ impl ConfigDirManager for DefaultConfigDirManager {
 
         debug_assert!(repo_path.is_absolute(), "Git repository path is not absolute");
         Ok(repo_path)
+    }
+
+    /// Remove Git repository entry from `$XDG_CONFIG_HOME/ricer/repos`.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Remove Git repository from `$XDG_CONFIG_HOME/ricer/repos`.
+    ///    - Will not fail if Git repository already does not exist.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`RicerError::Unrecoverable`] if Git repository could not be
+    ///    removed.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
+    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
+    ///
+    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
+    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
+    /// cfg_dir_mgr.remove_repo("vim")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
+    fn remove_repo(&self, name: impl AsRef<str>) -> RicerResult<()> {
+        trace!("Remove Git repository");
+        let repo_path = self.repos_dir.join(format!("{}.git", name.as_ref()));
+        if repo_path.exists() {
+            debug!("Remove Git repository '{}' at '{}'", name.as_ref(), repo_path.display());
+            remove_dir_all(&repo_path)?;
+        } else {
+            warn!("Git repository '{}' already removed", name.as_ref());
+            return Ok(());
+        }
+
+        Ok(())
     }
 
     /// Get path to hook script.
