@@ -65,12 +65,16 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// # Preconditions
     ///
-    /// 1. Configuration file exists at `$XDG_CONFIG_HOME/ricer/config.toml`.
-    /// 2. Configuration file contains valid TOML formatting.
+    /// 1. Configuration file contains valid TOML formatting.
     ///
     /// # Postconditions
     ///
     /// 1. Read and parse configuration file for later manipulation.
+    ///     - Will create empty configuration file if it does not exist.
+    ///
+    /// # Errors
+    ///
+    /// 1. Will fail if configuration file contains invalid TOML formatting.
     ///
     /// # Examples
     ///
@@ -107,16 +111,16 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
 
     /// Write configuration file.
     ///
-    /// # Preconditions
-    ///
-    /// 1. Full path to configuration file exists, i.e., no sub-directories are
-    ///    _not_ missing.
-    ///
     /// # Postconditions
     ///
     /// 1. If file does not exist, but all sub-directories do exist, then create
     ///    it and write to it.
     /// 2. Preserve original formatting and comments that existed before
+    ///
+    /// # Errors
+    ///
+    /// 1. May fail if it cannot write and/or create the configuration file
+    ///    for whatever reason.
     ///
     /// # Examples
     ///
@@ -181,10 +185,8 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// # See
     ///
-    /// - [`ConfigDirManager`]
     /// - [`ConfigFileManager`]
     ///
-    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
     /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn file_manager_to_string(&self) -> String {
         self.file_manager.to_string()
@@ -199,6 +201,12 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// 2. Add repository entry data into configuration file.
     ///     - Preserve original formatting of configuration file that existed
     ///       beforehand.
+    ///
+    /// # Errors
+    ///
+    /// 1. Will fail if `repos` section was not defined as a table.
+    /// 2. Will fail if it cannot create the repository in
+    ///    `$XDG_CONFIG_HOME/ricer/repos` for whatever reason.
     ///
     /// # Examples
     ///
@@ -252,6 +260,12 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// 1. Return path to target repository.
     /// 2. Return configuration file entry data of repository.
     ///
+    /// # Errors
+    ///
+    /// 1. Will fail if repository entry does not exist in configuration file.
+    /// 2. Will fail if repository entry does not exist in
+    ///    `$XDG_CONFIG_HOME/ricer/repos`.
+    ///
     /// # Examples
     ///
     /// ```no_run
@@ -294,6 +308,11 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// 1. Remove Git repository directory entry from `$XDG_CONFIG_HOME/ricer/repos`.
     /// 2. Remove configuration file repository entry.
     ///
+    /// # Errors
+    ///
+    /// 1. Will fail if repository entry in `$XDG_CONFIG_HOME/ricer/repos`
+    ///    cannot be deleted.
+    ///
     /// # Examples
     ///
     /// ```no_run
@@ -335,6 +354,10 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// 1. Rename repository entry in `$XDG_CONFIG_HOME/ricer/repos`.
     /// 2. Rename repository entry in configuration file.
     ///
+    /// # Errors
+    ///
+    /// 1. Will fail if repository entry cannot be renamed for whatever reason.
+    ///
     /// # Examples
     ///
     /// ```no_run
@@ -375,6 +398,11 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// 1. Return data from hook script.
     /// 2. Return entry data from configuration file.
+    ///
+    /// # Errors
+    ///
+    /// 1. Will fail if command hook entry does not exist in configuration file.
+    /// 2. Will fail if hook
     ///
     /// # Examples
     ///
