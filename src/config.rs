@@ -15,7 +15,6 @@ pub mod locator;
 
 use crate::error::RicerResult;
 use dir::ConfigDirManager;
-use file::hooks_section::CommandHookEntry;
 use file::repos_section::RepoEntry;
 use file::ConfigFileManager;
 
@@ -59,6 +58,42 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
     pub fn new(dir_manager: D, file_manager: F) -> Self {
         Self { dir_manager, file_manager }
+    }
+
+    /// Get reference to configuration directory manager instance.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Valid reference to configuration directory manager instance.
+    pub fn dir_manager(&self) -> &D {
+        &self.dir_manager
+    }
+
+    /// Get mutable reference to configuration directory manager instance.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Valid mutable reference to configuration directory manager instance.
+    pub fn dir_manager_mut(&mut self) -> &mut D {
+        &mut self.dir_manager
+    }
+
+    /// Get reference to configuration file manager instance.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Valid reference to configuration file manager instance.
+    pub fn file_manager(&self) -> &F {
+        &self.file_manager
+    }
+
+    /// Get mutable reference to configuration file manager instance.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Valid mutable reference to configuration file manager instance.
+    pub fn file_manager_mut(&mut self) -> &mut F {
+        &mut self.file_manager
     }
 
     /// Read configuration file.
@@ -153,43 +188,6 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
         let path = self.dir_manager.setup_config_file()?;
         self.file_manager.write(path)?;
         Ok(())
-    }
-
-    /// Get config file manager data in string form.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Get valid string representation of parsed configuration file data
-    ///    provided by  current configuraiton file manager.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use anyhow::Result;
-    /// # fn main() -> Result<()> {
-    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
-    /// use ricer::config::file::DefaultConfigFileManager;
-    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
-    /// use ricer::config::ConfigManager;
-    ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
-    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
-    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
-    /// let cfg_file_manager = DefaultConfigFileManager::new();
-    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
-    /// config.read_config_file()?;
-    /// println!("{}", config.file_manager_to_string());
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// # See
-    ///
-    /// - [`ConfigFileManager`]
-    ///
-    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
-    pub fn file_manager_to_string(&self) -> String {
-        self.file_manager.to_string()
     }
 
     /// Add new repository into configuration data.
@@ -389,96 +387,6 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     pub fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> RicerResult<()> {
         self.dir_manager.rename_repo(from.as_ref(), to.as_ref())?;
         self.file_manager.rename_repo(from.as_ref(), to.as_ref())?;
-        Ok(())
-    }
-
-    /// Get command hook entry from configuration data.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Return data from hook script.
-    /// 2. Return entry data from configuration file.
-    ///
-    /// # Errors
-    ///
-    /// 1. Will fail if command hook entry does not exist in configuration file.
-    /// 2. Will fail if hook
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use anyhow::Result;
-    /// # fn main() -> Result<()> {
-    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
-    /// use ricer::config::file::DefaultConfigFileManager;
-    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
-    /// use ricer::config::ConfigManager;
-    ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
-    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
-    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
-    /// let cfg_file_manager = DefaultConfigFileManager::new();
-    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
-    /// config.read_config_file()?;
-    /// let hook = config.get_cmd_hook("commit")?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// # See
-    ///
-    /// - [`ConfigDirManager`]
-    /// - [`ConfigFileManager`]
-    ///
-    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
-    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
-    pub fn get_cmd_hook(&self, name: impl AsRef<str>) -> RicerResult<(CommandHookEntry, String)> {
-        let entry = self.file_manager.get_cmd_hook(name.as_ref())?;
-        let data = self.dir_manager.get_cmd_hook(name.as_ref())?;
-        Ok((entry, data))
-    }
-
-    /// Write ignore file in `$XDG_CONFIG_HOME/ricer/ignores`.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Write given data into target ignore file in
-    ///    `$XDG_CONFIG_HOME/ricer/ignores`.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use anyhow::Result;
-    /// # fn main() -> Result<()> {
-    /// use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
-    /// use ricer::config::file::DefaultConfigFileManager;
-    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
-    /// use ricer::config::ConfigManager;
-    ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
-    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
-    /// let cfg_dir_manager = DefaultConfigDirManager::new(&locator);
-    /// let cfg_file_manager = DefaultConfigFileManager::new();
-    /// let mut config = ConfigManager::new(cfg_dir_manager, cfg_file_manager);
-    /// config.read_config_file()?;
-    /// config.write_ignore_file("vim", "data goes here!")?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// # See
-    ///
-    /// - [`ConfigDirManager`]
-    /// - [`ConfigFileManager`]
-    ///
-    /// [`ConfigDirManager`]: crate::config::dir::ConfigDirManager
-    /// [`ConfigFileManager`]: crate::config::file::ConfigFileManager
-    pub fn write_ignore_file(
-        &self,
-        repo: impl AsRef<str>,
-        data: impl AsRef<[u8]>,
-    ) -> RicerResult<()> {
-        self.dir_manager.write_ignore_file(repo.as_ref(), data.as_ref())?;
         Ok(())
     }
 }
