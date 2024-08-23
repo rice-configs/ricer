@@ -17,6 +17,7 @@ use log::{debug, trace, warn};
 use std::fs::{read_to_string, write};
 use std::path::Path;
 use toml_edit::{DocumentMut, Item, Key, Table};
+use std::fmt::{Display, Formatter, Result};
 
 pub mod hooks_section;
 pub mod repos_section;
@@ -26,15 +27,12 @@ use hooks_section::CommandHookEntry;
 use repos_section::RepoEntry;
 
 /// Configuration file manager representation.
-pub trait ConfigFileManager {
+pub trait ConfigFileManager: Display {
     /// Read from configuration file at provided path.
     fn read(&mut self, path: impl AsRef<Path>) -> RicerResult<()>;
 
     /// Write to configuration file at provided path.
     fn write(&mut self, path: impl AsRef<Path>) -> RicerResult<()>;
-
-    /// Show current configuration file data in string form.
-    fn to_string(&self) -> String;
 
     /// Deserialize repository entry from parsed configuration file data.
     fn get_repo(&self, repo_name: impl AsRef<str>) -> RicerResult<RepoEntry>;
@@ -220,29 +218,6 @@ impl ConfigFileManager for DefaultConfigFileManager {
         let buffer = self.doc.to_string();
         write(path.as_ref(), buffer)?;
         Ok(())
-    }
-
-    /// Show current configuration file data in string form.
-    ///
-    /// # Postconditions
-    ///
-    /// 1. Return contents of parsed configuration file data in string form.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use anyhow::Result;
-    /// # fn main() -> Result<()> {
-    /// use ricer::config::file::{ConfigFileManager, DefaultConfigFileManager};
-    ///
-    /// let mut cfg_file_mgr = DefaultConfigFileManager::new();
-    /// cfg_file_mgr.read("/path/to/config.toml")?;
-    /// println!("{}", cfg_file_mgr.to_string());
-    /// # Ok(())
-    /// # }
-    /// ```
-    fn to_string(&self) -> String {
-        self.doc.to_string()
     }
 
     /// Deserialize repository entry from parsed configuration file data.
@@ -498,5 +473,11 @@ impl ConfigFileManager for DefaultConfigFileManager {
             cmd_name.as_ref()
         ))?;
         Ok(CommandHookEntry::from(hook))
+    }
+}
+
+impl Display for DefaultConfigFileManager {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{}", self.doc.to_string())
     }
 }
