@@ -14,10 +14,10 @@
 
 use anyhow::anyhow;
 use log::{debug, trace, warn};
+use std::fmt::{Display, Formatter, Result};
 use std::fs::{read_to_string, write};
 use std::path::Path;
 use toml_edit::{DocumentMut, Item, Key, Table};
-use std::fmt::{Display, Formatter, Result};
 
 pub mod hooks_section;
 pub mod repos_section;
