@@ -350,15 +350,20 @@ impl ConfigDirManager for DefaultConfigDirManager {
 
     /// Rename Git repository entry from `$XDG_CONFIG_HOME/ricer/repos`.
     ///
+    /// # Preconditions
+    ///
+    /// 1. Repository directory entry exists in `$XDG_CONFIG_HOME/ricer/repos`.
+    ///
     /// # Postconditions
     ///
     /// 1. Rename Git repository entry in `$XDG_CONFIG_HOME/ricer/repos`.
-    ///    - Create empty Git repository entry if it does not exist.
     ///
     /// # Errors
     ///
     /// 1. Return [`RicerError::Unrecoverable`] if Git repository could not be
-    ///    renamed or created.
+    ///    renamed.
+    /// 2. Return [`RicerError::Unrecoverable`] if repository does not exist in
+    ///    `$XDG_CONFIG_HOME/ricer/repos`.
     ///
     /// # Examples
     ///
@@ -381,14 +386,12 @@ impl ConfigDirManager for DefaultConfigDirManager {
         trace!("Rename Git repository");
         let from_path = self.repos_dir.join(format!("{}.git", from.as_ref()));
         let to_path = self.repos_dir.join(format!("{}.git", to.as_ref()));
-        if from_path.exists() {
-            debug!("Rename Git repository from '{}' to '{}'", from.as_ref(), to.as_ref());
-            rename(&from_path, to_path)?;
-        } else {
-            warn!("Git repository '{}' does not exist; create '{}'", from.as_ref(), to.as_ref());
-            create_dir_all(&to_path)?;
+        if !from_path.exists() {
+            return Err(anyhow!("Cannot rename repository '{}', because it does not exist", from.as_ref()).into());
         }
 
+        debug!("Rename Git repository from '{}' to '{}'", from.as_ref(), to.as_ref());
+        rename(&from_path, to_path)?;
         Ok(())
     }
 
