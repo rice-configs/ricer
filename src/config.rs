@@ -148,8 +148,9 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// # Postconditions
     ///
-    /// 1. If file does not exist, but all sub-directories do exist, then create
-    ///    it and write to it.
+    /// 1. Write configuration data into configuration file.
+    ///     - If file and/or configuration directory do not exist, then they
+    ///       will be created and written too automatically.
     /// 2. Preserve original formatting and comments that existed before
     ///
     /// # Errors
@@ -202,7 +203,8 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// # Errors
     ///
-    /// 1. Will fail if `repos` section was not defined as a table.
+    /// 1. Will fail if it cannot insert repository entry into configuration
+    ///    file for whatever reason.
     /// 2. Will fail if it cannot create the repository in
     ///    `$XDG_CONFIG_HOME/ricer/repos` for whatever reason.
     ///
@@ -304,7 +306,9 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     /// # Postconditions
     ///
     /// 1. Remove Git repository directory entry from `$XDG_CONFIG_HOME/ricer/repos`.
+    ///     - Will not fail if repository directory entry does not exist.
     /// 2. Remove configuration file repository entry.
+    ///     - Will not fail if repository entry does not exist.
     ///
     /// # Errors
     ///
@@ -347,6 +351,11 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
 
     /// Rename repository in configuration data.
     ///
+    /// # Preconditions
+    ///
+    /// 1. Repository entry exists in configuration file.
+    /// 2. Repository directory entry exists in `$XDG_CONFIG_HOME/ricer/repos`.
+    ///
     /// # Postconditions
     ///
     /// 1. Rename repository entry in `$XDG_CONFIG_HOME/ricer/repos`.
@@ -354,7 +363,9 @@ impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
     ///
     /// # Errors
     ///
-    /// 1. Will fail if repository entry cannot be renamed for whatever reason.
+    /// 1. Will fail if repository entry does not exist in configuration file.
+    /// 2. Will fail if repository directory cannot be renamed in
+    ///    `$XDG_CONFIG_HOME/ricer/repos`.
     ///
     /// # Examples
     ///

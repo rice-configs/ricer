@@ -91,14 +91,14 @@ fn remove_repo_removes_git_repo(full_config_dir_fixture: FakeConfigDir) {
 }
 
 #[rstest]
-fn remove_repo_does_not_fail_if_git_repo_does_not_exist(empty_config_dir_fixture: FakeConfigDir) {
+fn remove_repo_does_not_fail_if_repo_does_not_exist(empty_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
     let result = cfg_dir_mgr.remove_repo("vim");
     assert!(result.is_ok());
 }
 
 #[rstest]
-fn rename_repo_renames_git_repo(full_config_dir_fixture: FakeConfigDir) {
+fn rename_repo_renames_repo_correctly(full_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&full_config_dir_fixture);
     let result = cfg_dir_mgr.rename_repo("vim", "vimrc");
     assert!(result.is_ok());
@@ -107,11 +107,10 @@ fn rename_repo_renames_git_repo(full_config_dir_fixture: FakeConfigDir) {
 }
 
 #[rstest]
-fn rename_repo_creates_inexistent_repo(empty_config_dir_fixture: FakeConfigDir) {
+fn rename_repo_catches_inexistent_repo(empty_config_dir_fixture: FakeConfigDir) {
     let cfg_dir_mgr = setup_cfg_dir_mgr(&empty_config_dir_fixture);
     let result = cfg_dir_mgr.rename_repo("vim", "vimrc");
-    assert!(result.is_ok());
-    assert!(empty_config_dir_fixture.repos_dir().join("vimrc.git").exists());
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
 #[rstest]
