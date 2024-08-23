@@ -478,6 +478,6 @@ impl ConfigFileManager for DefaultConfigFileManager {
 
 impl Display for DefaultConfigFileManager {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", self.doc.to_string())
+        write!(f, "{}", self.doc)
     }
 }
