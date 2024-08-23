@@ -52,5 +52,7 @@ pub mod context;
 
 pub mod config;
 
+pub mod hook;
+
 #[cfg(test)]
 mod tests;
