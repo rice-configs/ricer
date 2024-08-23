@@ -387,7 +387,11 @@ impl ConfigDirManager for DefaultConfigDirManager {
         let from_path = self.repos_dir.join(format!("{}.git", from.as_ref()));
         let to_path = self.repos_dir.join(format!("{}.git", to.as_ref()));
         if !from_path.exists() {
-            return Err(anyhow!("Cannot rename repository '{}', because it does not exist", from.as_ref()).into());
+            return Err(anyhow!(
+                "Cannot rename repository '{}', because it does not exist",
+                from.as_ref()
+            )
+            .into());
         }
 
         debug!("Rename Git repository from '{}' to '{}'", from.as_ref(), to.as_ref());

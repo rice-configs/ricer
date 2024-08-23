@@ -283,7 +283,8 @@ fn get_repo_catches_inexistent_repo_entry(desynced_config_dir_fixture: FakeConfi
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
 }
 
-#[rstest] fn get_repo_catches_inexistent_repo_dir(desynced_config_dir_fixture: FakeConfigDir) {
+#[rstest]
+fn get_repo_catches_inexistent_repo_dir(desynced_config_dir_fixture: FakeConfigDir) {
     let mut config = setup_config_manager(&desynced_config_dir_fixture);
     config.read_config_file().expect("Expect success");
     let result = config.get_repo("dwm");
