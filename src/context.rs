@@ -23,6 +23,8 @@
 //!
 //! [`RicerCli`]: crate::cli::RicerCli
 
+use std::fmt::{Display, Formatter, Result};
+
 pub mod clone;
 pub mod commit;
 pub mod delete;
@@ -79,6 +81,24 @@ impl From<RicerCli> for Context {
             CommandSet::List(_) => Self::List(ListContext::from(opts)),
             CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
             CommandSet::RepoGit(_) => Self::RepoGit(RepoGitContext::from(opts)),
+        }
+    }
+}
+
+impl Display for Context {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Context::Commit(_) => write!(f, "commit"),
+            Context::Push(_) => write!(f, "push"),
+            Context::Pull(_) => write!(f, "pull"),
+            Context::Init(_) => write!(f, "init"),
+            Context::Clone(_) => write!(f, "clone"),
+            Context::Delete(_) => write!(f, "delete"),
+            Context::Rename(_) => write!(f, "rename"),
+            Context::Status(_) => write!(f, "status"),
+            Context::List(_) => write!(f, "list"),
+            Context::Enter(_) => write!(f, "enter"),
+            &_ => unreachable!("This should not happen. Cannot convert this context to string"),
         }
     }
 }
