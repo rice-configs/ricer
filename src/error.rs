@@ -40,3 +40,15 @@ impl From<toml_edit::TomlError> for RicerError {
         RicerError::Unrecoverable(anyhow!("{}", err))
     }
 }
+
+impl From<run_script::ScriptError> for RicerError {
+    fn from(err: run_script::ScriptError) -> RicerError {
+        RicerError::Unrecoverable(anyhow!("{}", err))
+    }
+}
+
+impl From<std::env::VarError> for RicerError {
+    fn from(err: std::env::VarError) -> RicerError {
+        RicerError::Unrecoverable(anyhow!("{}", err))
+    }
+}
