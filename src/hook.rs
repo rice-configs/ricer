@@ -207,7 +207,7 @@ where
     /// use ricer::config::locator::{DefaultConfigDirLocator, DefaultXdgBaseDirSpec};
     /// use ricer::config::ConfigManager;
     /// use ricer::context::Context;
-    /// use ricer::hook::DefaultCommandHookManager;
+    /// use ricer::hook::{CommandHookManager, DefaultCommandHookManager};
     ///
     /// let opts = RicerCli::parse_args([OsString::from("some"), OsString::from("command")]);
     /// let ctx = Context::from(opts);
@@ -222,8 +222,15 @@ where
     /// # }
     /// ```
     fn run_pre(&self) -> RicerResult<()> {
-        let cmd_hook =
-            self.cfg_mgr.file_manager().get_cmd_hook(self.ctx.to_string()).ok().unwrap_or_default();
+        trace!("Run pre hooks");
+        let cmd_hook = match self.cfg_mgr.file_manager().get_cmd_hook(self.ctx.to_string()) {
+            Ok(cmd_hook) => cmd_hook,
+            Err(err) => {
+                debug!("{}", err);
+                return Ok(());
+            }
+        };
+
         for hook in cmd_hook.hooks.iter() {
             match self.run_hook_entry(hook, &HookKind::Pre)? {
                 HookStatus::HookSuccess => info!("Pre hook success"),
@@ -257,7 +264,7 @@ where
     /// use ricer::config::locator::{DefaultConfigDirLocator, DefaultXdgBaseDirSpec};
     /// use ricer::config::ConfigManager;
     /// use ricer::context::Context;
-    /// use ricer::hook::DefaultCommandHookManager;
+    /// use ricer::hook::{CommandHookManager, DefaultCommandHookManager};
     ///
     /// let opts = RicerCli::parse_args([OsString::from("some"), OsString::from("command")]);
     /// let ctx = Context::from(opts);
@@ -272,8 +279,15 @@ where
     /// # }
     /// ```
     fn run_post(&self) -> RicerResult<()> {
-        let cmd_hook =
-            self.cfg_mgr.file_manager().get_cmd_hook(self.ctx.to_string()).ok().unwrap_or_default();
+        trace!("Run post hooks");
+        let cmd_hook = match self.cfg_mgr.file_manager().get_cmd_hook(self.ctx.to_string()) {
+            Ok(cmd_hook) => cmd_hook,
+            Err(err) => {
+                debug!("{}", err);
+                return Ok(());
+            }
+        };
+
         for hook in cmd_hook.hooks.iter() {
             match self.run_hook_entry(hook, &HookKind::Post)? {
                 HookStatus::HookSuccess => info!("Post hook success"),
