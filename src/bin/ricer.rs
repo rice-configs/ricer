@@ -11,14 +11,15 @@ use log::error;
 use std::ffi::OsString;
 
 use ricer::cli::RicerCli;
-use ricer::config::ConfigManager;
+use ricer::config::dir::DefaultConfigDirManager;
 use ricer::config::file::DefaultConfigFileManager;
-use ricer::config::dir::{ConfigDirManager, DefaultConfigDirManager};
 use ricer::config::locator::{
     recover_default_config_dir_locator, DefaultConfigDirLocator, DefaultXdgBaseDirSpec,
 };
+use ricer::config::ConfigManager;
 use ricer::context::Context;
 use ricer::error::RicerError;
+use ricer::hook::{CommandHookManager, DefaultCommandHookManager};
 
 /// Starting point of Ricer binary.
 ///
@@ -58,7 +59,7 @@ where
         .filter_level(opts.log_opts.log_level_filter())
         .init();
 
-    let _ctx = Context::from(opts);
+    let ctx = Context::from(opts);
     let xdg_spec = DefaultXdgBaseDirSpec::new()?;
     let locator = match DefaultConfigDirLocator::new_locate(&xdg_spec) {
         Ok(locator) => locator,
@@ -67,7 +68,10 @@ where
     };
     let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
     let cfg_file_mgr = DefaultConfigFileManager::new();
-    let config = ConfigManager::new(cfg_dir_mgr, cfg_file_mgr);
+    let mut config = ConfigManager::new(cfg_dir_mgr, cfg_file_mgr);
+    config.read_config_file()?;
+    let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
+    hook_mgr.run_pre()?;
 
     // TODO: match and execute command in Ricer's command set...
 
