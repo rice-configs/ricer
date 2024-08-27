@@ -1,0 +1,133 @@
+// SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
+// SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
+
+use std::ffi::OsString;
+use indoc::indoc;
+use rstest::{fixture, rstest};
+
+use ricer_test_tools::fakes::FakeConfigDir;
+
+use crate::cli::RicerCli;
+use crate::config::dir::DefaultConfigDirManager;
+use crate::config::file::DefaultConfigFileManager;
+use crate::config::locator::MockConfigDirLocator;
+use crate::config::ConfigManager;
+use crate::context::Context;
+use crate::hook::{CommandHookManager, DefaultCommandHookManager};
+use crate::error::RicerError;
+
+fn setup_config_manager(
+    fake_dir: &FakeConfigDir,
+) -> ConfigManager<DefaultConfigDirManager, DefaultConfigFileManager> {
+    let mut mock_locator = MockConfigDirLocator::new();
+    mock_locator.expect_config_dir().return_const(fake_dir.root_dir().to_path_buf());
+    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
+    let cfg_file_mgr = DefaultConfigFileManager::new();
+    let mut config = ConfigManager::new(cfg_dir_mgr, cfg_file_mgr);
+    config.read_config_file().expect("Expect success");
+    config
+}
+
+fn setup_context(args: impl AsRef<str>) -> Context {
+    let args: Vec<OsString> = args.as_ref().split_whitespace().map(|s| OsString::from(s)).collect();
+    let opts = RicerCli::parse_args(args);
+    Context::from(opts)
+}
+
+#[fixture]
+fn good_hook_fixture() -> FakeConfigDir {
+    FakeConfigDir::builder()
+        .config_file(indoc! {r#"
+            [repos.vim]
+            branch = "main"
+            remote = "origin"
+            url = "https://github.com/awkless/vim.git"
+
+            [hooks]
+            commit = [
+                { pre = "hook.sh" },
+                { post = "hook.sh" },
+                { pre = "hook.sh", repo = "vim" },
+                { post = "hook.sh", repo = "vim" },
+            ]
+            "#
+        })
+        .hook_script("hook.sh", indoc! {r#"
+            #!/bin/sh
+            echo "Will succeed!"
+            "#
+        })
+        .git_repo("vim")
+        .build()
+}
+
+#[fixture]
+fn no_hook_script_fixture() -> FakeConfigDir {
+    FakeConfigDir::builder()
+        .config_file(indoc! {r#"
+            [hooks]
+            commit = [
+                # Hook script does not exist!
+                { pre = "hook.sh" },
+                { post = "hook.sh" },
+            ]
+            "#
+        })
+        .build()
+}
+
+#[fixture]
+fn no_repo_fixture() -> FakeConfigDir {
+    FakeConfigDir::builder()
+        .config_file(indoc! {r#"
+            [hooks]
+            commit = [
+                # Repository does not exist!
+                { pre = "hook.sh", repo = "nonexistent" },
+                { post = "hook.sh", repo = "nonexistent" },
+            ]
+            "#
+        })
+        .build()
+}
+
+#[fixture]
+fn empty_config_file_fixture() -> FakeConfigDir {
+    FakeConfigDir::builder().config_file("# No hook entries").build()
+}
+
+#[rstest]
+fn run_pre_does_fail_for_no_cmd_hook(empty_config_file_fixture: FakeConfigDir) {
+    let config = setup_config_manager(&empty_config_file_fixture);
+    let ctx = setup_context("ricer commit");
+    let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
+    let result = hook_mgr.run_pre();
+    assert!(result.is_ok());
+}
+
+#[rstest]
+fn run_pre_catches_inexistent_hook_script(no_hook_script_fixture: FakeConfigDir) {
+    let config = setup_config_manager(&no_hook_script_fixture);
+    let ctx = setup_context("ricer commit");
+    let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
+    let result = hook_mgr.run_pre();
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+}
+
+#[rstest]
+fn run_pre_catches_inexistent_repo(no_repo_fixture: FakeConfigDir) {
+    let config = setup_config_manager(&no_repo_fixture);
+    let ctx = setup_context("ricer commit");
+    let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
+    let result = hook_mgr.run_pre();
+    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+}
+
+#[rstest]
+fn run_pre_does_not_fail_for_valid_pre_hook_setup(good_hook_fixture: FakeConfigDir) {
+    let config = setup_config_manager(&good_hook_fixture);
+    let ctx = setup_context("ricer commit");
+    let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
+    let result = hook_mgr.run_pre();
+    assert!(result.is_ok());
+}
