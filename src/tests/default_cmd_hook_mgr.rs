@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
-use std::ffi::OsString;
 use indoc::indoc;
 use rstest::{fixture, rstest};
+use std::ffi::OsString;
 
 use ricer_test_tools::fakes::FakeConfigDir;
 
@@ -13,8 +13,8 @@ use crate::config::file::DefaultConfigFileManager;
 use crate::config::locator::MockConfigDirLocator;
 use crate::config::ConfigManager;
 use crate::context::Context;
-use crate::hook::{CommandHookManager, DefaultCommandHookManager};
 use crate::error::RicerError;
+use crate::hook::{CommandHookManager, DefaultCommandHookManager};
 
 fn setup_config_manager(
     fake_dir: &FakeConfigDir,
@@ -52,11 +52,14 @@ fn good_hook_fixture() -> FakeConfigDir {
             ]
             "#
         })
-        .hook_script("hook.sh", indoc! {r#"
+        .hook_script(
+            "hook.sh",
+            indoc! {r#"
             #!/bin/sh
             echo "Will succeed!"
             "#
-        })
+            },
+        )
         .git_repo("vim")
         .build()
 }
