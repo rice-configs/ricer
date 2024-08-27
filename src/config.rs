@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
-//! Configuration directory and file manager and implementation.
+//! Configuration data management.
 //!
 //! This module is responsible for providing a reliable way to manipulate
 //! configuration data housed in Ricer's configuration directory. This includes
