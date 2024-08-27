@@ -23,7 +23,11 @@ pub struct ConfigManager<D: ConfigDirManager, F: ConfigFileManager> {
     file_manager: F,
 }
 
-impl<D: ConfigDirManager, F: ConfigFileManager> ConfigManager<D, F> {
+impl<D, F> ConfigManager<D, F>
+where
+    D: ConfigDirManager,
+    F: ConfigFileManager,
+{
     /// Construct new configuration manager.
     ///
     /// # Preconditions
