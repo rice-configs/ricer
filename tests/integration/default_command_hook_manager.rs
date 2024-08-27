@@ -4,27 +4,44 @@
 use indoc::indoc;
 use rstest::{fixture, rstest};
 use std::ffi::OsString;
+use std::path::{PathBuf, Path};
 
 use ricer_test_tools::fakes::FakeConfigDir;
 
-use crate::cli::RicerCli;
-use crate::config::dir::DefaultConfigDirManager;
-use crate::config::file::DefaultConfigFileManager;
-use crate::config::locator::MockConfigDirLocator;
-use crate::config::ConfigManager;
-use crate::context::Context;
-use crate::error::RicerError;
-use crate::hook::{CommandHookManager, DefaultCommandHookManager};
+use ricer::cli::RicerCli;
+use ricer::config::dir::DefaultConfigDirManager;
+use ricer::config::file::DefaultConfigFileManager;
+use ricer::config::ConfigManager;
+use ricer::config::locator::{DefaultConfigDirLocator, XdgBaseDirSpec};
+use ricer::context::Context;
+use ricer::error::RicerError;
+use ricer::hook::{CommandHookManager, DefaultCommandHookManager};
+
+struct StubXdgBaseDirSpec {
+    stub_path: PathBuf,
+}
+
+impl StubXdgBaseDirSpec {
+    fn new(fake_dir: &FakeConfigDir) -> Self {
+        Self { stub_path: fake_dir.temp_dir().to_path_buf() }
+    }
+}
+
+impl XdgBaseDirSpec for StubXdgBaseDirSpec {
+    fn config_home_dir(&self) -> &Path {
+        self.stub_path.as_path()
+    }
+}
 
 fn setup_config_manager(
     fake_dir: &FakeConfigDir,
 ) -> ConfigManager<DefaultConfigDirManager, DefaultConfigFileManager> {
-    let mut mock_locator = MockConfigDirLocator::new();
-    mock_locator.expect_config_dir().return_const(fake_dir.root_dir().to_path_buf());
-    let cfg_dir_mgr = DefaultConfigDirManager::new(&mock_locator);
+    let xdg_spec = StubXdgBaseDirSpec::new(&fake_dir);
+    let locator = DefaultConfigDirLocator::new_locate(&xdg_spec).expect("Expect succuess");
+    let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
     let cfg_file_mgr = DefaultConfigFileManager::new();
     let mut config = ConfigManager::new(cfg_dir_mgr, cfg_file_mgr);
-    config.read_config_file().expect("Expect success");
+    config.read_config_file().expect("Failed to read configuration file");
     config
 }
 
