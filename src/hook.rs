@@ -115,19 +115,20 @@ where
     /// [`RicerError::Unrecoverable`]: crate::error::RicerError::Unrecoverable
     fn determine_work_dir(&self, repo: Option<&String>) -> RicerResult<ScriptOptions> {
         let mut opts = ScriptOptions::new();
-        if let Some(repo) = &repo {
+        if let Some(repo) = repo {
             let (path, repo) = self.cfg_mgr.get_repo(repo)?;
             let home_dir = PathBuf::from(env::var("HOME")?);
-            let work_dir = repo.target.as_ref().map(|target| match target.home.unwrap_or_default() {
-                true => {
-                    debug!("Script targets home directory '{}'", home_dir.display());
-                    home_dir
-                }
-                false => {
-                    debug!("Script targets repository '{}'", path.display());
-                    path
-                }
-            });
+            let work_dir =
+                repo.target.as_ref().map(|target| match target.home.unwrap_or_default() {
+                    true => {
+                        debug!("Script targets home directory '{}'", home_dir.display());
+                        home_dir
+                    }
+                    false => {
+                        debug!("Script targets repository '{}'", path.display());
+                        path
+                    }
+                });
 
             opts.working_directory = work_dir;
         } else {

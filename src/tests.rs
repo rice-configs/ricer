@@ -7,6 +7,8 @@ mod default_cfg_dir_mgr;
 
 mod default_cfg_file_mgr;
 
+mod default_cmd_hook_mgr;
+
 mod cli;
 
 mod repo_entry;
