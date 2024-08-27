@@ -4,15 +4,15 @@
 use indoc::indoc;
 use rstest::{fixture, rstest};
 use std::ffi::OsString;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 use ricer_test_tools::fakes::FakeConfigDir;
 
 use ricer::cli::RicerCli;
 use ricer::config::dir::DefaultConfigDirManager;
 use ricer::config::file::DefaultConfigFileManager;
-use ricer::config::ConfigManager;
 use ricer::config::locator::{DefaultConfigDirLocator, XdgBaseDirSpec};
+use ricer::config::ConfigManager;
 use ricer::context::Context;
 use ricer::error::RicerError;
 use ricer::hook::{CommandHookManager, DefaultCommandHookManager};
