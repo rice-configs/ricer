@@ -17,8 +17,23 @@
 //! The `cmd` field is the name of the Ricer command to bind the hook
 //! definitions too. The `pre` field is the hook script that will be executed
 //! _before_ the target command. The `post` field is the hook script that will
-//! be executed _after_ the target command. The `repo` command is the target
-//! repository to execute the current hook entry on only.
+//! be executed _after_ the target command.
+//!
+//! The `repo` field is really unique. It determines the working directory of
+//! the current hook script. If no `repo` field is present in a hook definition,
+//! then no working directory is set. If the `repo` field is present, then one
+//! of three things can happen depending on how the repository sets up the
+//! optional [`target`] field:
+//!
+//! 1. If [`target`] is `None` or [`target.home`] is `None`, then do not set
+//!    the working directory.
+//! 2. If [`target.home`] is true, then set the working directory to the user's
+//!    home directory.
+//! 3. If [`target.home`] is false, then set the working directory to the
+//!    repository itself in `$XDG_CONFIG_HOME/ricer/repos`.
+//!
+//! [`target`]: crate::config::file::repos_section::RepoEntry::target
+//! [`target.home`]: crate::config::file::repos_section::RepoTargetEntry::home
 
 use log::trace;
 use toml_edit::visit::{visit_inline_table, Visit};
