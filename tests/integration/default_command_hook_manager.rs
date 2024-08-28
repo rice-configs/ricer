@@ -119,7 +119,7 @@ fn empty_config_file_fixture() -> FakeConfigDir {
 #[rstest]
 fn run_pre_does_fail_for_no_cmd_hook(empty_config_file_fixture: FakeConfigDir) {
     let config = setup_config_manager(&empty_config_file_fixture);
-    let ctx = setup_context("ricer commit");
+    let ctx = setup_context("ricer --run-hook=always commit");
     let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
     let result = hook_mgr.run_pre();
     assert!(result.is_ok());
@@ -128,7 +128,7 @@ fn run_pre_does_fail_for_no_cmd_hook(empty_config_file_fixture: FakeConfigDir) {
 #[rstest]
 fn run_pre_catches_inexistent_hook_script(no_hook_script_fixture: FakeConfigDir) {
     let config = setup_config_manager(&no_hook_script_fixture);
-    let ctx = setup_context("ricer commit");
+    let ctx = setup_context("ricer --run-hook=always commit");
     let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
     let result = hook_mgr.run_pre();
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
@@ -137,7 +137,7 @@ fn run_pre_catches_inexistent_hook_script(no_hook_script_fixture: FakeConfigDir)
 #[rstest]
 fn run_pre_catches_inexistent_repo(no_repo_fixture: FakeConfigDir) {
     let config = setup_config_manager(&no_repo_fixture);
-    let ctx = setup_context("ricer commit");
+    let ctx = setup_context("ricer --run-hook=always commit");
     let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
     let result = hook_mgr.run_pre();
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
@@ -146,7 +146,7 @@ fn run_pre_catches_inexistent_repo(no_repo_fixture: FakeConfigDir) {
 #[rstest]
 fn run_pre_does_not_fail_for_valid_pre_hook_setup(good_hook_fixture: FakeConfigDir) {
     let config = setup_config_manager(&good_hook_fixture);
-    let ctx = setup_context("ricer commit");
+    let ctx = setup_context("ricer --run-hook=always commit");
     let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
     let result = hook_mgr.run_pre();
     assert!(result.is_ok());
@@ -155,7 +155,7 @@ fn run_pre_does_not_fail_for_valid_pre_hook_setup(good_hook_fixture: FakeConfigD
 #[rstest]
 fn run_post_does_fail_for_no_cmd_hook(empty_config_file_fixture: FakeConfigDir) {
     let config = setup_config_manager(&empty_config_file_fixture);
-    let ctx = setup_context("ricer commit");
+    let ctx = setup_context("ricer --run-hook=always commit");
     let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
     let result = hook_mgr.run_post();
     assert!(result.is_ok());
@@ -164,7 +164,7 @@ fn run_post_does_fail_for_no_cmd_hook(empty_config_file_fixture: FakeConfigDir) 
 #[rstest]
 fn run_post_catches_inexistent_hook_script(no_hook_script_fixture: FakeConfigDir) {
     let config = setup_config_manager(&no_hook_script_fixture);
-    let ctx = setup_context("ricer commit");
+    let ctx = setup_context("ricer --run-hook=always commit");
     let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
     let result = hook_mgr.run_post();
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
@@ -173,7 +173,7 @@ fn run_post_catches_inexistent_hook_script(no_hook_script_fixture: FakeConfigDir
 #[rstest]
 fn run_post_catches_inexistent_repo(no_repo_fixture: FakeConfigDir) {
     let config = setup_config_manager(&no_repo_fixture);
-    let ctx = setup_context("ricer commit");
+    let ctx = setup_context("ricer --run-hook=always commit");
     let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
     let result = hook_mgr.run_post();
     assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
@@ -182,7 +182,7 @@ fn run_post_catches_inexistent_repo(no_repo_fixture: FakeConfigDir) {
 #[rstest]
 fn run_post_does_not_fail_for_valid_post_hook_setup(good_hook_fixture: FakeConfigDir) {
     let config = setup_config_manager(&good_hook_fixture);
-    let ctx = setup_context("ricer commit");
+    let ctx = setup_context("ricer --run-hook=always commit");
     let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
     let result = hook_mgr.run_post();
     assert!(result.is_ok());
