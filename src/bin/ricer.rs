@@ -56,6 +56,7 @@ where
     env_logger::Builder::new()
         .format_target(false)
         .format_timestamp(None)
+        .format_indent(Some(8))
         .filter_level(opts.log_opts.log_level_filter())
         .init();
 
