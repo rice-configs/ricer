@@ -122,7 +122,7 @@ impl RicerCli {
 #[command(next_help_heading = "Command Options")]
 pub struct SharedOptions {
     /// Tell Ricer how you want hooks to be executed.
-    #[arg(default_value_t = HookAction::Prompt, value_enum, value_name = "ACTION")]
+    #[arg(default_value_t = HookAction::Prompt, long, short, value_enum, value_name = "ACTION")]
     pub run_hook: HookAction,
 }
 
