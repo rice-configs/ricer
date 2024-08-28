@@ -236,7 +236,7 @@ where
 
         let data = self.cfg_mgr.dir_manager().get_cmd_hook(script)?;
         let run = match prompt {
-            true => self.prompt_hook_script(&script, &data)?,
+            true => self.prompt_hook_script(script, &data)?,
             false => true,
         };
 
