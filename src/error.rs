@@ -52,3 +52,15 @@ impl From<std::env::VarError> for RicerError {
         RicerError::Unrecoverable(anyhow!("{}", err))
     }
 }
+
+impl From<minus::error::MinusError> for RicerError {
+    fn from(err: minus::error::MinusError) -> RicerError {
+        RicerError::Unrecoverable(anyhow!("{}", err))
+    }
+}
+
+impl From<dialoguer::Error> for RicerError {
+    fn from(err: dialoguer::Error) -> RicerError {
+        RicerError::Unrecoverable(anyhow!("{}", err))
+    }
+}
