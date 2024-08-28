@@ -11,7 +11,9 @@
 //! working directory for a given hook script by targeting a specific repository
 //! definition.
 
+use dialoguer::Confirm;
 use log::{debug, info, trace, warn};
+use minus::{page_all, ExitStrategy, LineNumbers, Pager};
 use run_script::{run_script, ScriptOptions};
 use std::env;
 use std::path::PathBuf;
@@ -20,7 +22,7 @@ use crate::config::dir::ConfigDirManager;
 use crate::config::file::hooks_section::HookEntry;
 use crate::config::file::ConfigFileManager;
 use crate::config::ConfigManager;
-use crate::context::Context;
+use crate::context::{Context, HookAction};
 use crate::error::RicerResult;
 
 /// Representation of a command hook manager.
@@ -101,7 +103,7 @@ where
     ///
     /// 1. Return [`RicerError::Unrecoverable`] if home directory cannot be
     ///    determined.
-    /// 2. May fail if repository entry cannot be obtained due to no entry in
+    /// 2. Will fail if repository entry cannot be obtained due to no entry in
     ///    configuration file or `$XDG_CONFIG_HOME/ricer/repos`.
     ///
     /// # See
@@ -138,6 +140,64 @@ where
         Ok(opts)
     }
 
+    /// Get action type for hook execution.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Return [`HookAction`] from [`Context`].
+    fn get_hook_action(&self) -> &HookAction {
+        match self.ctx {
+            Context::Commit(ctx) => &ctx.shared.hook_action,
+            Context::Push(ctx) => &ctx.shared.hook_action,
+            Context::Pull(ctx) => &ctx.shared.hook_action,
+            Context::Init(ctx) => &ctx.shared.hook_action,
+            Context::Clone(ctx) => &ctx.shared.hook_action,
+            Context::Delete(ctx) => &ctx.shared.hook_action,
+            Context::Rename(ctx) => &ctx.shared.hook_action,
+            Context::Status(ctx) => &ctx.shared.hook_action,
+            Context::List(ctx) => &ctx.shared.hook_action,
+            Context::Enter(ctx) => &ctx.shared.hook_action,
+            Context::RepoGit(_) => {
+                trace!("Repository command shortcut cannot use hooks");
+                &HookAction::Never
+            }
+        }
+    }
+
+    /// Present and prompt user about running hook script.
+    ///
+    /// # Postconditions
+    ///
+    /// 1. Present hook script through pager.
+    /// 2. Prompt user about running hook script after pager closes.
+    /// 3. Return boolean flag containing user's choice.
+    ///
+    /// # Errors
+    ///
+    /// 1. May fail if pager encounters issues.
+    /// 2. May fail if prompt fails.
+    ///
+    /// # See
+    ///
+    /// - [`Minus`]
+    /// - [`Dialoguer`]
+    ///
+    /// [`Minus`]: https://docs.rs/minus/5.6.1/minus/index.html
+    /// [`Dialoguer`]: https://docs.rs/dialoguer/latest/dialoguer/index.html
+    fn prompt_hook_script(&self, hook_name: &String, data: &String) -> RicerResult<bool> {
+        let pager = Pager::new();
+        pager.set_prompt(format!("Verify hook script '{}'", hook_name))?;
+        pager.set_run_no_overflow(true)?;
+        pager.set_exit_strategy(ExitStrategy::PagerQuit)?;
+        pager.set_line_numbers(LineNumbers::AlwaysOn)?;
+        pager.push_str(data)?;
+        page_all(pager)?;
+
+        let choice =
+            Confirm::new().with_prompt(format!("Run reviewed hook '{}'?", hook_name)).interact()?;
+        Ok(choice)
+    }
+
     /// Run a given hook entry in command hook.
     ///
     /// # Postconditions
@@ -149,8 +209,8 @@ where
     /// # Errors
     ///
     /// 1. May fail if hook script cannot be read for whatever reason.
-    /// 2. May fail if [`determine_work_dir`] fails.
-    /// 3. May fail if [`run_script`] fails.
+    /// 2. Will fail if [`determine_work_dir`] fails.
+    /// 3. Will fail if [`run_script`] fails.
     ///
     /// # See
     ///
@@ -158,7 +218,12 @@ where
     ///
     /// [`determine_work_dir`]: #method.determine_work_dir
     /// [`run_script`]: https://docs.rs/run_script/latest/run_script/macro.run_script.html
-    fn run_hook_entry(&self, hook: &HookEntry, kind: &HookKind) -> RicerResult<HookStatus> {
+    fn run_hook_entry(
+        &self,
+        hook: &HookEntry,
+        prompt: bool,
+        kind: &HookKind,
+    ) -> RicerResult<HookStatus> {
         let script = match kind {
             HookKind::Pre => hook.pre.as_ref(),
             HookKind::Post => hook.post.as_ref(),
@@ -170,17 +235,75 @@ where
         };
 
         let data = self.cfg_mgr.dir_manager().get_cmd_hook(script)?;
-        let args = script.split_whitespace().skip(1).map(|s| s.to_string()).collect();
-        let opts = self.determine_work_dir(hook.repo.as_ref())?;
-        let (code, output, error) = run_script!(data, args, opts)?;
-        if error.is_empty() {
-            info!("Script '{}' (exit code: {}) stdout: {}", script, code, output);
+        let run = match prompt {
+            true => self.prompt_hook_script(&script, &data)?,
+            false => true,
+        };
+
+        if run {
+            let args = script.split_whitespace().skip(1).map(|s| s.to_string()).collect();
+            let opts = self.determine_work_dir(hook.repo.as_ref())?;
+            let (code, output, error) = run_script!(data, args, opts)?;
+            if error.is_empty() {
+                info!("Script '{}' (exit code: {})\nstdout:\n{}", script, code, output);
+            } else {
+                warn!("Script '{}' failed (exit code: {})\nstderr:\n{}", script, code, error);
+                return Ok(HookStatus::HookFailure);
+            }
         } else {
-            warn!("Script '{}' failed (exit code: {}): {}", script, code, error);
-            return Ok(HookStatus::HookFailure);
+            return Ok(HookStatus::NoHook);
         }
 
         Ok(HookStatus::HookSuccess)
+    }
+
+    /// Run command hook.
+    ///
+    /// # Postcondition
+    ///
+    /// 1. Run hook entries in command hook obtained in [`Context`].
+    ///
+    /// # Errors
+    ///
+    /// 1. Will fail if [`run_hook_entry`] fails.
+    ///
+    /// [`run_hook_entry`]: #method.run_hook_entry
+    fn run_cmd_hook(&self, kind: &HookKind) -> RicerResult<()> {
+        let cmd_hook = match self.cfg_mgr.file_manager().get_cmd_hook(self.ctx.to_string()) {
+            Ok(cmd_hook) => cmd_hook,
+            Err(err) => {
+                debug!("{}", err);
+                return Ok(());
+            }
+        };
+
+        let prompt = match self.get_hook_action() {
+            HookAction::Prompt => {
+                trace!("Hook action is to prompt for hooks");
+                true
+            }
+            HookAction::Always => {
+                trace!("Hook action is to always execute hooks");
+                false
+            }
+            HookAction::Never => {
+                trace!("Hook action is to never execute hooks");
+                return Ok(());
+            }
+        };
+
+        for hook in cmd_hook.hooks.iter() {
+            match self.run_hook_entry(hook, prompt, kind)? {
+                HookStatus::HookSuccess => info!("Pre hook success"),
+                HookStatus::HookFailure => warn!("Pre hook failure! Address reported issues"),
+                HookStatus::NoHook => {
+                    trace!("No pre hook to run");
+                    continue;
+                }
+            };
+        }
+
+        Ok(())
     }
 }
 
@@ -194,6 +317,14 @@ where
     /// # Postconditions
     ///
     /// 1. Run all pre hook entries and report status on each one.
+    /// 2. Will not fail a command does not have hook definitions for it.
+    ///
+    /// # Errors
+    ///
+    /// 1. Will fail if repository definition does not exist in configuration
+    ///    file or in `$XDG_CONFIG_HOME/ricer/repos`.
+    /// 2. Will fail if hook script does not exist in
+    ///    `$XDG_CONFIG_HOME/ricer/hooks`.
     ///
     /// # Examples
     ///
@@ -224,26 +355,7 @@ where
     /// ```
     fn run_pre(&self) -> RicerResult<()> {
         trace!("Run pre hooks");
-        let cmd_hook = match self.cfg_mgr.file_manager().get_cmd_hook(self.ctx.to_string()) {
-            Ok(cmd_hook) => cmd_hook,
-            Err(err) => {
-                debug!("{}", err);
-                return Ok(());
-            }
-        };
-
-        for hook in cmd_hook.hooks.iter() {
-            match self.run_hook_entry(hook, &HookKind::Pre)? {
-                HookStatus::HookSuccess => info!("Pre hook success"),
-                HookStatus::HookFailure => warn!("Pre hook failure! Address reported issues"),
-                HookStatus::NoHook => {
-                    trace!("No pre hook to run");
-                    continue;
-                }
-            };
-        }
-
-        Ok(())
+        self.run_cmd_hook(&HookKind::Pre)
     }
 
     /// Run post hook entries in command hook.
@@ -251,6 +363,14 @@ where
     /// # Postconditions
     ///
     /// 1. Run all post hook entries and report status on each one.
+    /// 2. Will not fail a command does not have hook definitions for it.
+    ///
+    /// # Errors
+    ///
+    /// 1. Will fail if repository definition does not exist in configuration
+    ///    file or in `$XDG_CONFIG_HOME/ricer/repos`.
+    /// 2. Will fail if hook script does not exist in
+    ///    `$XDG_CONFIG_HOME/ricer/hooks`.
     ///
     /// # Examples
     ///
@@ -281,26 +401,7 @@ where
     /// ```
     fn run_post(&self) -> RicerResult<()> {
         trace!("Run post hooks");
-        let cmd_hook = match self.cfg_mgr.file_manager().get_cmd_hook(self.ctx.to_string()) {
-            Ok(cmd_hook) => cmd_hook,
-            Err(err) => {
-                debug!("{}", err);
-                return Ok(());
-            }
-        };
-
-        for hook in cmd_hook.hooks.iter() {
-            match self.run_hook_entry(hook, &HookKind::Post)? {
-                HookStatus::HookSuccess => info!("Post hook success"),
-                HookStatus::HookFailure => warn!("Post hook failure! Address reported issues"),
-                HookStatus::NoHook => {
-                    trace!("No post hook to run");
-                    continue;
-                }
-            };
-        }
-
-        Ok(())
+        self.run_cmd_hook(&HookKind::Post)
     }
 }
 
