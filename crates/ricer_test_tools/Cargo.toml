@@ -5,7 +5,7 @@
 name = "ricer_test_tools"
 description = "Testing tools for Ricer"
 authors = ["Jason Pena <jasonpena@awkless.com>"]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.74.1"
 license = "GPL-2.0-or-later WITH GPL-CC-1.0"
@@ -13,3 +13,4 @@ license = "GPL-2.0-or-later WITH GPL-CC-1.0"
 [dependencies]
 ricer = { path = "../../" }
 tempfile = "3.10"
+is_executable = "1.0"
