@@ -6,14 +6,21 @@
 //! Standard test fixture creation and management for unit and integration
 //! testing in Ricer's codebase.
 
+use is_executable::IsExecutable;
+use mkdirp::mkdirp;
 use std::fs::{metadata, read_to_string, set_permissions, write};
 use std::path::{Path, PathBuf};
-use is_executable::IsExecutable;
 
+mod dotfile;
 mod git;
 
 #[doc(inline)]
+pub use dotfile::*;
+
+#[doc(inline)]
 pub use git::*;
+
+use crate::util::err_check;
 
 /// Basic test file fixture.
 ///
@@ -113,6 +120,10 @@ impl FileFixture {
 
     /// Synchronize file fixture with tracked file.
     ///
+    /// # Panics
+    ///
+    /// Will panic if file cannot be read for whatever reason.
+    ///
     /// # Examples
     ///
     /// ```
@@ -129,7 +140,7 @@ impl FileFixture {
     /// assert_eq!(file.data(), "key = 'modified'");
     /// ```
     pub fn sync(&mut self) {
-        self.data = read_to_string(&self.path).expect("Failed to sync file fixture");
+        self.data = err_check!(read_to_string(&self.path));
     }
 }
 
@@ -232,22 +243,33 @@ impl FileFixtureBuilder {
     ///     .executable(true)
     ///     .build();
     /// ```
-    pub fn build(self) -> FileFixture {
-        write(&self.path, &self.data).unwrap_or_else(|error| {
-            panic!("Failed to create file '{}': {}", self.path.display(), error)
-        });
+    pub fn build(mut self) -> FileFixture {
+        self.write();
+        FileFixture { path: self.path, data: self.data, executable: self.executable }
+    }
+
+    /// Write contents of file fixture.
+    ///
+    /// Will create the parent path to a file if it does not exist. Will also
+    /// set execute permissions if set by the caller.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if parent path cannot be created, contents of the file cannot
+    /// be written, or execute permission data cannot be set.
+    pub(crate) fn write(&mut self) {
+        err_check!(mkdirp(self.path.parent().unwrap()));
+        err_check!(write(&self.path, &self.data));
 
         #[cfg(unix)]
         if self.executable {
             use std::os::unix::fs::PermissionsExt;
 
-            let mut perms = metadata(&self.path).unwrap().permissions();
+            let metadata = err_check!(metadata(&self.path));
+            let mut perms = metadata.permissions();
             let mode = perms.mode();
-
             perms.set_mode(mode | 0o111);
-            set_permissions(&self.path, perms).unwrap();
+            err_check!(set_permissions(&self.path, perms));
         }
-
-        FileFixture { path: self.path, data: self.data, executable: self.executable }
     }
 }
