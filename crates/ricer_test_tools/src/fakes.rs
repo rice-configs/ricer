@@ -23,9 +23,15 @@ use std::path::Path;
 use tempfile::{Builder, TempDir};
 
 mod config_dir;
+mod data_dir;
 
 #[doc(inline)]
 pub use config_dir::*;
+
+#[doc(inline)]
+pub use data_dir::*;
+
+use crate::util::err_check;
 
 /// Fake of home directory.
 ///
@@ -47,7 +53,7 @@ impl FakeHomeDir {
     /// let home = FakeHomeDir::new();
     /// ```
     pub fn new() -> Self {
-        let home_dir = Builder::new().tempdir().expect("Failed to create fake home directory");
+        let home_dir = err_check!(Builder::new().tempdir());
         Self { home_dir }
     }
 
@@ -68,11 +74,5 @@ impl FakeHomeDir {
     pub fn as_path(&self) -> &Path {
         debug_assert!(self.home_dir.path().exists(), "Path to fake home directory does not exist");
         self.home_dir.path()
-    }
-}
-
-impl Default for FakeHomeDir {
-    fn default() -> Self {
-        Self::new()
     }
 }
