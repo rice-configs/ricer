@@ -271,7 +271,7 @@ pub struct EnterOptions {
     pub repo: String,
 }
 
-const EXTERNAL_SUBCOMMAND_INFORMATION: &'static str = r#"
+const EXTERNAL_SUBCOMMAND_INFORMATION: &str = r#"
 Command Shortcuts:
   <REPO> <GIT_CMD>  Shortcut to execute a Git command directly on a target repository.
 "#;
