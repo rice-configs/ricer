@@ -55,7 +55,7 @@ use log::{debug, trace, warn};
 use std::fs::{create_dir_all, read_to_string, remove_dir_all, rename, write, File};
 use std::path::{Path, PathBuf};
 
-use crate::config::locator::ConfigDirLocator;
+use crate::config::DirLocator;
 use crate::error::RicerResult;
 
 /// Configuration directory manager representation.
@@ -126,18 +126,17 @@ impl DefaultConfigDirManager {
     /// ```no_run
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
-    /// use ricer::config::locator::{DefaultXdgBaseDirSpec, DefaultConfigDirLocator};
-    /// use ricer::config::dir::DefaultConfigDirManager;
+    /// use ricer::config::{DefaultDirLocator, XdgDirLayout, DefaultConfigDirManager};
     ///
-    /// let xdg_spec = DefaultXdgBaseDirSpec::new()?;
-    /// let locator = DefaultConfigDirLocator::new_locate(&xdg_spec)?;
+    /// let layout = XdgDirLayout::new_layout()?;
+    /// let locator = DefaultDirLocator::new_locate(&xdg_spec)?;
     /// let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
     /// # Ok(())
     /// # }
     /// ```
     ///
     /// [`ConfigDirLocator`]: crate::config::locator::ConfigDirLocator
-    pub fn new(locator: &dyn ConfigDirLocator) -> Self {
+    pub fn new(locator: &dyn DirLocator) -> Self {
         trace!("Construct default configuration directory manager");
         let root_dir = locator.config_dir().to_path_buf();
         let repos_dir = root_dir.join("repos");

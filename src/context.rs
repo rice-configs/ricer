@@ -23,8 +23,8 @@
 //!
 //! [`RicerCli`]: crate::cli::RicerCli
 
-use std::fmt::{Display, Formatter, Result};
 use clap::ValueEnum;
+use std::fmt::{Display, Formatter, Result};
 
 mod clone;
 mod commit;
