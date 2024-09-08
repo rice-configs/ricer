@@ -33,6 +33,57 @@ pub struct RepoEntry {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
+pub struct RepoEntryBuilder {
+    name: String,
+    branch: String,
+    remote: String,
+    workdir_home: bool,
+    bootstrap: Option<RepoBootstrapEntry>
+}
+
+impl RepoEntryBuilder {
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            branch: Default::default(),
+            remote: Default::default(),
+            workdir_home: Default::default(),
+            bootstrap: Default::default(),
+        }
+    }
+
+    pub fn branch(mut self, branch: impl Into<String>) -> Self {
+        self.branch = branch.into();
+        self
+    }
+
+    pub fn remote(mut self, remote: impl Into<String>) -> Self {
+        self.remote = remote.into();
+        self
+    }
+
+    pub fn workdir_home(mut self, choice: bool) -> Self {
+        self.workdir_home = choice;
+        self
+    }
+
+    pub fn bootstrap(mut self, bootstrap: RepoBootstrapEntry) -> Self {
+        self.bootstrap = Some(bootstrap);
+        self
+    }
+
+    pub fn build(self) -> RepoEntry {
+        RepoEntry {
+            name: self.name,
+            branch: self.branch,
+            remote: self.remote,
+            workdir_home: self.workdir_home,
+            bootstrap: self.bootstrap,
+        }
+    }
+}
+
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct RepoBootstrapEntry {
     pub clone: String,
     pub os: OsType,
