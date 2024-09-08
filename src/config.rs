@@ -32,6 +32,12 @@ pub struct RepoEntry {
     pub bootstrap: Option<RepoBootstrapEntry>
 }
 
+impl RepoEntry {
+    pub fn builder(name: impl Into<String>) -> RepoEntryBuilder {
+        RepoEntryBuilder::new(name)
+    }
+}
+
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct RepoEntryBuilder {
     name: String,
@@ -89,6 +95,69 @@ pub struct RepoBootstrapEntry {
     pub os: OsType,
     pub users: Option<Vec<String>>,
     pub hosts: Option<Vec<String>>,
+}
+
+impl RepoBootstrapEntry {
+    pub fn builder() -> RepoBootstrapEntryBuilder {
+        RepoBootstrapEntryBuilder::new()
+    }
+}
+
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
+pub struct RepoBootstrapEntryBuilder {
+    clone: String,
+    os: OsType,
+    users: Option<Vec<String>>,
+    hosts: Option<Vec<String>>,
+}
+
+impl RepoBootstrapEntryBuilder {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn clone(mut self, url: impl Into<String>) -> Self {
+        self.clone = url.into();
+        self
+    }
+
+    pub fn os(mut self, os: OsType) -> Self {
+        self.os = os;
+        self
+    }
+
+    pub fn users<I, S>(mut self, users: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        self.users = Some(Vec::new());
+        for user in users {
+            self.users.get_or_insert(vec![]).push(user.into());
+        }
+        self
+    }
+
+    pub fn hosts<I, S>(mut self, hosts: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        self.hosts = Some(Vec::new());
+        for host in hosts {
+            self.users.get_or_insert(vec![]).push(host.into());
+        }
+        self
+    }
+
+    pub fn build(self) -> RepoBootstrapEntry {
+        RepoBootstrapEntry {
+            clone: self.clone,
+            os: self.os,
+            users: self.users,
+            hosts: self.hosts,
+        }
+    }
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Copy, Clone)]
