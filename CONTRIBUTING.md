@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
-SPDX-License-Identifier: CC-BY-SA-4.0
+SPDX-License-Identifier: MIT
 -->
 
 # Contributing to Ricer
@@ -83,21 +83,10 @@ proper SPDX copyright and licensing tags at the top always. Contributors can
 Use the [reuse tool][reuse-tool] to determine if their changes are REUSE 3.0
 compliant.
 
-Ricer uses a number of different licenses to cover different sections of the
-codebase. Regardless, Ricer's main license is the GNU GPL v2+ license with the
-GPL Cooperation Commitment version 1.0. Thus, all major pieces of source code
-will need the following SPDX license identifier tag: `GPL-2.0-or-later WITH
-GPL-CC-1.0`.
-
-If you add a file that mainly provides documentation, then you will need to use
-the Creative Commons Attribution-ShareAlike 4.0 International license, because
-the GPL only covers source code. Thus, all documentation files will need the
-following SPDX license identifier tag: `CC-BY-SA-4.0`.
-
-Finally, if you add files that are either too small or too generic to place
-copyright over, or you just want the file to exist in the public domain, then
-use the Creative Commons CC0 1.0 Unviersal license via this SPDX license
-identifier: `CC0-1.0`
+Ricer uses the MIT license as its main source code and documentation license.
+Ricer also uses the CC0-1.0 license to place files in the public domain that are
+considered to be to small or generic to place copyright over. Thus, for more
+contributions you will use the MIT license.
 
 Do not forget to include the following SPDX copyright identifier at the top of
 any file you create along with the SPDX copyright identifier:
