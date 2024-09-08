@@ -11,6 +11,9 @@ rust-version = "1.74.1"
 license = "GPL-2.0-or-later WITH GPL-CC-1.0"
 
 [dependencies]
-ricer = { path = "../../" }
+anyhow.workspace = true
+git2.workspace = true
+is_executable.workspace = true
+pretty_assertions.workspace = true
+mkdirp.workspace = true
 tempfile = "3.10"
-is_executable = "1.0"
