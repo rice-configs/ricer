@@ -11,12 +11,10 @@ use log::error;
 use std::ffi::OsString;
 
 use ricer::cli::RicerCli;
-use ricer::config::dir::DefaultConfigDirManager;
-use ricer::config::file::DefaultConfigFileManager;
-use ricer::config::locator::{
-    recover_default_config_dir_locator, DefaultConfigDirLocator, DefaultXdgBaseDirSpec,
+use ricer::config::{
+    DefaultDirLocator, DefaultConfigFileManager, ConfigManager,
+    DefaultConfigDirManager, XdgDirLayout,
 };
-use ricer::config::ConfigManager;
 use ricer::context::Context;
 use ricer::error::RicerError;
 use ricer::hook::{CommandHookManager, DefaultCommandHookManager};
@@ -61,12 +59,8 @@ where
         .init();
 
     let ctx = Context::from(opts);
-    let xdg_spec = DefaultXdgBaseDirSpec::new()?;
-    let locator = match DefaultConfigDirLocator::new_locate(&xdg_spec) {
-        Ok(locator) => locator,
-        Err(RicerError::NoConfigDir(..)) => recover_default_config_dir_locator(&xdg_spec)?,
-        Err(err) => return Err(err.into()),
-    };
+    let layout = XdgDirLayout::new_layout()?;
+    let locator = DefaultDirLocator::new(&layout);
     let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
     let cfg_file_mgr = DefaultConfigFileManager::new();
     let mut config = ConfigManager::new(cfg_dir_mgr, cfg_file_mgr);

@@ -43,11 +43,11 @@
 //! external subcommand shortcut to the user.
 
 use crate::build;
-use crate::context::commit::FixupAction;
-use crate::context::HookAction;
 use clap::{Args, Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use std::ffi::OsString;
+
+use crate::context::{FixupAction, HookAction};
 
 /// Ricer CLI structure.
 ///
