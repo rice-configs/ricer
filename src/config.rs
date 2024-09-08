@@ -9,14 +9,20 @@
 
 use std::path::PathBuf;
 
-pub mod dir;
-pub mod file;
-pub mod locator;
+mod dir;
+mod file;
+mod locator;
+
+#[doc(inline)]
+pub use dir::*;
+
+#[doc(inline)]
+pub use file::*;
+
+#[doc(inline)]
+pub use locator::*;
 
 use crate::error::RicerResult;
-use dir::ConfigDirManager;
-use file::repos_section::RepoEntry;
-use file::ConfigFileManager;
 
 pub struct ConfigManager<D: ConfigDirManager, F: ConfigFileManager> {
     dir_manager: D,

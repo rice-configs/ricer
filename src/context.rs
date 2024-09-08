@@ -24,32 +24,54 @@
 //! [`RicerCli`]: crate::cli::RicerCli
 
 use std::fmt::{Display, Formatter, Result};
+use clap::ValueEnum;
 
-pub mod clone;
-pub mod commit;
-pub mod delete;
-pub mod enter;
-pub mod init;
-pub mod list;
-pub mod pull;
-pub mod push;
-pub mod rename;
-pub mod repo_git;
-pub mod status;
+mod clone;
+mod commit;
+mod delete;
+mod enter;
+mod init;
+mod list;
+mod pull;
+mod push;
+mod rename;
+mod repo_git;
+mod status;
+
+#[doc(inline)]
+pub use clone::*;
+
+#[doc(inline)]
+pub use commit::*;
+
+#[doc(inline)]
+pub use delete::*;
+
+#[doc(inline)]
+pub use enter::*;
+
+#[doc(inline)]
+pub use init::*;
+
+#[doc(inline)]
+pub use list::*;
+
+#[doc(inline)]
+pub use pull::*;
+
+#[doc(inline)]
+pub use push::*;
+
+#[doc(inline)]
+pub use rename::*;
+
+#[doc(inline)]
+pub use repo_git::*;
+
+#[doc(inline)]
+pub use status::*;
 
 use crate::cli::{CommandSet, RicerCli, SharedOptions};
-use clap::ValueEnum;
-use clone::CloneContext;
-use commit::CommitContext;
-use delete::DeleteContext;
-use enter::EnterContext;
-use init::InitContext;
-use list::ListContext;
-use pull::PullContext;
-use push::PushContext;
-use rename::RenameContext;
-use repo_git::RepoGitContext;
-use status::StatusContext;
 
 /// Context states for each Ricer command.
 #[derive(Debug)]

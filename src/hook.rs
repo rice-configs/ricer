@@ -18,10 +18,7 @@ use run_script::{run_script, ScriptOptions};
 use std::env;
 use std::path::PathBuf;
 
-use crate::config::dir::ConfigDirManager;
-use crate::config::file::hooks_section::HookEntry;
-use crate::config::file::ConfigFileManager;
-use crate::config::ConfigManager;
+use crate::config::{ConfigDirManager, HookEntry, ConfigFileManager, ConfigManager };
 use crate::context::{Context, HookAction};
 use crate::error::RicerResult;
 

@@ -19,12 +19,16 @@ use std::fs::{read_to_string, write};
 use std::path::Path;
 use toml_edit::{DocumentMut, Item, Key, Table};
 
-pub mod hooks_section;
-pub mod repos_section;
+mod hooks_section;
+mod repos_section;
+
+#[doc(inline)]
+pub use hooks_section::*;
+
+#[doc(inline)]
+pub use repos_section::*;
 
 use crate::error::RicerResult;
-use hooks_section::CommandHookEntry;
-use repos_section::RepoEntry;
 
 /// Configuration file manager representation.
 pub trait ConfigFileManager: Display {
