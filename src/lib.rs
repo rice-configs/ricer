@@ -44,15 +44,12 @@
 use shadow_rs::shadow;
 shadow!(build);
 
-pub mod error;
-
 pub mod cli;
-
+pub mod config;
 pub mod context;
 
-pub mod config;
-
-pub mod hook;
+// pub mod error;
+// pub mod hook;
 
 #[cfg(test)]
 mod tests;

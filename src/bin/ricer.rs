@@ -11,21 +11,8 @@ use log::error;
 use std::ffi::OsString;
 
 use ricer::cli::RicerCli;
-use ricer::config::{
-    DefaultDirLocator, DefaultConfigFileManager, ConfigManager,
-    DefaultConfigDirManager, XdgDirLayout,
-};
 use ricer::context::Context;
-use ricer::error::RicerError;
-use ricer::hook::{CommandHookManager, DefaultCommandHookManager};
 
-/// Starting point of Ricer binary.
-///
-/// # Postconditions
-///
-/// 1. Parse and execute Ricer command set.
-/// 2. Log any errors.
-/// 3. Provide [`ExitCode`] before exiting.
 fn main() {
     std::process::exit(
         match run_ricer(std::env::args_os) {
@@ -39,12 +26,6 @@ fn main() {
     );
 }
 
-/// Run Ricer binary.
-///
-/// # Postconditions
-///
-/// 1. Parse and execute Ricer command set.
-/// 2. Provide [`ExitCode`] after processing.
 fn run_ricer<I, F>(args: F) -> Result<ExitCode>
 where
     I: IntoIterator<Item = OsString>,
@@ -58,27 +39,13 @@ where
         .filter_level(opts.log_opts.log_level_filter())
         .init();
 
-    let ctx = Context::from(opts);
-    let layout = XdgDirLayout::new_layout()?;
-    let locator = DefaultDirLocator::new(&layout);
-    let cfg_dir_mgr = DefaultConfigDirManager::new(&locator);
-    let cfg_file_mgr = DefaultConfigFileManager::new();
-    let mut config = ConfigManager::new(cfg_dir_mgr, cfg_file_mgr);
-    config.read_config_file()?;
-    let hook_mgr = DefaultCommandHookManager::new(&config, &ctx);
-    hook_mgr.run_pre()?;
-
     // TODO: match and execute command in Ricer's command set...
 
     Ok(ExitCode::Success)
 }
 
-/// General exit code status.
 enum ExitCode {
-    /// Ricer binary exited with no errors.
     Success,
-
-    /// Ricer binary exited with errors.
     Failure,
 }
 

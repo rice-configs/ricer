@@ -60,10 +60,10 @@ where
     /// use std::ffi::OsString;
     ///
     /// use ricer::cli::RicerCli;
-    /// use ricer::config::dir::DefaultConfigDirManager;
-    /// use ricer::config::file::DefaultConfigFileManager;
-    /// use ricer::config::locator::{DefaultConfigDirLocator, DefaultXdgBaseDirSpec};
-    /// use ricer::config::ConfigManager;
+    /// use ricer::config::{
+    ///     ConfigManager, DefaultConfigDirManager, DefaultDirLocator, XdgDirLayout,
+    ///     DefaultConfigFileManager
+    /// };
     /// use ricer::context::Context;
     /// use ricer::hook::DefaultCommandHookManager;
     ///
@@ -331,10 +331,10 @@ where
     /// use std::ffi::OsString;
     ///
     /// use ricer::cli::RicerCli;
-    /// use ricer::config::dir::DefaultConfigDirManager;
-    /// use ricer::config::file::DefaultConfigFileManager;
-    /// use ricer::config::locator::{DefaultConfigDirLocator, DefaultXdgBaseDirSpec};
-    /// use ricer::config::ConfigManager;
+    /// use ricer::config::{
+    ///     ConfigManager, DefaultConfigDirManager, DefaultDirLocator, XdgDirLayout,
+    ///     DefaultConfigFileManager
+    /// };
     /// use ricer::context::Context;
     /// use ricer::hook::{CommandHookManager, DefaultCommandHookManager};
     ///
@@ -377,10 +377,10 @@ where
     /// use std::ffi::OsString;
     ///
     /// use ricer::cli::RicerCli;
-    /// use ricer::config::dir::DefaultConfigDirManager;
-    /// use ricer::config::file::DefaultConfigFileManager;
-    /// use ricer::config::locator::{DefaultConfigDirLocator, DefaultXdgBaseDirSpec};
-    /// use ricer::config::ConfigManager;
+    /// use ricer::config::{
+    ///     ConfigManager, DefaultConfigDirManager, DefaultDirLocator, XdgDirLayout,
+    ///     DefaultConfigFileManager
+    /// };
     /// use ricer::context::Context;
     /// use ricer::hook::{CommandHookManager, DefaultCommandHookManager};
     ///
