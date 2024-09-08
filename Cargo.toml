@@ -6,6 +6,16 @@ members = [
     "crates/*"
 ]
 
+[workspace.dependencies]
+anyhow = "1.0"
+git2 = "0.19"
+is_executable = "1.0"
+mkdirp = "1.0"
+mockall = "0.13"
+pretty_assertions = "1.4"
+ricer_test_tools = { version = "0.3.0", path = "crates/ricer_test_tools" }
+thiserror = "1.0"
+
 [package]
 name = "ricer"
 description = "Experimental rice/dotfile manager"
@@ -21,28 +31,26 @@ build = "build.rs"
 shadow-rs = "0.29"
 
 [dependencies]
-anyhow = "1.0"
+anyhow.workspace = true
 clap = { version = "4.5", features = ["derive"] }
 clap-verbosity-flag = "2.2"
 const_format = "0.2"
+dialoguer = "0.11.0"
 directories = "5.0"
 env_logger = "0.11"
-git2 = "0.19"
+git2.workspace = true
 indoc = "2"
 log = "0.4"
-run_script = "0.10"
-serde = { version = "1.0", features = ["derive"] }
-shadow-rs = "0.29"
-thiserror = "1.0"
-toml_edit = "0.22"
 minus = { version = "5.6", features = [ "static_output", "search" ] }
-dialoguer = "0.11.0"
+mkdirp.workspace = true
+run_script = "0.10"
+shadow-rs = "0.29"
+thiserror.workspace = true
+toml_edit = "0.22"
 
 [dev-dependencies]
-assert_cmd = "2.0"
-pretty_assertions = "1.4"
-tempfile = "3.10"
+pretty_assertions.workspace = true
+ricer_test_tools.workspace = true
+mockall.workspace = true
 rstest = "0.21"
-mockall = "0.13"
-ricer_test_tools = { path = "crates/ricer_test_tools" }
 test-log = "0.2"
