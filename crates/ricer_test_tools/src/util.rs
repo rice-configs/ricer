@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: GPL-2.0-or-later WITH GPL-CC-1.0
 
+//! General utilities.
+//!
+//! Basic utilities to make writing tests easier.
+
 use std::fmt::Write;
 
 /// Check a `Result` with a useful panic message.
@@ -17,9 +21,11 @@ macro_rules! err_check {
     ($expr:expr) => {
         match $expr {
             Ok(data) => data,
-            Err(err) => $crate::util::anyhow_panic(&format!("Failed running {}", stringify!($expr)), err),
+            Err(err) => {
+                $crate::util::anyhow_panic(&format!("Failed running {}", stringify!($expr)), err)
+            }
         }
-    }
+    };
 }
 
 pub use err_check;
