@@ -7,7 +7,7 @@
 //! configuration data housed in Ricer's configuration directory. This includes
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
-use std::path::PathBuf;
+// use std::path::PathBuf;
 
 // mod dir;
 // mod file;
