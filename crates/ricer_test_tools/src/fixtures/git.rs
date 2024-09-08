@@ -61,7 +61,6 @@ impl GitRepoFixture {
         Self { git_dir: path.as_ref().into(), repo }
     }
 
-
     /// Add all currently unstaged files in repository.
     ///
     /// # Panics
