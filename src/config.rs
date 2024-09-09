@@ -7,7 +7,8 @@
 //! configuration data housed in Ricer's configuration directory. This includes
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
-use toml_edit::DocumentMut;
+use toml_edit::visit::{visit_table_like_kv, Visit};
+use toml_edit::{DocumentMut, Array, InlineTable, Item, Key, Table, Value};
 
 mod locator;
 
@@ -35,6 +36,17 @@ pub struct RepoEntry {
 impl RepoEntry {
     pub fn builder(name: impl Into<String>) -> RepoEntryBuilder {
         RepoEntryBuilder::new(name)
+    }
+}
+
+impl<'toml> From<(&'toml Key, &'toml Item)> for RepoEntry {
+    fn from(toml_entry: (&'toml Key, &'toml Item)) -> Self {
+        let (key, value) = toml_entry;
+        let mut bootstrap = RepoBootstrapEntry::builder();
+        let mut repo = RepoEntry::builder(key.get());
+        bootstrap.visit_item(value);
+        repo.visit_item(value);
+        repo.bootstrap(bootstrap.build()).build()
     }
 }
 
@@ -89,6 +101,18 @@ impl RepoEntryBuilder {
     }
 }
 
+impl<'toml> Visit<'toml> for RepoEntryBuilder {
+    fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
+        match key {
+            "branch" => self.branch = node.as_str().unwrap_or_default().to_string(),
+            "remote" => self.remote = node.as_str().unwrap_or_default().to_string(),
+            "workdir_home" => self.workdir_home = node.as_bool().unwrap_or_default(),
+            &_ => visit_table_like_kv(self, key, node),
+        }
+        visit_table_like_kv(self, key, node);
+    }
+}
+
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct RepoBootstrapEntry {
     pub clone: String,
@@ -101,6 +125,7 @@ impl RepoBootstrapEntry {
     pub fn builder() -> RepoBootstrapEntryBuilder {
         RepoBootstrapEntryBuilder::new()
     }
+
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
@@ -158,6 +183,38 @@ impl RepoBootstrapEntryBuilder {
             hosts: self.hosts,
         }
     }
+
+    fn to_vec_string(&self, toml_array: &Array) -> Vec<String> {
+        let mut data = Vec::new();
+        for item in toml_array.iter() {
+            data.push(item.as_str().unwrap_or_default().to_string());
+        }
+        data
+    }
+}
+
+impl<'toml> Visit<'toml> for RepoBootstrapEntryBuilder {
+    fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
+        match key {
+            "clone" => self.clone = node.as_str().unwrap_or_default().to_string(),
+            "os" => self.os = OsType::from(node.as_str().unwrap_or_default()),
+
+            "hosts" => {
+                if let Some(array) = node.as_array() {
+                    self.hosts = Some(self.to_vec_string(array))
+                }
+            }
+
+            "users" => {
+                if let Some(array) = node.as_array() {
+                    self.users = Some(self.to_vec_string(array))
+                }
+            }
+
+            &_ => visit_table_like_kv(self, key, node),
+        }
+        visit_table_like_kv(self, key, node);
+    }
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Copy, Clone)]
@@ -170,4 +227,16 @@ pub enum OsType {
     MacOs,
 
     Windows,
+}
+
+impl From<&str> for OsType {
+    fn from(data: &str) -> Self {
+        match data {
+            "any" => Self::Any,
+            "unix" => Self::Unix,
+            "MacOs" => Self::MacOs,
+            "Windows" => Self::Windows,
+            &_ => Self::Any,
+        }
+    }
 }
