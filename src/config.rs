@@ -7,8 +7,9 @@
 //! configuration data housed in Ricer's configuration directory. This includes
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
+use std::fmt::{Display, Formatter, Result};
 use toml_edit::visit::{visit_table_like_kv, Visit};
-use toml_edit::{DocumentMut, Array, InlineTable, Item, Key, Table, Value};
+use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
 
 mod locator;
 
@@ -30,12 +31,39 @@ pub struct RepoEntry {
     pub branch: String,
     pub remote: String,
     pub workdir_home: bool,
-    pub bootstrap: Option<RepoBootstrapEntry>
+    pub bootstrap: Option<RepoBootstrapEntry>,
 }
 
 impl RepoEntry {
     pub fn builder(name: impl Into<String>) -> RepoEntryBuilder {
         RepoEntryBuilder::new(name)
+    }
+
+    pub fn to_toml(&self) -> (Key, Item) {
+        let mut repo_entry = Table::new();
+        let mut bootstrap_entry = Table::new();
+
+        repo_entry.insert("branch", Item::Value(Value::from(&self.branch)));
+        repo_entry.insert("remote", Item::Value(Value::from(&self.remote)));
+        repo_entry.insert("workdir_home", Item::Value(Value::from(self.workdir_home)));
+        if let Some(bootstrap) = &self.bootstrap {
+            bootstrap_entry.insert("clone", Item::Value(Value::from(&bootstrap.clone)));
+            bootstrap_entry.insert("os", Item::Value(Value::from(bootstrap.os.to_string())));
+
+            if let Some(users) = &bootstrap.users {
+                bootstrap_entry.insert("users", Item::Value(Value::Array(Array::from_iter(users))));
+            }
+
+            if let Some(hosts) = &bootstrap.hosts {
+                bootstrap_entry.insert("hosts", Item::Value(Value::Array(Array::from_iter(hosts))));
+            }
+
+            repo_entry.insert("bootstrap", Item::Table(bootstrap_entry));
+        }
+
+        let key = Key::new(&self.name);
+        let value = Item::Table(repo_entry);
+        (key, value)
     }
 }
 
@@ -56,7 +84,7 @@ pub struct RepoEntryBuilder {
     branch: String,
     remote: String,
     workdir_home: bool,
-    bootstrap: Option<RepoBootstrapEntry>
+    bootstrap: Option<RepoBootstrapEntry>,
 }
 
 impl RepoEntryBuilder {
@@ -125,7 +153,6 @@ impl RepoBootstrapEntry {
     pub fn builder() -> RepoBootstrapEntryBuilder {
         RepoBootstrapEntryBuilder::new()
     }
-
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
@@ -176,20 +203,7 @@ impl RepoBootstrapEntryBuilder {
     }
 
     pub fn build(self) -> RepoBootstrapEntry {
-        RepoBootstrapEntry {
-            clone: self.clone,
-            os: self.os,
-            users: self.users,
-            hosts: self.hosts,
-        }
-    }
-
-    fn to_vec_string(&self, toml_array: &Array) -> Vec<String> {
-        let mut data = Vec::new();
-        for item in toml_array.iter() {
-            data.push(item.as_str().unwrap_or_default().to_string());
-        }
-        data
+        RepoBootstrapEntry { clone: self.clone, os: self.os, users: self.users, hosts: self.hosts }
     }
 }
 
@@ -200,14 +214,14 @@ impl<'toml> Visit<'toml> for RepoBootstrapEntryBuilder {
             "os" => self.os = OsType::from(node.as_str().unwrap_or_default()),
 
             "hosts" => {
-                if let Some(array) = node.as_array() {
-                    self.hosts = Some(self.to_vec_string(array))
+                if let Some(hosts) = node.as_array() {
+                    self.hosts = Some(hosts.into_iter().map(|s| s.to_string()).collect())
                 }
             }
 
             "users" => {
-                if let Some(array) = node.as_array() {
-                    self.users = Some(self.to_vec_string(array))
+                if let Some(users) = node.as_array() {
+                    self.users = Some(users.into_iter().map(|s| s.to_string()).collect())
                 }
             }
 
@@ -237,6 +251,17 @@ impl From<&str> for OsType {
             "MacOs" => Self::MacOs,
             "Windows" => Self::Windows,
             &_ => Self::Any,
+        }
+    }
+}
+
+impl Display for OsType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            OsType::Any => write!(f, "any"),
+            OsType::Unix => write!(f, "unix"),
+            OsType::MacOs => write!(f, "macos"),
+            OsType::Windows => write!(f, "windows"),
         }
     }
 }
