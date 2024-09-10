@@ -8,7 +8,7 @@
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
 use anyhow::{anyhow, Result};
-use log::{debug, info};
+use log::{debug, info, trace};
 use std::fmt;
 use std::fs::{read_to_string, write};
 use std::path::Path;
@@ -98,6 +98,57 @@ impl ReposConfig {
         Ok(())
     }
 
+    /// Serialize repository entry into parsed configuration file data.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if `repos` section is not defined as a table.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
+    /// use ricer::config::{ReposConfig, RepoEntry};
+    ///
+    /// let repo = RepoEntry::builder("vim")
+    ///     .branch("master")
+    ///     .remote("origin")
+    ///     .workdir_home(true)
+    ///     .build();
+    /// let mut config = ReposConfig::new();
+    /// config.add_repo(repo)?;
+    /// let expect = indoc! {r#"
+    /// [repos.vim]
+    /// branch = "master"
+    /// remote = "origin"
+    /// workdir_home = true
+    /// "#};
+    /// let result = config.to_string();
+    /// assert_eq!(result, expect);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn add_repo(&mut self, entry: RepoEntry) -> Result<()> {
+        info!("Add repository '{}' to configuration file", &entry.name);
+        let (key, value) = entry.to_toml();
+        if let Some(repos) = self.doc.get_mut("repos") {
+            trace!("The 'repos' section exists, add to it");
+            let repos = repos.as_table_mut().ok_or(anyhow!(
+                "The 'repos' section in configuration file not defined as a table"
+            ))?;
+            repos.insert(key.get(), value);
+        } else {
+            trace!("The 'repos' section does not exist, set it up and add to it");
+            let mut repos = Table::new();
+            repos.insert(key.get(), value);
+            repos.set_implicit(true);
+            self.doc.insert("repos", Item::Table(repos));
+        }
+        Ok(())
+    }
+
     /// Deserialize repository entry from parsed configuration file data.
     ///
     /// # Errors
@@ -120,17 +171,9 @@ impl ReposConfig {
     ///     .workdir_home(true)
     ///     .build();
     /// let mut config = ReposConfig::new();
-    /// config.add_repo(repo);
-    /// config.get_repo("vim");
-    ///
-    /// let expect = indoc! {r#"
-    /// [repos.vim]
-    /// branch = "master"
-    /// remote = "origin"
-    /// workdir_home = true
-    /// "#};
-    /// let result = config.to_string();
-    /// assert_eq!(expect, result);
+    /// config.add_repo(repo)?;
+    /// let result = config.get_repo("vim")?;
+    /// assert_eq!(result, repo);
     /// # Ok(())
     /// # }
     /// ```
