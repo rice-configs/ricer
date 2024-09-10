@@ -19,12 +19,15 @@ mod locator;
 #[doc(inline)]
 pub use locator::*;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ReposConfig {
     doc: DocumentMut,
 }
 
 impl ReposConfig {
+    pub fn new() -> Self {
+        Default::default()
+    }
     /// Read from repository configuration file at provided path.
     ///
     /// # Errors
