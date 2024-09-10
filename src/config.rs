@@ -8,8 +8,9 @@
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
 use anyhow::Result;
-use std::fs::read_to_string;
+use std::fs::{read_to_string, write};
 use std::fmt;
+use log::info;
 use std::path::Path;
 use toml_edit::visit::{visit_table_like_kv, Visit};
 use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
@@ -19,15 +20,36 @@ mod locator;
 #[doc(inline)]
 pub use locator::*;
 
+/// Repository configuration file handler.
+///
+/// Handles the the parsing and manipulation of Ricer's repository configuration
+/// file. Designed to serialize and deserialize repository configuration
+/// information, while perserving the comments and formatting the user may
+/// introduce into the configuration file.
+///
+/// # See also
+///
+/// - [`RepoEntry`]
+/// - [`RepoBootstrapEntry`]
 #[derive(Debug, Default, Clone)]
 pub struct ReposConfig {
     doc: DocumentMut,
 }
 
 impl ReposConfig {
+    /// Construct new repository configuration handler.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::ReposConfig;
+    ///
+    /// let config = ReposConfig::new();
+    /// ```
     pub fn new() -> Self {
         Default::default()
     }
+
     /// Read from repository configuration file at provided path.
     ///
     /// # Errors
@@ -51,6 +73,28 @@ impl ReposConfig {
         let buffer = read_to_string(path.as_ref())?;
         let doc: DocumentMut = buffer.parse()?;
         self.doc = doc;
+        Ok(())
+    }
+
+    /// Write to repository configuraiton file at provided path.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if writing to the configuration file fails for whatever
+    /// reason.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::ReposConfig;
+    ///
+    /// let mut config = ReposConfig::new();
+    /// config.write("/path/to/repos.toml");
+    /// ```
+    pub fn write(&mut self, path: impl AsRef<Path>) -> Result<()> {
+        info!("Write to '{}'", path.as_ref().display());
+        let buffer = self.doc.to_string();
+        write(path.as_ref(), buffer)?;
         Ok(())
     }
 }
