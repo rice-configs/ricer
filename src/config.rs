@@ -118,7 +118,7 @@ impl ReposConfig {
     ///     .workdir_home(true)
     ///     .build();
     /// let mut config = ReposConfig::new();
-    /// config.add_repo(repo)?;
+    /// config.add_repo(&repo)?;
     /// let expect = indoc! {r#"
     /// [repos.vim]
     /// branch = "master"
@@ -130,7 +130,7 @@ impl ReposConfig {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn add_repo(&mut self, entry: RepoEntry) -> Result<()> {
+    pub fn add_repo(&mut self, entry: &RepoEntry) -> Result<()> {
         info!("Add repository '{}' to configuration file", &entry.name);
         let (key, value) = entry.to_toml();
         if let Some(repos) = self.doc.get_mut("repos") {
@@ -171,7 +171,7 @@ impl ReposConfig {
     ///     .workdir_home(true)
     ///     .build();
     /// let mut config = ReposConfig::new();
-    /// config.add_repo(repo)?;
+    /// config.add_repo(&repo)?;
     /// let result = config.get_repo("vim")?;
     /// assert_eq!(result, repo);
     /// # Ok(())
@@ -197,6 +197,12 @@ impl ReposConfig {
         ))?;
 
         Ok(repos)
+    }
+}
+
+impl fmt::Display for ReposConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.doc)
     }
 }
 
