@@ -25,6 +25,31 @@ pub struct ReposConfig {
 }
 
 impl ReposConfig {
+    /// Read from repository configuration file at provided path.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if configuration file cannot be read, or contains invalid
+    /// TOML formatting.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::ReposConfig;
+    ///
+    /// let mut config = ReposConfig::new();
+    /// config.read("/path/to/repos.toml")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn read(&mut self, path: impl AsRef<Path>) -> Result<()> {
+        let buffer = read_to_string(path.as_ref())?;
+        let doc: DocumentMut = buffer.parse()?;
+        self.doc = doc;
+        Ok(())
+    }
 }
 
 /// Repository entry definition.
