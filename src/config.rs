@@ -7,10 +7,10 @@
 //! configuration data housed in Ricer's configuration directory. This includes
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
-use anyhow::Result;
-use std::fs::{read_to_string, write};
+use anyhow::{anyhow, Result};
+use log::{debug, info};
 use std::fmt;
-use log::info;
+use std::fs::{read_to_string, write};
 use std::path::Path;
 use toml_edit::visit::{visit_table_like_kv, Visit};
 use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
@@ -96,6 +96,64 @@ impl ReposConfig {
         let buffer = self.doc.to_string();
         write(path.as_ref(), buffer)?;
         Ok(())
+    }
+
+    /// Deserialize repository entry from parsed configuration file data.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if there is not 'repos' section to obtain repository entries
+    /// from. Will also fail if target repository does not exist in 'repos'
+    /// section.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
+    /// use ricer::config::{ReposConfig, RepoEntry};
+    ///
+    /// let repo = RepoEntry::builder("vim")
+    ///     .branch("master")
+    ///     .remote("origin")
+    ///     .workdir_home(true)
+    ///     .build();
+    /// let mut config = ReposConfig::new();
+    /// config.add_repo(repo);
+    /// config.get_repo("vim");
+    ///
+    /// let expect = indoc! {r#"
+    /// [repos.vim]
+    /// branch = "master"
+    /// remote = "origin"
+    /// workdir_home = true
+    /// "#};
+    /// let result = config.to_string();
+    /// assert_eq!(expect, result);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_repo(&self, name: impl AsRef<str>) -> Result<RepoEntry> {
+        debug!("Get repository '{}' from configuration file", name.as_ref());
+        let repos = self.get_section("repos")?;
+        let repo = repos
+            .get_key_value(name.as_ref())
+            .ok_or(anyhow!("Repository '{}' does not exist in 'repos' section", name.as_ref()))?;
+        Ok(RepoEntry::from(repo))
+    }
+
+    fn get_section(&self, name: impl AsRef<str>) -> Result<&Table> {
+        let repos = self
+            .doc
+            .get(name.as_ref())
+            .ok_or(anyhow!("Configuration file does not define a '{}' section", name.as_ref()))?;
+        let repos = repos.as_table().ok_or(anyhow!(
+            "Configuration file does not define '{}' section as a table",
+            name.as_ref()
+        ))?;
+
+        Ok(repos)
     }
 }
 
