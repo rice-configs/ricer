@@ -162,6 +162,7 @@ impl ReposConfig {
     /// ```
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
+    /// use pretty_assertions::assert_eq;
     /// use indoc::indoc;
     /// use ricer::config::{ReposConfig, RepoEntry};
     ///
@@ -332,7 +333,12 @@ impl<'toml> From<(&'toml Key, &'toml Item)> for RepoEntry {
         let mut repo = RepoEntry::builder(key.get());
         bootstrap.visit_item(value);
         repo.visit_item(value);
-        repo.bootstrap(bootstrap.build()).build()
+
+        let bootstrap = bootstrap.build();
+        if !bootstrap.is_empty() {
+            repo = repo.bootstrap(bootstrap);
+        }
+        repo.build()
     }
 }
 
@@ -354,7 +360,7 @@ impl RepoEntryBuilder {
     /// ```no_run
     /// use ricer::config::RepoEntryBuilder;
     ///
-    /// let builder = RepoEntryBuilder::new();
+    /// let builder = RepoEntryBuilder::new("vim");
     /// ```
     pub fn new(name: impl Into<String>) -> Self {
         Self {
@@ -373,7 +379,7 @@ impl RepoEntryBuilder {
     /// ```no_run
     /// use ricer::config::RepoEntryBuilder;
     ///
-    /// let builder = RepoEntryBuilder::new().branch("master");
+    /// let builder = RepoEntryBuilder::new("vim").branch("master");
     /// ```
     pub fn branch(mut self, branch: impl Into<String>) -> Self {
         self.branch = branch.into();
@@ -387,7 +393,7 @@ impl RepoEntryBuilder {
     /// ```no_run
     /// use ricer::config::RepoEntryBuilder;
     ///
-    /// let builder = RepoEntryBuilder::new().remote("origin");
+    /// let builder = RepoEntryBuilder::new("vim").remote("origin");
     /// ```
     pub fn remote(mut self, remote: impl Into<String>) -> Self {
         self.remote = remote.into();
@@ -401,7 +407,7 @@ impl RepoEntryBuilder {
     /// ```no_run
     /// use ricer::config::RepoEntryBuilder;
     ///
-    /// let builder = RepoEntryBuilder::new().workdir_home(true);
+    /// let builder = RepoEntryBuilder::new("vim").workdir_home(true);
     /// ```
     pub fn workdir_home(mut self, choice: bool) -> Self {
         self.workdir_home = choice;
@@ -413,7 +419,7 @@ impl RepoEntryBuilder {
     /// # Examples
     ///
     /// ```no_run
-    /// use ricer::config::RepoEntryBuilder;
+    /// use ricer::config::{RepoEntryBuilder, RepoBootstrapEntry, OsType};
     ///
     /// let bootstrap = RepoBootstrapEntry::builder()
     ///     .clone("https://github.com/awkless/vim.git")
@@ -421,7 +427,7 @@ impl RepoEntryBuilder {
     ///     .users(["awkless", "sedgwick"])
     ///     .hosts(["lovelace", "turing"])
     ///     .build();
-    /// let builder = RepoEntryBuilder::new().bootstrap(bootstrap);
+    /// let builder = RepoEntryBuilder::new("vim").bootstrap(bootstrap);
     /// ```
     pub fn bootstrap(mut self, bootstrap: RepoBootstrapEntry) -> Self {
         self.bootstrap = Some(bootstrap);
@@ -497,6 +503,10 @@ impl RepoBootstrapEntry {
     /// ```
     pub fn builder() -> RepoBootstrapEntryBuilder {
         RepoBootstrapEntryBuilder::new()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.clone.is_none() && self.os.is_none() && self.users.is_none() && self.hosts.is_none()
     }
 }
 
@@ -602,7 +612,7 @@ impl RepoBootstrapEntryBuilder {
     /// # Examples
     ///
     /// ```no_run
-    /// user ricer::config::RepoBootstrapEntryBuilder;
+    /// use ricer::config::{RepoBootstrapEntryBuilder, OsType};
     ///
     /// let bootstrap = RepoBootstrapEntryBuilder::new()
     ///     .clone("https://github.com/awkless/vim.git")
