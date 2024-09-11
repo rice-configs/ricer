@@ -12,7 +12,7 @@ use log::{debug, info, trace};
 use std::fmt;
 use std::fs::{read_to_string, write};
 use std::path::{Path, PathBuf};
-use toml_edit::visit::{visit_table_like_kv, Visit};
+use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
 use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
 
 mod locator;
@@ -802,6 +802,10 @@ impl fmt::Display for OsType {
     }
 }
 
+/// Command hook entry definition.
+///
+/// An intermediary structure to help deserialize command hook entries from
+/// Ricer's command hook configuration file.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CmdHookEntry {
     /// Name of command to bind hook definition entries too.
@@ -812,9 +816,69 @@ pub struct CmdHookEntry {
 }
 
 impl CmdHookEntry {
-    // TODO: Implement this...
+    /// Construct new command hook entry definition.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::CmdHookEntry;
+    ///
+    /// let hook = CmdHookEntry::new("commit");
+    /// ```
+    pub fn new(cmd: impl Into<String>) -> Self {
+        trace!("Construct new command hook entry definition");
+        Self { cmd: cmd.into(), hooks: Default::default() }
+    }
+
+    /// Add hook entry into command hook definition.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::{CmdHookEntry, HookEntry};
+    ///
+    /// let mut cmd_hook = CmdHookEntry::new("commit");
+    /// let hook = HookEntry::builder()
+    ///     .pre("hook.sh")
+    ///     .post("hook.sh")
+    ///     .workdir("/path/to/work/dir")
+    ///     .build();
+    /// cmd_hook.add_hook(hook);
+    /// ```
+   pub fn add_hook(&mut self, hook: HookEntry) {
+       self.hooks.push(hook);
+   }
 }
 
+impl<'toml> From<(&'toml Key, &'toml Item)> for CmdHookEntry {
+    fn from(toml_entry: (&'toml Key, &'toml Item)) -> Self {
+        let (key, value) = toml_entry;
+        let mut hook = CmdHookEntry::new(key.get());
+        hook.visit_item(value);
+        hook
+    }
+}
+
+impl<'toml> Visit<'toml> for CmdHookEntry {
+    fn visit_inline_table(&mut self, node: &'toml InlineTable) {
+        let pre = if let Some(pre) = node.get("pre") { pre.as_str() } else { None };
+        let post = if let Some(post) = node.get("post") { post.as_str() } else { None };
+        let workdir = if let Some(workdir) = node.get("workdir") { workdir.as_str() } else { None };
+
+        let hook = HookEntry::builder();
+        let hook = if let Some(pre) = pre { hook.pre(pre) } else { hook };
+        let hook = if let Some(post) = post { hook.post(post) } else { hook };
+        let hook = if let Some(workdir) = workdir { hook.workdir(workdir) } else { hook };
+        self.add_hook(hook.build());
+
+        visit_inline_table(self, node);
+    }
+}
+
+/// Hook entry definition.
+///
+/// An intermediary structure to help deserialize hook entries for command hook
+/// definitions.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct HookEntry {
     /// Execute hook script _before_ command itself.
@@ -846,6 +910,7 @@ impl HookEntry {
     }
 }
 
+/// Builder for [`HookEntry`].
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct HookEntryBuilder {
     pre: Option<String>,
