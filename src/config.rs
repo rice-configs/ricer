@@ -226,6 +226,55 @@ impl ReposConfig {
         }
     }
 
+    /// Rename repository entry in configuration file data.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if `repos` section does not exist, `repos` section is not
+    /// defined as a table, or target repository does not exist in the `repos`
+    /// section.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
+    /// use ricer::config::{ReposConfig, RepoEntry};
+    ///
+    /// let repo = RepoEntry::builder("vim")
+    ///     .branch("master")
+    ///     .remote("origin")
+    ///     .workdir_home(true)
+    ///     .build();
+    /// let mut config = ReposConfig::new();
+    /// config.add_repo(&repo)?;
+    /// config.rename_repo("vim", "neovim")?;
+    /// let result = config.to_string();
+    /// let expect = indoc! {r#"
+    /// [repos.neovim]
+    /// branch = "master"
+    /// remote = "origin"
+    /// workdir_home = true
+    /// "#};
+    /// assert_eq!(result, expect);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn rename_repo(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> Result<()> {
+        info!("Rename repository '{}' to '{}' in configuration file", from.as_ref(), to.as_ref());
+        let repos = self.get_section_mut("repos")?;
+        let (key, value) = repos.remove_entry(from.as_ref()).ok_or(anyhow!(
+            "Repository '{}' does not exist in 'repos' section of configuratoin file",
+            from.as_ref()
+        ))?;
+
+        // Preserve decor (comments and formatting) from original key...
+        let key = Key::new(to.as_ref()).with_leaf_decor(key.leaf_decor().clone());
+        repos.insert_formatted(&key, value);
+        Ok(())
+    }
+
     /// Get specific section of TOML document.
     ///
     /// # Errors
