@@ -11,7 +11,7 @@ use anyhow::{anyhow, Result};
 use log::{debug, info, trace};
 use std::fmt;
 use std::fs::{read_to_string, write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use toml_edit::visit::{visit_table_like_kv, Visit};
 use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
 
@@ -824,5 +824,106 @@ pub struct HookEntry {
     pub post: Option<String>,
 
     /// Set working directory of hook script.
-    pub workdir: Option<String>,
+    pub workdir: Option<PathBuf>,
+}
+
+impl HookEntry {
+    /// Build new hook entry definition.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookEntry;
+    ///
+    /// let hook = HookEntry::builder()
+    ///     .pre("hook.sh")
+    ///     .pre("hook.sh")
+    ///     .workdir("/path/to/work/dir/")
+    ///     .build();
+    /// ```
+    pub fn builder() -> HookEntryBuilder {
+        HookEntryBuilder::new()
+    }
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct HookEntryBuilder {
+    pre: Option<String>,
+    post: Option<String>,
+    workdir: Option<PathBuf>,
+}
+
+impl HookEntryBuilder {
+    /// Construct new hook entry builder.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookEntryBuilder;
+    ///
+    /// let builder = HookEntryBuilder::new();
+    /// ```
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Set hook to run _before_ command.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookEntryBuilder;
+    ///
+    /// let builder = HookEntryBuilder::new().pre("hook.sh");
+    /// ```
+    pub fn pre(mut self, script: impl Into<String>) -> Self {
+        self.pre = Some(script.into());
+        self
+    }
+
+    /// Set hook to run _after_ command.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookEntryBuilder;
+    ///
+    /// let builder = HookEntryBuilder::new().post("hook.sh");
+    /// ```
+    pub fn post(mut self, script: impl Into<String>) -> Self {
+        self.post = Some(script.into());
+        self
+    }
+
+    /// Set working directory for script.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookEntryBuilder;
+    ///
+    /// let builder = HookEntryBuilder::new().workdir("/path/to/work/dir");
+    /// ```
+    pub fn workdir(mut self, path: impl Into<PathBuf>) -> Self {
+        self.workdir = Some(path.into());
+        self
+    }
+
+    /// Build new [`HookEntry`].
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookEntryBuilder;
+    ///
+    /// let hook = HookEntryBuilder::new()
+    ///     .pre("hook.sh")
+    ///     .pre("hook.sh")
+    ///     .workdir("/path/to/work/dir/")
+    ///     .build();
+    /// ```
+    pub fn build(self) -> HookEntry {
+        trace!("Build new hook entry definition");
+        HookEntry { pre: self.pre, post: self.post, workdir: self.workdir }
+    }
 }
