@@ -8,7 +8,7 @@
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
 use anyhow::{anyhow, Result};
-use log::{debug, info, trace};
+use log::{debug, info, trace, warn};
 use std::fmt;
 use std::fs::{read_to_string, write};
 use std::path::Path;
@@ -187,12 +187,76 @@ impl ReposConfig {
         Ok(RepoEntry::from(repo))
     }
 
+    /// Delete repository entry definition from configuraiton file data.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if `repos` section does not exist, `repos` section is not
+    /// defined as table, or target repository does not exist in the `repos`
+    /// section.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::{ReposConfig, RepoEntry};
+    ///
+    /// let repo = RepoEntry::builder("vim")
+    ///     .branch("master")
+    ///     .remote("origin")
+    ///     .workdir_home(true)
+    ///     .build();
+    /// let mut config = ReposConfig::new();
+    /// config.add_repo(&repo)?;
+    /// let ret_result = config.delete_repo("vim")?;
+    /// let str_result = config.to_string();
+    /// let expect = "";
+    /// assert_eq!(str_result, expect);
+    /// assert_eq!(ret_result, repo);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn delete_repo(&mut self, name: impl AsRef<str>) -> Result<RepoEntry> {
+        info!("Remove repository '{}' from configuration file", name.as_ref());
+        let repos = self.get_section_mut("repos")?;
+        match repos.remove_entry(name.as_ref()) {
+            Some((key, value)) => Ok(RepoEntry::from((&key, &value))),
+            None => Err(anyhow!("Repository '{}' does not exist in configuration file", name.as_ref())),
+        }
+    }
+
+    /// Get specific section of TOML document.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if configuration file does not contain target section, or if
+    /// target section is not defined as a table.
     fn get_section(&self, name: impl AsRef<str>) -> Result<&Table> {
         let repos = self
             .doc
             .get(name.as_ref())
             .ok_or(anyhow!("Configuration file does not define a '{}' section", name.as_ref()))?;
         let repos = repos.as_table().ok_or(anyhow!(
+            "Configuration file does not define '{}' section as a table",
+            name.as_ref()
+        ))?;
+
+        Ok(repos)
+    }
+
+    /// Get specific mutable section of TOML document.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if configuration file does not contain target section, or if
+    /// target section is not defined as a table.
+    fn get_section_mut(&mut self, name: impl AsRef<str>) -> Result<&mut Table> {
+        let repos = self
+            .doc
+            .get_mut(name.as_ref())
+            .ok_or(anyhow!("Configuration file does not define a '{}' section", name.as_ref()))?;
+        let repos = repos.as_table_mut().ok_or(anyhow!(
             "Configuration file does not define '{}' section as a table",
             name.as_ref()
         ))?;
