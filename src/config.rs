@@ -8,7 +8,7 @@
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
 use anyhow::{anyhow, Result};
-use log::{debug, info, trace, warn};
+use log::{debug, info, trace};
 use std::fmt;
 use std::fs::{read_to_string, write};
 use std::path::Path;
@@ -222,7 +222,9 @@ impl ReposConfig {
         let repos = self.get_section_mut("repos")?;
         match repos.remove_entry(name.as_ref()) {
             Some((key, value)) => Ok(RepoEntry::from((&key, &value))),
-            None => Err(anyhow!("Repository '{}' does not exist in configuration file", name.as_ref())),
+            None => {
+                Err(anyhow!("Repository '{}' does not exist in configuration file", name.as_ref()))
+            }
         }
     }
 
@@ -798,4 +800,29 @@ impl fmt::Display for OsType {
             OsType::Windows => write!(f, "windows"),
         }
     }
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct CmdHookEntry {
+    /// Name of command to bind hook definition entries too.
+    pub cmd: String,
+
+    /// Array of hook entries to execute.
+    pub hooks: Vec<HookEntry>,
+}
+
+impl CmdHookEntry {
+    // TODO: Implement this...
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct HookEntry {
+    /// Execute hook script _before_ command itself.
+    pub pre: Option<String>,
+
+    /// Execute hook script _after_ command itself.
+    pub post: Option<String>,
+
+    /// Set working directory of hook script.
+    pub workdir: Option<String>,
 }
