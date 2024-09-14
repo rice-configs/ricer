@@ -11,7 +11,7 @@ use anyhow::{anyhow, Result};
 use log::{debug, info, trace};
 use std::fmt;
 use std::fs::{read_to_string, write};
-use std::path::Path;
+use std::path::{PathBuf, Path};
 use toml_edit::{DocumentMut, Item, Key, Table};
 
 mod hook;
@@ -144,5 +144,19 @@ impl FileFormat for Toml {
             key.as_ref()
         ))?;
         Ok(entry)
+    }
+}
+
+pub struct RepoConfig<F: FileFormat> {
+    path: PathBuf,
+    format: F,
+}
+
+impl<F> RepoConfig<F>
+where
+    F: FileFormat,
+{
+    pub fn new(path: impl Into<PathBuf>, format: F) -> Self {
+        Self { path: path.into(), format }
     }
 }
