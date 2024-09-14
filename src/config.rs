@@ -21,54 +21,17 @@ mod repo;
 pub use hook::*;
 pub use repo::*;
 
-pub enum Entry {
-    Repo(RepoEntry),
-    CmdHook(CmdHookEntry),
-}
-
-pub trait FileFormat {
-    type FormatKey;
-    type FormatItem;
-
-    fn read(&mut self, path: impl AsRef<Path>) -> Result<()>;
-
-    fn write(&mut self, path: impl AsRef<Path>) -> Result<()>;
-
-    fn get_entry(
-        &self,
-        section: impl AsRef<str>,
-        key: impl AsRef<str>,
-    ) -> Result<(&Self::FormatKey, &Self::FormatItem)>;
-
-    fn add_entry(
-        &mut self,
-        section: impl AsRef<str>,
-        entry: (Self::FormatKey, Self::FormatItem),
-    ) -> Result<Option<Self::FormatItem>>;
-
-    fn remove_entry(
-        &mut self,
-        section: impl AsRef<str>,
-        key: impl AsRef<str>,
-    ) -> Result<(Self::FormatKey, Self::FormatItem)>;
-}
-
 #[derive(Clone, Debug, Default)]
-pub struct Toml {
+pub struct TomlParser {
     doc: DocumentMut,
 }
 
-impl Toml {
+impl TomlParser {
     pub fn new() -> Self {
         Default::default()
     }
-}
 
-impl FileFormat for Toml {
-    type FormatKey = Key;
-    type FormatItem = Item;
-
-    fn read(&mut self, path: impl AsRef<Path>) -> Result<()> {
+    pub fn read(&mut self, path: impl AsRef<Path>) -> Result<()> {
         info!("Read configuration file '{}'", path.as_ref().display());
         let buffer = read_to_string(path.as_ref())?;
         let doc: DocumentMut = buffer.parse()?;
@@ -76,18 +39,18 @@ impl FileFormat for Toml {
         Ok(())
     }
 
-    fn write(&mut self, path: impl AsRef<Path>) -> Result<()> {
+    pub fn write(&mut self, path: impl AsRef<Path>) -> Result<()> {
         info!("Write configuration file '{}'", path.as_ref().display());
         let buffer = self.doc.to_string();
         write(path.as_ref(), buffer)?;
         Ok(())
     }
 
-    fn get_entry(
+    pub fn get_entry(
         &self,
         section: impl AsRef<str>,
         key: impl AsRef<str>,
-    ) -> Result<(&Self::FormatKey, &Self::FormatItem)> {
+    ) -> Result<(&Key, &Item)> {
         let table = self
             .doc
             .get(section.as_ref())
@@ -104,11 +67,11 @@ impl FileFormat for Toml {
         Ok(entry)
     }
 
-    fn add_entry(
+    pub fn add_entry(
         &mut self,
         section: impl AsRef<str>,
-        entry: (Self::FormatKey, Self::FormatItem),
-    ) -> Result<Option<Self::FormatItem>> {
+        entry: (Key, Item),
+    ) -> Result<Option<Item>> {
         let (key, value) = entry;
         let out = if let Some(table) = self.doc.get_mut(section.as_ref()) {
             let table = table.as_table_mut().ok_or(anyhow!(
@@ -125,11 +88,11 @@ impl FileFormat for Toml {
         Ok(out)
     }
 
-    fn remove_entry(
+    pub fn remove_entry(
         &mut self,
         section: impl AsRef<str>,
         key: impl AsRef<str>,
-    ) -> Result<(Self::FormatKey, Self::FormatItem)> {
+    ) -> Result<(Key, Item)> {
         let table = self
             .doc
             .get_mut(section.as_ref())
@@ -147,16 +110,13 @@ impl FileFormat for Toml {
     }
 }
 
-pub struct RepoConfig<F: FileFormat> {
+pub struct RepoConfig {
     path: PathBuf,
-    format: F,
+    toml: TomlParser,
 }
 
-impl<F> RepoConfig<F>
-where
-    F: FileFormat,
-{
-    pub fn new(path: impl Into<PathBuf>, format: F) -> Self {
-        Self { path: path.into(), format }
+impl RepoConfig {
+    pub fn new(path: impl Into<PathBuf>, toml: TomlParser) -> Self {
+        Self { path: path.into(), toml }
     }
 }
