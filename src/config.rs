@@ -145,4 +145,9 @@ impl RepoConfig {
         let entry = self.toml.get_entry("repos", name.as_ref())?;
         Ok(RepoEntry::from(entry))
     }
+
+    pub fn remove_repo(&mut self, name: impl AsRef<str>) -> Result<RepoEntry> {
+        let (key, item) = self.toml.remove_entry("repos", name.as_ref())?;
+        Ok(RepoEntry::from((&key, &item)))
+    }
 }
