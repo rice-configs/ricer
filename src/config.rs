@@ -125,6 +125,11 @@ impl RepoConfig {
         Ok(())
     }
 
+    pub fn write(&mut self) -> Result<()> {
+        self.toml.write(&self.path)?;
+        Ok(())
+    }
+
     pub fn get_repo(&self, name: impl AsRef<str>) -> Result<RepoEntry> {
         let entry = self.toml.get_entry("repos", name.as_ref())?;
         Ok(RepoEntry::from(entry))
