@@ -40,7 +40,11 @@ pub trait FileFormat {
         key: impl AsRef<str>,
     ) -> Result<(&Self::FormatKey, &Self::FormatItem)>;
 
-    fn add_entry(&mut self, section: impl AsRef<str>, entry: Entry) -> Result<Self::FormatItem>;
+    fn add_entry(
+        &mut self,
+        section: impl AsRef<str>,
+        entry: (Self::FormatKey, Self::FormatItem),
+    ) -> Result<Option<Self::FormatItem>>;
 
     fn remove_entry(
         &mut self,
@@ -100,8 +104,25 @@ impl FileFormat for Toml {
         Ok(entry)
     }
 
-    fn add_entry(&mut self, section: impl AsRef<str>, entry: Entry) -> Result<Self::FormatItem> {
-        todo!();
+    fn add_entry(
+        &mut self,
+        section: impl AsRef<str>,
+        entry: (Self::FormatKey, Self::FormatItem),
+    ) -> Result<Option<Self::FormatItem>> {
+        let (key, value) = entry;
+        let out = if let Some(table) = self.doc.get_mut(section.as_ref()) {
+            let table = table.as_table_mut().ok_or(anyhow!(
+                "Configuruation file does not define section '{}' as a table",
+                section.as_ref()
+            ))?;
+            table.insert(key.get(), value)
+        } else {
+            let mut table = Table::new();
+            table.insert(key.get(), value);
+            table.set_implicit(true);
+            self.doc.insert(section.as_ref(), Item::Table(table))
+        };
+        Ok(out)
     }
 
     fn remove_entry(
