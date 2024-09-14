@@ -50,7 +50,11 @@ impl TomlParser {
 
 impl FileParser for TomlParser {
     fn read(&mut self, path: impl AsRef<Path>) -> Result<()> {
-        todo!();
+        info!("Read configuration file '{}'", path.as_ref().display());
+        let buffer = read_to_string(path.as_ref())?;
+        let doc: DocumentMut = buffer.parse()?;
+        self.doc = doc;
+        Ok(())
     }
 
     fn write(&mut self, path: impl AsRef<Path>) -> Result<()> {
