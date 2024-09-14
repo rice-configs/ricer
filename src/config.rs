@@ -120,6 +120,11 @@ impl RepoConfig {
         Self { path: path.into(), toml }
     }
 
+    pub fn read(&mut self) -> Result<()> {
+        self.toml.read(&self.path)?;
+        Ok(())
+    }
+
     pub fn get_repo(&self, name: impl AsRef<str>) -> Result<RepoEntry> {
         let entry = self.toml.get_entry("repos", name.as_ref())?;
         Ok(RepoEntry::from(entry))
