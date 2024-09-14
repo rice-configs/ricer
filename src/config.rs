@@ -11,7 +11,7 @@ use anyhow::{anyhow, Result};
 use log::{debug, info, trace};
 use std::fmt;
 use std::fs::{read_to_string, write};
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 use toml_edit::{DocumentMut, Item, Key, Table};
 
 mod hook;
@@ -71,9 +71,10 @@ impl TomlParser {
         &mut self,
         section: impl AsRef<str>,
         entry: (Key, Item),
-    ) -> Result<Option<Item>> {
+    ) -> Result<Option<(Key, Item)>> {
         let (key, value) = entry;
-        let out = if let Some(table) = self.doc.get_mut(section.as_ref()) {
+        let old_key = key.clone();
+        let old_entry = if let Some(table) = self.doc.get_mut(section.as_ref()) {
             let table = table.as_table_mut().ok_or(anyhow!(
                 "Configuruation file does not define section '{}' as a table",
                 section.as_ref()
@@ -84,8 +85,9 @@ impl TomlParser {
             table.insert(key.get(), value);
             table.set_implicit(true);
             self.doc.insert(section.as_ref(), Item::Table(table))
-        };
-        Ok(out)
+        }
+        .map(|old_item| (old_key, old_item));
+        Ok(old_entry)
     }
 
     pub fn remove_entry(
@@ -128,6 +130,15 @@ impl RepoConfig {
     pub fn write(&mut self) -> Result<()> {
         self.toml.write(&self.path)?;
         Ok(())
+    }
+
+    pub fn add_repo(&mut self, entry: RepoEntry) -> Result<Option<RepoEntry>> {
+        let (key, item) = entry.to_toml();
+        let old_entry = self
+            .toml
+            .add_entry("repos", (key, item))?
+            .map(|(key, item)| RepoEntry::from((&key, &item)));
+        Ok(old_entry)
     }
 
     pub fn get_repo(&self, name: impl AsRef<str>) -> Result<RepoEntry> {
