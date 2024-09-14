@@ -58,7 +58,10 @@ impl FileParser for TomlParser {
     }
 
     fn write(&mut self, path: impl AsRef<Path>) -> Result<()> {
-        todo!();
+        info!("Write configuration file '{}'", path.as_ref().display());
+        let buffer = self.doc.to_string();
+        write(path.as_ref(), buffer)?;
+        Ok(())
     }
 
     fn get_entry(&self, section: impl AsRef<str>, key: impl AsRef<str>) -> Result<Entry> {
