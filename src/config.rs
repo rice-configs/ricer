@@ -150,4 +150,16 @@ impl RepoConfig {
         let (key, item) = self.toml.remove_entry("repos", name.as_ref())?;
         Ok(RepoEntry::from((&key, &item)))
     }
+
+    pub fn rename_repo<S>(&mut self, from: S, to: S) -> Result<RepoEntry>
+    where
+        S: AsRef<str>,
+    {
+        let (key, item) = self.toml.remove_entry("repos", from.as_ref())?;
+        let mut repo = RepoEntry::from((&key, &item));
+        repo.name = to.as_ref().into();
+        self.toml.add_entry("repos", repo.to_toml())?;
+        repo.name = from.as_ref().into();
+        Ok(repo)
+    }
 }
