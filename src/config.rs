@@ -37,3 +37,31 @@ pub trait FileParser {
     fn add_entry(&mut self, section: impl AsRef<str>, entry: Entry) -> Result<Entry>;
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct TomlParser {
+    doc: DocumentMut,
+}
+
+impl TomlParser {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
+impl FileParser for TomlParser {
+    fn read(&mut self, path: impl AsRef<Path>) -> Result<()> {
+        todo!();
+    }
+
+    fn write(&mut self, path: impl AsRef<Path>) -> Result<()> {
+        todo!();
+    }
+
+    fn get_entry(&self, section: impl AsRef<str>, key: impl AsRef<str>) -> Result<Entry> {
+        todo!();
+    }
+
+    fn add_entry(&mut self, section: impl AsRef<str>, entry: Entry) -> Result<Entry> {
+        todo!();
+    }
+}
