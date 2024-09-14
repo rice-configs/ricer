@@ -130,6 +130,19 @@ impl FileFormat for Toml {
         section: impl AsRef<str>,
         key: impl AsRef<str>,
     ) -> Result<(Self::FormatKey, Self::FormatItem)> {
-        todo!();
+        let table = self
+            .doc
+            .get_mut(section.as_ref())
+            .ok_or(anyhow!("Configuration file does not contain '{}' section", section.as_ref()))?;
+        let table = table.as_table_mut().ok_or(anyhow!(
+            "Configuration file does not define '{}' section as a table",
+            section.as_ref()
+        ))?;
+        let entry = table.remove_entry(key.as_ref()).ok_or(anyhow!(
+            "Configuration file does not define '{}' in '{}' section to remove",
+            section.as_ref(),
+            key.as_ref()
+        ))?;
+        Ok(entry)
     }
 }
