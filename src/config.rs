@@ -119,4 +119,9 @@ impl RepoConfig {
     pub fn new(path: impl Into<PathBuf>, toml: TomlParser) -> Self {
         Self { path: path.into(), toml }
     }
+
+    pub fn get_repo(&self, name: impl AsRef<str>) -> Result<RepoEntry> {
+        let entry = self.toml.get_entry("repos", name.as_ref())?;
+        Ok(RepoEntry::from(entry))
+    }
 }
