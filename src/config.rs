@@ -21,7 +21,6 @@ mod repo;
 pub use hook::*;
 pub use repo::*;
 
-
 pub enum Entry {
     Repo(RepoEntry),
     CmdHook(CmdHookEntry),
@@ -35,11 +34,19 @@ pub trait FileFormat {
 
     fn write(&mut self, path: impl AsRef<Path>) -> Result<()>;
 
-    fn get_entry(&self, section: impl AsRef<str>, key: impl AsRef<str>) -> Result<Self::FormatItem>;
+    fn get_entry(
+        &self,
+        section: impl AsRef<str>,
+        key: impl AsRef<str>,
+    ) -> Result<(&Self::FormatKey, &Self::FormatItem)>;
 
     fn add_entry(&mut self, section: impl AsRef<str>, entry: Entry) -> Result<Self::FormatItem>;
 
-    fn remove_entry(&mut self, section: impl AsRef<str>, key: impl AsRef<str>) -> Result<(Self::FormatKey, Self::FormatItem)>;
+    fn remove_entry(
+        &mut self,
+        section: impl AsRef<str>,
+        key: impl AsRef<str>,
+    ) -> Result<(Self::FormatKey, Self::FormatItem)>;
 }
 
 #[derive(Clone, Debug, Default)]
@@ -72,15 +79,36 @@ impl FileFormat for Toml {
         Ok(())
     }
 
-    fn get_entry(&self, section: impl AsRef<str>, key: impl AsRef<str>) -> Result<Self::FormatItem> {
-        todo!();
+    fn get_entry(
+        &self,
+        section: impl AsRef<str>,
+        key: impl AsRef<str>,
+    ) -> Result<(&Self::FormatKey, &Self::FormatItem)> {
+        let table = self
+            .doc
+            .get(section.as_ref())
+            .ok_or(anyhow!("Configuration file does not contain '{}' section", section.as_ref()))?;
+        let table = table.as_table().ok_or(anyhow!(
+            "Configuration file does not define '{}' section as a table",
+            section.as_ref()
+        ))?;
+        let entry = table.get_key_value(key.as_ref()).ok_or(anyhow!(
+            "Configuration file does not have '{}' in '{}' section",
+            section.as_ref(),
+            key.as_ref()
+        ))?;
+        Ok(entry)
     }
 
     fn add_entry(&mut self, section: impl AsRef<str>, entry: Entry) -> Result<Self::FormatItem> {
         todo!();
     }
 
-    fn remove_entry(&mut self, section: impl AsRef<str>, key: impl AsRef<str>) -> Result<(Self::FormatKey, Self::FormatItem)> {
+    fn remove_entry(
+        &mut self,
+        section: impl AsRef<str>,
+        key: impl AsRef<str>,
+    ) -> Result<(Self::FormatKey, Self::FormatItem)> {
         todo!();
     }
 }
