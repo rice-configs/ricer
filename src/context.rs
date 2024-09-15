@@ -40,35 +40,15 @@ mod status;
 
 #[doc(inline)]
 pub use clone::*;
-
-#[doc(inline)]
 pub use commit::*;
-
-#[doc(inline)]
 pub use delete::*;
-
-#[doc(inline)]
 pub use enter::*;
-
-#[doc(inline)]
 pub use init::*;
-
-#[doc(inline)]
 pub use list::*;
-
-#[doc(inline)]
 pub use pull::*;
-
-#[doc(inline)]
 pub use push::*;
-
-#[doc(inline)]
 pub use rename::*;
-
-#[doc(inline)]
 pub use repo_git::*;
-
-#[doc(inline)]
 pub use status::*;
 
 use crate::cli::{CommandSet, RicerCli, SharedOptions};
