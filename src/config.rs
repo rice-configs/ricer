@@ -276,4 +276,27 @@ impl CmdHookConfig {
     pub fn new(path: impl Into<PathBuf>) -> Self {
         Self { path: path.into(), toml: TomlParser::new() }
     }
+
+    /// Read from command hook configuration file.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if path to command hook configuration file does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::CmdHookConfig;
+    ///
+    /// let mut config = CmdHookConfig::new("/path/to/hooks.toml");
+    /// config.read()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn read(&mut self) -> Result<()> {
+        self.toml.read(&self.path)?;
+        Ok(())
+    }
 }
