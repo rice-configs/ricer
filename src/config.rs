@@ -231,6 +231,70 @@ impl TomlParser {
         ))?;
         Ok(entry)
     }
+
+    /// Rename entry in TOML file.
+    ///
+    /// Provides old entry before it was renamed.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if target section does not exist, or is not defined as a
+    /// table. Will also fail if target entry does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
+    /// use ricer::config::{TomlParser, RepoEntry};
+    ///
+    /// let repo = RepoEntry::builder("vim")
+    ///     .branch("main")
+    ///     .remote("origin")
+    ///     .workdir_home(true)
+    ///     .build();
+    /// let mut toml = TomlParser::new();
+    /// toml.add_entry("repos", repo.to_toml())?;
+    /// toml.rename_entry("repos", "vim", "neovim")?;
+    ///
+    /// let expect = indoc! {r#"
+    ///     [repos.neovim]
+    ///     branch = "main"
+    ///     remote = "origin"
+    ///     workdir_home = true
+    /// "#};
+    /// let result = toml.to_string();
+    /// assert_eq!(expect, result);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn rename_entry<S>(
+        &mut self,
+        section: S,
+        from: S,
+        to: S,
+    ) -> Result<(Key, Item)>
+    where
+        S: AsRef<str>,
+    {
+        let table = self
+            .doc
+            .get_mut(section.as_ref())
+            .ok_or(anyhow!("Configuration file does not contain '{}' section", section.as_ref()))?;
+        let table = table.as_table_mut().ok_or(anyhow!(
+            "Configuration file does not define '{}' section as a table",
+            section.as_ref()
+        ))?;
+        let (old_key, old_item)= table.remove_entry(from.as_ref()).ok_or(anyhow!(
+            "Configuration file does not define '{}' in '{}' section to remove",
+            section.as_ref(),
+            from.as_ref()
+        ))?;
+        let new_key = Key::new(to.as_ref()).with_leaf_decor(old_key.leaf_decor().clone());
+        table.insert_formatted(&new_key, old_item.clone());
+        Ok((old_key, old_item))
+    }
 }
 
 impl fmt::Display for TomlParser {
@@ -432,12 +496,8 @@ impl RepoConfig {
     where
         S: AsRef<str>,
     {
-        let (key, item) = self.toml.remove_entry("repos", from.as_ref())?;
-        let mut repo = RepoEntry::from((&key, &item));
-        repo.name = to.as_ref().into();
-        self.toml.add_entry("repos", repo.to_toml())?;
-        repo.name = from.as_ref().into();
-        Ok(repo)
+        let (key, item) = self.toml.rename_entry("repos", from.as_ref(), to.as_ref())?;
+        Ok(RepoEntry::from((&key, &item)))
     }
 }
 
