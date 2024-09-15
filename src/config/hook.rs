@@ -4,7 +4,7 @@
 use log::trace;
 use std::path::PathBuf;
 use toml_edit::visit::{visit_inline_table, Visit};
-use toml_edit::{InlineTable, Item, Key, Value, Table, Array};
+use toml_edit::{Array, InlineTable, Item, Key, Value};
 
 /// Command hook entry definition.
 ///
@@ -61,15 +61,16 @@ impl CmdHookEntry {
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
     /// use indoc::indoc;
+    /// use pretty_assertions::assert_eq;
     /// use ricer::config::{CmdHookEntry, HookEntry};
-    /// use toml_edit::DocumentMut
+    /// use toml_edit::DocumentMut;
     ///
     /// let mut cmd_hook = CmdHookEntry::new("commit");
-    /// cmd_hook.push(HookEntry::builder().pre("hook.sh"));
-    /// cmd_hook.push(HookEntry::builder().post("hook.sh").workdir("/some/path"));
+    /// cmd_hook.add_hook(HookEntry::builder().pre("hook.sh").build());
+    /// cmd_hook.add_hook(HookEntry::builder().post("hook.sh").workdir("/some/path").build());
     /// let (key, value) = cmd_hook.to_toml();
-    /// 
-    /// let mut table_doc: DocumentMut = "[hooks]".parse()?;
+    ///
+    /// let mut toml_doc: DocumentMut = "[hooks]".parse()?;
     /// let hooks_table = toml_doc.get_mut("hooks").unwrap();
     /// let hooks_table = hooks_table.as_table_mut().unwrap();
     /// hooks_table.insert(&key, value);
@@ -88,9 +89,16 @@ impl CmdHookEntry {
     /// ```
     pub fn to_toml(&self) -> (Key, Item) {
         let mut tables = Array::new();
-
-        for hook in self.hooks.iter() {
+        let mut iter = self.hooks.iter().enumerate().peekable();
+        while let Some((_, hook)) = iter.next() {
             let mut inline = InlineTable::new();
+            let decor = inline.decor_mut();
+            decor.set_prefix("\n    ");
+
+            if iter.peek().is_none() {
+                decor.set_suffix("\n");
+            }
+            
             if let Some(pre) = &hook.pre {
                 inline.insert("pre", Value::from(pre));
             }
@@ -102,7 +110,8 @@ impl CmdHookEntry {
             if let Some(workdir) = &hook.workdir {
                 inline.insert("workdir", Value::from(String::from(workdir.to_string_lossy())));
             }
-            tables.push(Value::from(inline));
+
+            tables.push_formatted(Value::from(inline));
         }
 
         let key = Key::new(&self.cmd);
