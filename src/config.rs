@@ -300,6 +300,55 @@ impl CmdHookConfig {
         Ok(())
     }
 
+    /// Add command hook definition entry into configuration file.
+    ///
+    /// Inserts command hook entry into `hooks` section. If the `hooks` section
+    /// does not exist, then a new `hooks` section will be created with the
+    /// command hook entry inserted.
+    ///
+    /// Will return previous command hook entry if target command hook entry
+    /// replaced it in the configuration file. Otherwise, will return `None`
+    /// if provided command hook entry was a new addition to configuration file.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if existing `hooks` section was not defined as a table.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
+    /// use ricer::config::{CmdHookConfig, CmdHookEntry, HookEntry};
+    ///
+    /// let mut cmd_hook = CmdHookEntry::new("commit");
+    /// cmd_hook.add_hook(HookEntry::builder().pre("hook.sh").build());
+    /// cmd_hook.add_hook(HookEntry::builder().post("hook.sh").workdir("/some/path").build());
+    /// let mut config = CmdHookConfig::new("/path/to/hooks.toml");
+    /// config.add_cmd_hook(cmd_hook)?;
+    ///
+    /// let expect = indoc! {r#"
+    ///     [hooks]
+    ///     commit = [
+    ///         { pre = "hook.sh" },
+    ///         { post = "hook.sh", workdir = "/some/path" }
+    ///     ]
+    /// "#};
+    /// let result = config.to_string();
+    /// assert_eq!(expect, result);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn add_cmd_hook(&mut self, entry: CmdHookEntry) -> Result<Option<CmdHookEntry>> {
+        let (key, item) = entry.to_toml();
+        let old_entry = self
+            .toml
+            .add_entry("hooks", (key, item))?
+            .map(|(key, item)| CmdHookEntry::from((&key, &item)));
+        Ok(old_entry)
+    }
+
     /// Get command hook entry from configuration file.
     ///
     /// # Errors
@@ -313,7 +362,7 @@ impl CmdHookConfig {
     /// ```
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
-    /// use ricer::config::{CmdHookConfig, CmdHookEntry};
+    /// use ricer::config::{CmdHookConfig, CmdHookEntry, HookEntry};
     ///
     /// let mut expect = CmdHookEntry::new("commit");
     /// expect.add_hook(HookEntry::builder().pre("hook.sh").build());
@@ -325,9 +374,16 @@ impl CmdHookConfig {
     /// let result = config.get_cmd_hook("commit")?;
     /// assert_eq!(expect, result);
     /// # Ok(())
+    /// # }
     /// ```
     pub fn get_cmd_hook(&self, name: impl AsRef<str>) -> Result<CmdHookEntry> {
         let entry= self.toml.get_entry("hooks", name.as_ref())?;
         Ok(CmdHookEntry::from(entry))
+    }
+}
+
+impl fmt::Display for CmdHookConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.toml)
     }
 }
