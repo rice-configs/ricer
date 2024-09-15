@@ -55,7 +55,7 @@ impl XdgDirLayout {
     /// ```no_run
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
-    /// use ricer::config::{DirLayout, XdgDirLayout};
+    /// use ricer::manager::{DirLayout, XdgDirLayout};
     ///
     /// let layout = XdgDirLayout::new_layout()?;
     /// println!("{}", layout.config_dir().display());

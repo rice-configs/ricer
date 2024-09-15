@@ -64,7 +64,7 @@ impl DefaultDirLocator {
     /// use std::env;
     /// use std::path::PathBuf;
     ///
-    /// use ricer::config::{DirLocator, DefaultDirLocator, XdgDirLayout};
+    /// use ricer::manager::{DirLocator, DefaultDirLocator, XdgDirLayout};
     ///
     /// let home = env::var("HOME")?;
     /// let layout = XdgDirLayout::new_layout()?;
