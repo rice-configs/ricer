@@ -93,3 +93,19 @@ fn from_deserializes_correctly() -> Result<()> {
     assert_eq!(expect, result);
     Ok(())
 }
+
+#[test]
+fn from_deserializes_without_bootstrap_entry() -> Result<()> {
+    let expect = RepoEntry::builder("vim")
+        .branch("master")
+        .remote("origin")
+        .workdir_home(true)
+        .build();
+    let entry = expect.to_toml();
+    let doc = setup_toml_doc(entry)?;
+    let result = RepoEntry::from(
+        doc.get("repos").unwrap().as_table().unwrap().get_key_value("vim").unwrap(),
+    );
+    assert_eq!(expect, result);
+    Ok(())
+}
