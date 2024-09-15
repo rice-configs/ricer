@@ -8,7 +8,7 @@
 //! tracked repositories, hook scripts, ignore files, and configuration files.
 
 use anyhow::{anyhow, Result};
-use log::{debug, info, trace};
+use log::{info, trace};
 use std::fmt;
 use std::fs::{read_to_string, write};
 use std::path::{Path, PathBuf};
@@ -118,7 +118,7 @@ impl TomlParser {
 
 impl fmt::Display for TomlParser {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.doc.to_string())
+        write!(f, "{}", self.doc)
     }
 }
 
@@ -128,8 +128,9 @@ pub struct RepoConfig {
 }
 
 impl RepoConfig {
-    pub fn new(path: impl Into<PathBuf>, toml: TomlParser) -> Self {
-        Self { path: path.into(), toml }
+    pub fn new(path: impl Into<PathBuf>) -> Self {
+        trace!("Construct new repository configuration file handler");
+        Self { path: path.into(), toml: TomlParser::new() }
     }
 
     pub fn read(&mut self) -> Result<()> {
@@ -176,6 +177,6 @@ impl RepoConfig {
 
 impl fmt::Display for RepoConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.toml.to_string())
+        write!(f, "{}", self.toml)
     }
 }
