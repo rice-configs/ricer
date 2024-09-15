@@ -47,9 +47,7 @@ shadow!(build);
 pub mod cli;
 pub mod config;
 pub mod context;
-
-// pub mod error;
-// pub mod hook;
+pub mod manager;
 
 #[cfg(test)]
 mod tests;
