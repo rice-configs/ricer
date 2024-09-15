@@ -52,6 +52,26 @@ fn to_toml_serializes_correctly() -> Result<()> {
 }
 
 #[test]
+fn to_toml_serializes_without_bootstrap_entry() -> Result<()> {
+    let repo = RepoEntry::builder("vim")
+        .branch("master")
+        .remote("origin")
+        .workdir_home(true)
+        .build();
+    let entry = repo.to_toml();
+    let doc = setup_toml_doc(entry)?;
+    let expect = indoc! {r#"
+        [repos.vim]
+        branch = "master"
+        remote = "origin"
+        workdir_home = true
+    "#};
+    let result = doc.to_string();
+    assert_eq!(expect, result);
+    Ok(())
+}
+
+#[test]
 fn from_deserializes_correctly() -> Result<()> {
     let bootstrap = RepoBootstrapEntry::builder()
         .clone("https://github.com/awkless/vim.git")
