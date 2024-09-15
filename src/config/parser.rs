@@ -1,13 +1,12 @@
-
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
 use anyhow::{anyhow, Result};
 use log::{info, trace};
+use std::fmt;
 use std::fs::{read_to_string, write};
 use std::path::Path;
 use toml_edit::{DocumentMut, Item, Key, Table};
-use std::fmt;
 
 /// Format preserving TOML parser.
 #[derive(Clone, Debug, Default)]
@@ -257,12 +256,7 @@ impl TomlParser {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rename_entry<S>(
-        &mut self,
-        section: S,
-        from: S,
-        to: S,
-    ) -> Result<(Key, Item)>
+    pub fn rename_entry<S>(&mut self, section: S, from: S, to: S) -> Result<(Key, Item)>
     where
         S: AsRef<str>,
     {
@@ -274,7 +268,7 @@ impl TomlParser {
             "Configuration file does not define '{}' section as a table",
             section.as_ref()
         ))?;
-        let (old_key, old_item)= table.remove_entry(from.as_ref()).ok_or(anyhow!(
+        let (old_key, old_item) = table.remove_entry(from.as_ref()).ok_or(anyhow!(
             "Configuration file does not define '{}' in '{}' section to remove",
             section.as_ref(),
             from.as_ref()

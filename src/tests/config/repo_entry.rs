@@ -53,11 +53,8 @@ fn to_toml_serializes_correctly() -> Result<()> {
 
 #[test]
 fn to_toml_serializes_without_bootstrap_entry() -> Result<()> {
-    let repo = RepoEntry::builder("vim")
-        .branch("master")
-        .remote("origin")
-        .workdir_home(true)
-        .build();
+    let repo =
+        RepoEntry::builder("vim").branch("master").remote("origin").workdir_home(true).build();
     let entry = repo.to_toml();
     let doc = setup_toml_doc(entry)?;
     let expect = indoc! {r#"
@@ -96,11 +93,8 @@ fn from_deserializes_correctly() -> Result<()> {
 
 #[test]
 fn from_deserializes_without_bootstrap_entry() -> Result<()> {
-    let expect = RepoEntry::builder("vim")
-        .branch("master")
-        .remote("origin")
-        .workdir_home(true)
-        .build();
+    let expect =
+        RepoEntry::builder("vim").branch("master").remote("origin").workdir_home(true).build();
     let entry = expect.to_toml();
     let doc = setup_toml_doc(entry)?;
     let result = RepoEntry::from(

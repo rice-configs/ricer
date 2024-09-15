@@ -11,15 +11,14 @@ use log::trace;
 use std::fmt;
 use std::path::PathBuf;
 
-mod parser;
 mod hook;
+mod parser;
 mod repo;
 
+pub use hook::*;
 #[doc(inline)]
 pub use parser::*;
-pub use hook::*;
 pub use repo::*;
-
 
 /// Manage repository configuration file.
 #[derive(Clone, Debug, Default)]
@@ -377,7 +376,7 @@ impl CmdHookConfig {
     /// # }
     /// ```
     pub fn get_cmd_hook(&self, name: impl AsRef<str>) -> Result<CmdHookEntry> {
-        let entry= self.toml.get_entry("hooks", name.as_ref())?;
+        let entry = self.toml.get_entry("hooks", name.as_ref())?;
         Ok(CmdHookEntry::from(entry))
     }
 }

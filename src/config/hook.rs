@@ -98,7 +98,7 @@ impl CmdHookEntry {
             if iter.peek().is_none() {
                 decor.set_suffix("\n");
             }
-            
+
             if let Some(pre) = &hook.pre {
                 inline.insert("pre", Value::from(pre));
             }
