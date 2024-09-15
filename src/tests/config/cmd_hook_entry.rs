@@ -40,3 +40,20 @@ fn to_toml_serializes_correctly() -> Result<()> {
     assert_eq!(expect, result);
     Ok(())
 }
+
+#[test]
+fn from_deserializes_correctly() -> Result<()> {
+    let mut expect = CmdHookEntry::new("commit");
+    expect.add_hook(
+        HookEntry::builder().pre("hook.sh").post("hook.sh").workdir("/some/path").build(),
+    );
+    expect.add_hook(HookEntry::builder().pre("hook.sh").build());
+    expect.add_hook(HookEntry::builder().post("hook.sh").build());
+    let entry = expect.to_toml();
+    let doc = setup_toml_doc(entry)?;
+    let result = CmdHookEntry::from(
+        doc.get("hooks").unwrap().as_table().unwrap().get_key_value("commit").unwrap()
+    );
+    assert_eq!(expect, result);
+    Ok(())
+}
