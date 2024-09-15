@@ -299,4 +299,35 @@ impl CmdHookConfig {
         self.toml.read(&self.path)?;
         Ok(())
     }
+
+    /// Get command hook entry from configuration file.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if `hooks` section does not exist, or `hooks` section was not
+    /// defined as a table. Will also fail if hooksitory entry does not exist
+    /// in `hooks` section.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::{CmdHookConfig, CmdHookEntry};
+    ///
+    /// let mut expect = CmdHookEntry::new("commit");
+    /// expect.add_hook(HookEntry::builder().pre("hook.sh").build());
+    /// expect.add_hook(HookEntry::builder().post("hook.sh").workdir("/some/path").build());
+    ///
+    /// let mut config = CmdHookConfig::new("/path/to/hooks/toml");
+    /// config.add_cmd_hook(expect.clone())?;
+    ///
+    /// let result = config.get_cmd_hook("commit")?;
+    /// assert_eq!(expect, result);
+    /// # Ok(())
+    /// ```
+    pub fn get_cmd_hook(&self, name: impl AsRef<str>) -> Result<CmdHookEntry> {
+        let entry= self.toml.get_entry("hooks", name.as_ref())?;
+        Ok(CmdHookEntry::from(entry))
+    }
 }
