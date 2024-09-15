@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Result;
-use pretty_assertions::assert_eq;
 use indoc::indoc;
-use toml_edit::{Key, Item, DocumentMut};
+use pretty_assertions::assert_eq;
+use toml_edit::{DocumentMut, Item, Key};
 
-use crate::config::{RepoEntry, RepoBootstrapEntry, OsType};
+use crate::config::{OsType, RepoBootstrapEntry, RepoEntry};
 
 fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
     let mut doc: DocumentMut = "[repos]".parse()?;
@@ -32,7 +32,7 @@ fn to_toml_serializes_correctly() -> Result<()> {
         .workdir_home(true)
         .bootstrap(bootstrap)
         .build();
-    let entry= repo.to_toml();
+    let entry = repo.to_toml();
     let doc = setup_toml_doc(entry)?;
     let expect = indoc! {r#"
         [repos.vim]
@@ -47,6 +47,29 @@ fn to_toml_serializes_correctly() -> Result<()> {
         hosts = ["lovelace", "turing"]
     "#};
     let result = doc.to_string();
+    assert_eq!(expect, result);
+    Ok(())
+}
+
+#[test]
+fn from_deserializes_correctly() -> Result<()> {
+    let bootstrap = RepoBootstrapEntry::builder()
+        .clone("https://github.com/awkless/vim.git")
+        .os(OsType::Unix)
+        .users(["awkless", "sedgwick"])
+        .hosts(["lovelace", "turing"])
+        .build();
+    let expect = RepoEntry::builder("vim")
+        .branch("master")
+        .remote("origin")
+        .workdir_home(true)
+        .bootstrap(bootstrap)
+        .build();
+    let entry = expect.to_toml();
+    let doc = setup_toml_doc(entry)?;
+    let result = RepoEntry::from(
+        doc.get("repos").unwrap().as_table().unwrap().get_key_value("vim").unwrap(),
+    );
     assert_eq!(expect, result);
     Ok(())
 }
