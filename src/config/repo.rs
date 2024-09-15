@@ -427,16 +427,40 @@ impl RepoBootstrapEntryBuilder {
 impl<'toml> Visit<'toml> for RepoBootstrapEntryBuilder {
     fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
         match key {
-            "clone" => self.clone = Some(node.as_str().unwrap_or_default().to_string()),
-            "os" => self.os = Some(OsType::from(node.as_str().unwrap_or_default())),
+            "clone" => {
+                if let Some(clone) = node.as_str() {
+                    self.clone = Some(clone.to_string())
+                }
+            }
+            "os" => {
+                if let Some(os) = node.as_str() {
+                    self.os = Some(OsType::from(os))
+                }
+            }
             "hosts" => {
                 if let Some(hosts) = node.as_array() {
-                    self.hosts = Some(hosts.into_iter().map(|s| s.to_string()).collect())
+                    // Convert hosts from type &Array to type Vec<String>, and trim out any
+                    // quotation characters...
+                    let data = hosts
+                        .into_iter()
+                        .map(|s| {
+                            s.as_str().unwrap().trim_matches(|c| c == '\"' || c == '\'').to_string()
+                        })
+                        .collect();
+                    self.hosts = Some(data)
                 }
             }
             "users" => {
                 if let Some(users) = node.as_array() {
-                    self.users = Some(users.into_iter().map(|s| s.to_string()).collect())
+                    // Convert users from type &Array to type Vec<String>, and trim out any
+                    // quotation characters...
+                    let data = users
+                        .into_iter()
+                        .map(|s| {
+                            s.as_str().unwrap().trim_matches(|c| c == '\"' || c == '\'').to_string()
+                        })
+                        .collect();
+                    self.users = Some(data)
                 }
             }
             &_ => visit_table_like_kv(self, key, node),
