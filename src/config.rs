@@ -28,6 +28,7 @@ pub struct TomlParser {
 
 impl TomlParser {
     pub fn new() -> Self {
+        trace!("Construct new TOML file parser");
         Default::default()
     }
 
@@ -51,6 +52,7 @@ impl TomlParser {
         section: impl AsRef<str>,
         key: impl AsRef<str>,
     ) -> Result<(&Key, &Item)> {
+        info!("Get entry '{}' from '{}' section", key.as_ref(), section.as_ref());
         let table = self
             .doc
             .get(section.as_ref())
@@ -73,6 +75,7 @@ impl TomlParser {
         entry: (Key, Item),
     ) -> Result<Option<(Key, Item)>> {
         let (key, value) = entry;
+        info!("Add entry '{}' to '{}' section", key.get(), section.as_ref());
         let old_key = key.clone();
         let old_entry = if let Some(table) = self.doc.get_mut(section.as_ref()) {
             let table = table.as_table_mut().ok_or(anyhow!(
@@ -95,6 +98,7 @@ impl TomlParser {
         section: impl AsRef<str>,
         key: impl AsRef<str>,
     ) -> Result<(Key, Item)> {
+        info!("Remove entry '{}' from '{}' section", key.as_ref(), section.as_ref());
         let table = self
             .doc
             .get_mut(section.as_ref())
@@ -109,6 +113,12 @@ impl TomlParser {
             key.as_ref()
         ))?;
         Ok(entry)
+    }
+}
+
+impl fmt::Display for TomlParser {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.doc.to_string())
     }
 }
 
@@ -161,5 +171,11 @@ impl RepoConfig {
         self.toml.add_entry("repos", repo.to_toml())?;
         repo.name = from.as_ref().into();
         Ok(repo)
+    }
+}
+
+impl fmt::Display for RepoConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.toml.to_string())
     }
 }
