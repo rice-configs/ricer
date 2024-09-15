@@ -401,10 +401,10 @@ impl RepoConfig {
     /// let mut config = RepoConfig::new("/path/to/repos.toml");
     /// config.add_repo(repo)?;
     /// let expect = indoc! {r#"
-    /// [repos.vim]
-    /// branch = "main"
-    /// remote = "origin"
-    /// workdir_home = true
+    ///     [repos.vim]
+    ///     branch = "main"
+    ///     remote = "origin"
+    ///     workdir_home = true
     /// "#};
     /// let result = config.to_string();
     /// assert_eq!(expect, result);
@@ -433,7 +433,6 @@ impl RepoConfig {
     /// ```
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
-    /// use indoc::indoc;
     /// use ricer::config::{RepoConfig, RepoEntry};
     ///
     /// let expect = RepoEntry::builder("vim")
@@ -466,7 +465,6 @@ impl RepoConfig {
     /// ```
     /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
-    /// use indoc::indoc;
     /// use ricer::config::{RepoConfig, RepoEntry};
     ///
     /// let expect = RepoEntry::builder("vim")
@@ -489,9 +487,42 @@ impl RepoConfig {
 
     /// Rename repository entry in configuration file.
     ///
+    /// Provides previous repository entry in deserialized form.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if `repos` section does not exist, or `repos` section was not
+    /// defined as a table. Will also fail if repository entry does not exist
+    /// in `repos` section.
+    ///
     /// # Examples
     ///
-    /// TODO
+    /// ```
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
+    /// use ricer::config::{RepoConfig, RepoEntry};
+    ///
+    /// let expect = RepoEntry::builder("vim")
+    ///     .branch("main")
+    ///     .remote("origin")
+    ///     .workdir_home(true)
+    ///     .build();
+    /// let mut config = RepoConfig::new("/path/to/repos.toml");
+    /// config.add_repo(expect.clone())?;
+    /// config.rename_repo("vim", "neovim")?;
+    ///
+    /// let expect = indoc! {r#"
+    ///     [repos.neovim]
+    ///     branch = "main"
+    ///     remote = "origin"
+    ///     workdir_home = true
+    /// "#};
+    /// let result = config.to_string();
+    /// assert_eq!(expect, result);
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn rename_repo<S>(&mut self, from: S, to: S) -> Result<RepoEntry>
     where
         S: AsRef<str>,
