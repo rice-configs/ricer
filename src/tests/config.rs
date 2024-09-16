@@ -3,3 +3,4 @@
 
 mod cmd_hook_entry;
 mod repo_entry;
+mod toml_parser;

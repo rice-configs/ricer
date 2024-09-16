@@ -73,3 +73,17 @@ fn get_entry_catches_nonexistent_section() {
     let result = toml.get_entry("nonexistent", "bad");
     assert!(matches!(result, Err(..)));
 }
+
+#[test]
+fn get_entry_catches_non_table_section() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture = FileFixture::builder()
+        .path(fake.as_path().join("bad.toml"))
+        .data(r#"section = "not a table""#)
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let result = toml.get_entry("section", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
