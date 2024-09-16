@@ -121,3 +121,29 @@ fn get_entry_provides_correct_entry() -> Result<()> {
     assert_eq!(expect_item.as_str().unwrap_or_default(), result_item.as_str().unwrap_or_default());
     Ok(())
 }
+
+#[test]
+fn add_entry_adds_to_existing_section() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture =  FileFixture::builder()
+        .path(fake.as_path().join("good.toml"))
+        .data(indoc! {r#"
+            # This will not be overwritten!
+            [testing]
+            this = "will parse"
+        "#})
+        .build();
+    let entry = (Key::new("cool"), Item::Value(Value::from("new data")));
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    toml.add_entry("testing", entry)?;
+    let expect = indoc! {r#"
+        # This will not be overwritten!
+        [testing]
+        this = "will parse"
+        cool = "new data"
+    "#};
+    let result = toml.to_string();
+    assert_eq!(expect, result);
+    Ok(())
+}
