@@ -222,3 +222,77 @@ fn add_entry_catches_non_table_section() -> Result<()> {
     assert!(matches!(result, Err(..)));
     Ok(())
 }
+
+#[test]
+fn remove_entry_catches_nonexistent_section() {
+    let mut toml = TomlParser::new();
+    let result = toml.remove_entry("nonexistent", "bad");
+    assert!(matches!(result, Err(..)));
+}
+
+#[test]
+fn remove_entry_catches_non_table_section() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture = FileFixture::builder()
+        .path(fake.as_path().join("bad.toml"))
+        .data(r#"section = "not a table""#)
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let result = toml.remove_entry("section", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[test]
+fn remove_entry_catches_nonexistent_key() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture = FileFixture::builder()
+        .path(fake.as_path().join("bad.toml"))
+        .data(r#"[empty]"#)
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let result = toml.remove_entry("empty", "nonexistent");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[test]
+fn remove_entry_removes_full_entry() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture =  FileFixture::builder()
+        .path(fake.as_path().join("good.toml"))
+        .data(indoc! {r#"
+            [testing]
+            this = "will parse"
+        "#})
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    toml.remove_entry("testing", "this")?;
+    let expect = "[testing]\n";
+    let result = toml.to_string();
+    assert_eq!(expect, result);
+    Ok(())
+}
+
+#[test]
+fn remove_entry_returns_correct_entry() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture =  FileFixture::builder()
+        .path(fake.as_path().join("good.toml"))
+        .data(indoc! {r#"
+            [testing]
+            this = "will parse"
+        "#})
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let expect_key = Key::new("this");
+    let expect_item = Item::Value(Value::from("will parse"));
+    let (result_key, result_item) = toml.remove_entry("testing", "this")?;
+    assert_eq!(expect_key.get(), result_key.get());
+    assert_eq!(expect_item.as_str().unwrap_or_default(), result_item.as_str().unwrap_or_default());
+    Ok(())
+}
