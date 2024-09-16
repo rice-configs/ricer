@@ -58,9 +58,11 @@ impl TomlParser {
 
     /// Write to a TOML file.
     ///
+    /// Will create target path if it does not already exist.
+    ///
     /// # Errors
     ///
-    /// Will fail if path to TOML file does not exist.
+    /// Will fail if file cannot be written to for whatever reason.
     ///
     /// # Examples
     ///
