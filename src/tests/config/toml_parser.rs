@@ -207,3 +207,18 @@ fn add_entry_returns_none_for_new_entry() -> Result<()> {
     assert!(matches!(result, None));
     Ok(())
 }
+
+#[test]
+fn add_entry_catches_non_table_section() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture = FileFixture::builder()
+        .path(fake.as_path().join("bad.toml"))
+        .data(r#"section = "not a table""#)
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let entry = (Key::new("this"), Item::Value(Value::from("will fail")));
+    let result = toml.add_entry("section", entry);
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
