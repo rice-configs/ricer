@@ -188,3 +188,22 @@ fn add_entry_returns_replaced_entry() -> Result<()> {
     assert_eq!("will parse", old_item.as_str().unwrap_or_default());
     Ok(())
 }
+
+#[test]
+fn add_entry_returns_none_for_new_entry() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture =  FileFixture::builder()
+        .path(fake.as_path().join("good.toml"))
+        .data(indoc! {r#"
+            # This will not be overwritten!
+            [testing]
+            this = "will parse"
+        "#})
+        .build();
+    let new_entry = (Key::new("cool"), Item::Value(Value::from("new data")));
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let result = toml.add_entry("testing", new_entry)?;
+    assert!(matches!(result, None));
+    Ok(())
+}
