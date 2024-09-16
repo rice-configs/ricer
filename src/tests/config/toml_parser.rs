@@ -66,3 +66,10 @@ fn write_serializes_correctly() -> Result<()> {
     assert_eq!(expect, result);
     Ok(())
 }
+
+#[test]
+fn get_entry_catches_nonexistent_section() {
+    let toml = TomlParser::new();
+    let result = toml.get_entry("nonexistent", "bad");
+    assert!(matches!(result, Err(..)));
+}
