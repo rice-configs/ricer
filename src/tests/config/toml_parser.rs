@@ -147,3 +147,17 @@ fn add_entry_adds_to_existing_section() -> Result<()> {
     assert_eq!(expect, result);
     Ok(())
 }
+
+#[test]
+fn add_entry_creates_new_section() -> Result<()> {
+    let entry = (Key::new("cool"), Item::Value(Value::from("new data")));
+    let mut toml = TomlParser::new();
+    toml.add_entry("testing", entry)?;
+    let expect = indoc! {r#"
+        [testing]
+        cool = "new data"
+    "#};
+    let result = toml.to_string();
+    assert_eq!(expect, result);
+    Ok(())
+}
