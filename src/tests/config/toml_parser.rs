@@ -101,3 +101,23 @@ fn get_entry_catches_nonexistent_key() -> Result<()> {
     assert!(matches!(result, Err(..)));
     Ok(())
 }
+
+#[test]
+fn get_entry_provides_correct_entry() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture =  FileFixture::builder()
+        .path(fake.as_path().join("good.toml"))
+        .data(indoc! {r#"
+            [testing]
+            this = "will parse"
+        "#})
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let expect_key = Key::new("this");
+    let expect_item = Item::Value(Value::from("will parse"));
+    let (result_key, result_item) = toml.get_entry("testing", "this")?;
+    assert_eq!(expect_key.get(), result_key.get());
+    assert_eq!(expect_item.as_str().unwrap_or_default(), result_item.as_str().unwrap_or_default());
+    Ok(())
+}
