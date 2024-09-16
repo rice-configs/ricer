@@ -33,7 +33,8 @@ impl TomlParser {
     ///
     /// # Errors
     ///
-    /// Will fail if path to TOML file does not exist.
+    /// Will fail if path to file does not exist, or contains invalid TOML
+    /// formatting.
     ///
     /// # Examples
     ///
