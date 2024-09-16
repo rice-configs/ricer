@@ -296,3 +296,78 @@ fn remove_entry_returns_correct_entry() -> Result<()> {
     assert_eq!(expect_item.as_str().unwrap_or_default(), result_item.as_str().unwrap_or_default());
     Ok(())
 }
+
+#[test]
+fn rename_entry_catches_nonexistent_section() {
+    let mut toml = TomlParser::new();
+    let result = toml.rename_entry("nonexistent", "bad", "fail");
+    assert!(matches!(result, Err(..)));
+}
+
+#[test]
+fn rename_entry_catches_non_table_section() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture = FileFixture::builder()
+        .path(fake.as_path().join("bad.toml"))
+        .data(r#"section = "not a table""#)
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let result = toml.rename_entry("section", "fail", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[test]
+fn rename_entry_catches_nonexistent_key() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture = FileFixture::builder()
+        .path(fake.as_path().join("bad.toml"))
+        .data(r#"[empty]"#)
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let result = toml.rename_entry("empty", "nonexistent", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[test]
+fn rename_entry_renames_full_entry() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture =  FileFixture::builder()
+        .path(fake.as_path().join("good.toml"))
+        .data(indoc! {r#"
+            [testing]
+            this = "will parse"
+        "#})
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    toml.rename_entry("testing", "this", "that")?;
+    let expect = indoc! {r#"
+        [testing]
+        that = "will parse"
+    "#};
+    let result = toml.to_string();
+    assert_eq!(expect, result);
+    Ok(())
+}
+
+#[test]
+fn rename_entry_returns_old_entry() -> Result<()> {
+    let fake = FakeHomeDir::new();
+    let fixture =  FileFixture::builder()
+        .path(fake.as_path().join("good.toml"))
+        .data(indoc! {r#"
+            [testing]
+            this = "will parse"
+        "#})
+        .build();
+    let mut toml = TomlParser::new();
+    toml.read(fixture.as_path())?;
+    let (old_key, old_item) = toml.rename_entry("testing", "this", "that")?;
+    assert_eq!("this", old_key.get());
+    assert_eq!("will parse", old_item.as_str().unwrap_or_default());
+    Ok(())
+}
