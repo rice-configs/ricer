@@ -31,7 +31,7 @@ use anyhow::Result;
 use toml_edit::DocumentMut;
 use std::path::{Path, PathBuf};
 use std::fs::{File, OpenOptions};
-use std::io::Read;
+use std::io::{Read, Write};
 use log::{debug, trace};
 
 /// TOML file parser.
@@ -39,7 +39,7 @@ use log::{debug, trace};
 /// # Invariants
 ///
 /// Preserve original formatting for any modifications made to the file.
-#[derive(Clone, Debug, Default)]
+#[derive(Debug)]
 pub struct Toml {
     document: DocumentMut,
     file: File,
@@ -85,5 +85,37 @@ impl Toml {
 
         debug!("Load TOML file at '{}'", path.as_ref().display());
         Ok(Self { document, file, path: path.as_ref().into() })
+    }
+
+    /// Save TOML file at loaded `path`.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if writing to loaded `path` cannot be done.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::Toml;
+    ///
+    /// let mut toml = Toml::load("/path/to/config.toml")?;
+    /// // Do some operations on `toml`...
+    /// toml.save()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # See also
+    ///
+    /// - [`std::io::Write::write`]
+    ///
+    /// [`std::io::Write::write`]: https://doc.rust-lang.org/std/io/trait.Write.html#tymethod.write
+    pub fn save(&mut self) -> Result<()> {
+        debug!("Save TOML file at '{}'", self.path.display());
+        let buffer = self.document.to_string();
+        self.file.write_all(buffer.as_bytes())?;
+        Ok(())
     }
 }
