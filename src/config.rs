@@ -33,6 +33,7 @@ use std::path::{Path, PathBuf};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use log::{debug, trace};
+use std::fmt;
 
 /// TOML file parser.
 ///
@@ -64,7 +65,7 @@ impl Toml {
     /// # Examples
     ///
     /// ```no_run
-    /// # anyhow::Result;
+    /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
     /// use ricer::config::Toml;
     ///
@@ -96,7 +97,7 @@ impl Toml {
     /// # Examples
     ///
     /// ```no_run
-    /// # anyhow::Result;
+    /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
     /// use ricer::config::Toml;
     ///
@@ -124,7 +125,7 @@ impl Toml {
     /// # Examples
     ///
     /// ```no_run
-    /// # anyhow::Result;
+    /// # use anyhow::Result;
     /// # fn main() -> Result<()> {
     /// use ricer::config::Toml;
     ///
@@ -135,5 +136,11 @@ impl Toml {
     /// ```
     pub fn as_path(&self) -> &Path {
         &self.path
+    }
+}
+
+impl fmt::Display for Toml {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.document)
     }
 }
