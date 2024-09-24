@@ -27,16 +27,63 @@
 //!
 //! [toml-spec]: https://toml.io/en/v1.0.0
 
-use std::path::PathBuf;
+use anyhow::Result;
 use toml_edit::DocumentMut;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::fs::{File, OpenOptions};
+use std::io::Read;
+use log::{debug, trace};
 
+/// TOML file parser.
+///
+/// # Invariants
+///
+/// Preserve original formatting for any modifications made to the file.
 #[derive(Clone, Debug, Default)]
 pub struct Toml {
-    doc: DocumentMut,
+    document: DocumentMut,
+    file: File,
     path: PathBuf,
 }
 
 impl Toml {
-    // TODO: Implement this!
+    /// Load TOML file at `path`.
+    ///
+    /// If TOML file exists at `path`, then it will be parsed into `Self`. If
+    /// TOML file does not exist at `path`, then it will be created at `path`.
+    ///
+    /// # Errors
+    ///
+    /// This function will fail for the following reasons:
+    ///
+    /// - One of the directory components of `path` does not exist.
+    /// - Lacks permission to access the TOML file, or access one of the
+    ///   directory components to the TOML file.
+    /// - TOML file contains invalid TOML formatting, or invalid UTF-8.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::Toml;
+    ///
+    /// let toml = Toml::load("/path/to/config.toml")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn load(path: impl AsRef<Path>) -> Result<Self> {
+        trace!("Construct new TOML file parser");
+        let mut file = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .create(true)
+            .open(path.as_ref())?;
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)?;
+        let document: DocumentMut = buffer.parse()?;
+
+        debug!("Load TOML file at '{}'", path.as_ref().display());
+        Ok(Self { document, file, path: path.as_ref().into() })
+    }
 }
