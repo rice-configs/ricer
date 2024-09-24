@@ -15,6 +15,7 @@ mockall = "0.13"
 pretty_assertions = "1.4"
 ricer_test_tools = { version = "0.3.0", path = "crates/ricer_test_tools" }
 thiserror = "1.0"
+indoc = "2.0.5"
 
 [package]
 name = "ricer"
@@ -36,6 +37,7 @@ clap = { version = "4.5", features = ["derive"] }
 clap-verbosity-flag = "2.2"
 dialoguer = "0.11.0"
 directories = "5.0"
+indoc.workspace = true
 env_logger = "0.11"
 git2.workspace = true
 log = "0.4"
