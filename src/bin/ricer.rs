@@ -40,6 +40,7 @@ where
         .init();
 
     let _ctx = Context::from(opts);
+
     // TODO: match and execute command in Ricer's command set...
 
     Ok(ExitCode::Success)
