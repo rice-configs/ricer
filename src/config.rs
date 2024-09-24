@@ -118,4 +118,22 @@ impl Toml {
         self.file.write_all(buffer.as_bytes())?;
         Ok(())
     }
+
+    /// Get path to TOML file.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::Toml;
+    ///
+    /// let toml = Toml::load("/path/to/config.toml")?;
+    /// let path = toml.as_path();
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn as_path(&self) -> &Path {
+        &self.path
+    }
 }
