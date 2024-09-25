@@ -128,6 +128,67 @@ impl Toml {
         Ok(entry)
     }
 
+    /// Add entry data into TOML document.
+    ///
+    /// If entry data already exists in `section`, then it will be replaced by
+    /// `entry` with old entry data being returned. Otherwise, `entry` will be
+    /// added into `section` returning `None`. If `section` does not exist, then
+    /// it will be added into document, and `entry` will be added into newly
+    /// created `section`.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if `section` was not defined as a table.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # use pretty_assertions::assert_eq;
+    /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
+    /// use toml_edit::{Key, Item, Value};
+    ///
+    /// use ricer::config::Toml;
+    ///
+    /// let mut config = Toml::new();
+    /// let entry = (Key::new("foo"), Item::Value(Value::from("some data")));
+    /// let old_entry = config.add_entry("test", entry)?;
+    /// let expect = indoc! {r#"
+    ///     [test]
+    ///     foo = "some data"
+    /// "#};
+    /// let result = config.to_string();
+    /// assert_eq!(expect, result);
+    /// assert!(matches!(old_entry, None));
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn add_entry(
+        &mut self,
+        section: impl AsRef<str>,
+        entry: (Key, Item),
+    ) -> Result<Option<(Key, Item)>> {
+        let (key, value) = entry;
+        info!("Add entry '{}' to '{}' section", key.get(), section.as_ref());
+        let old_key = key.clone();
+        let old_entry = if let Some(table) = self.doc.get_mut(section.as_ref()) {
+            debug!("Section '{}' exists", section.as_ref());
+            let table = table
+                .as_table_mut()
+                .ok_or(anyhow!("Section '{}' not defined as a table", section.as_ref()))?;
+            table.insert(key.get(), value)
+        } else {
+            debug!("Create new '{}' section", section.as_ref());
+            let mut table = Table::new();
+            table.insert(key.get(), value);
+            table.set_implicit(true);
+            self.doc.insert(section.as_ref(), Item::Table(table))
+        }
+        .map(|old_item| (old_key, old_item));
+        Ok(old_entry)
+    }
+
     /// Get section of TOML document.
     ///
     /// # Errors
