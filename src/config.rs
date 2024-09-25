@@ -33,7 +33,7 @@ use std::fmt;
 use toml_edit::{DocumentMut, Item, Key, Table};
 use std::str::FromStr;
 
-/// TOML file parser.
+/// TOML parser.
 ///
 /// # Invariants
 ///
@@ -44,21 +44,14 @@ pub struct Toml {
 }
 
 impl Toml {
-    /// Load TOML file at `path`.
-    ///
-    /// If TOML file exists at `path`, then it will be parsed into `Self`. If
-    /// TOML file does not exist at `path`, then it will be created at `path`.
+    /// Construct new TOML parser.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # use anyhow::Result;
-    /// # fn main() -> Result<()> {
     /// use ricer::config::Toml;
     ///
     /// let toml = Toml::new();
-    /// # Ok(())
-    /// # }
     /// ```
     pub fn new() -> Self {
         trace!("Construct new TOML file parser");
