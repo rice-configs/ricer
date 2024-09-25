@@ -109,13 +109,13 @@ impl Toml {
     ///     [test]
     ///     foo = "some data"
     /// "#}.parse()?;
-    /// let (key, value) = config.get_entry("test", "foo")?;
+    /// let (key, value) = config.get("test", "foo")?;
     /// assert_eq!("foo", key.get());
     /// assert_eq!("some data", value.as_str().unwrap_or_default());
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_entry<S>(&self, section: S, key: S) -> Result<(&Key, &Item)>
+    pub fn get<S>(&self, section: S, key: S) -> Result<(&Key, &Item)>
     where
         S: AsRef<str>,
     {
@@ -154,7 +154,7 @@ impl Toml {
     ///
     /// let mut config = Toml::new();
     /// let entry = (Key::new("foo"), Item::Value(Value::from("some data")));
-    /// let old_entry = config.add_entry("test", entry)?;
+    /// let old_entry = config.add("test", entry)?;
     /// let expect = indoc! {r#"
     ///     [test]
     ///     foo = "some data"
@@ -165,7 +165,7 @@ impl Toml {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn add_entry(
+    pub fn add(
         &mut self,
         section: impl AsRef<str>,
         entry: (Key, Item),
