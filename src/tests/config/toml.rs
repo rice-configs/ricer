@@ -139,3 +139,39 @@ fn add_replaces_entry(good_toml: String, replace_entry: (Key, Item)) -> Result<(
     assert_eq!("some data", old_value.as_str().unwrap_or_default());
     Ok(())
 }
+
+#[rstest]
+fn remove_no_section_error(good_toml: String) -> Result<()> {
+    let mut config: Toml = good_toml.parse()?;
+    let result = config.remove("nonexistent", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
+fn remove_nontable_section_error(good_toml: String) -> Result<()> {
+    let mut config: Toml = good_toml.parse()?;
+    let result = config.remove("razz", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
+fn remove_no_key_error(good_toml: String) -> Result<()> {
+    let mut config: Toml = good_toml.parse()?;
+    let result = config.remove("test", "nonexistent");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
+fn remove_no_error(good_toml: String) -> Result<()> {
+    let mut config: Toml = good_toml.parse()?;
+    let (key, value) = config.remove("test", "foo")?;
+    let expect = good_toml.replace("foo = \"some data\"\n", "");
+    let result = config.to_string();
+    assert_eq!(expect, result);
+    assert_eq!("foo", key.get());
+    assert_eq!("some data", value.as_str().unwrap_or_default());
+    Ok(())
+}
