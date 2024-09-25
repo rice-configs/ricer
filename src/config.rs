@@ -235,6 +235,55 @@ impl Toml {
         Ok(entry)
     }
 
+    /// Rename entry in TOML document.
+    ///
+    /// Returns old entry before it was renamed.
+    ///
+    /// # Errors
+    ///
+    /// Function will fail if `section` does not exist, `section` is not defined
+    /// as a table, or `key` does not exist in `section`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # use pretty_assertions::assert_eq;
+    /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
+    /// use ricer::config::Toml;
+    ///
+    /// let mut config: Toml = indoc! {r#"
+    ///     [test]
+    ///     foo = "some data"
+    /// "#}.parse()?;
+    /// let (key, value) = config.rename("test", "foo", "lum")?;
+    /// let expect = indoc! {r#"
+    ///     [test]
+    ///     lum = "some data"
+    /// "#};
+    /// let result = config.to_string();
+    /// assert_eq!(expect, result);
+    /// assert_eq!("foo", key.get());
+    /// assert_eq!("some data", value.as_str().unwrap_or_default());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn rename<S>(&mut self, section: S, from: S, to: S) -> Result<(Key, Item)>
+    where
+        S: AsRef<str>,
+    {
+        let table = self.section_mut(section.as_ref())?;
+        let (old_key, old_item) = table.remove_entry(from.as_ref()).ok_or(anyhow!(
+            "Entry '{}' does not exist in '{}' section",
+            from.as_ref(),
+            section.as_ref()
+        ))?;
+        let new_key = Key::new(to.as_ref()).with_leaf_decor(old_key.leaf_decor().clone());
+        table.insert_formatted(&new_key, old_item.clone());
+        Ok((old_key, old_item))
+    }
+
     /// Get section of TOML document.
     ///
     /// # Errors
