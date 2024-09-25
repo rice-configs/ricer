@@ -27,24 +27,19 @@
 //!
 //! [toml-spec]: https://toml.io/en/v1.0.0
 
-use anyhow::Result;
-use toml_edit::DocumentMut;
-use std::path::{Path, PathBuf};
-use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
-use log::{debug, trace};
+use anyhow::{anyhow, Result};
+use log::{debug, info, trace};
 use std::fmt;
+use toml_edit::{DocumentMut, Item, Key, Table};
 
 /// TOML file parser.
 ///
 /// # Invariants
 ///
 /// Preserve original formatting for any modifications made to the file.
-#[derive(Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct Toml {
-    document: DocumentMut,
-    file: File,
-    path: PathBuf,
+    doc: DocumentMut,
 }
 
 impl Toml {
@@ -53,15 +48,6 @@ impl Toml {
     /// If TOML file exists at `path`, then it will be parsed into `Self`. If
     /// TOML file does not exist at `path`, then it will be created at `path`.
     ///
-    /// # Errors
-    ///
-    /// This function will fail for the following reasons:
-    ///
-    /// - One of the directory components of `path` does not exist.
-    /// - Lacks permission to access the TOML file, or access one of the
-    ///   directory components to the TOML file.
-    /// - TOML file contains invalid TOML formatting, or invalid UTF-8.
-    ///
     /// # Examples
     ///
     /// ```no_run
@@ -69,78 +55,18 @@ impl Toml {
     /// # fn main() -> Result<()> {
     /// use ricer::config::Toml;
     ///
-    /// let toml = Toml::load("/path/to/config.toml")?;
+    /// let toml = Toml::new();
     /// # Ok(())
     /// # }
     /// ```
-    pub fn load(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn new() -> Self {
         trace!("Construct new TOML file parser");
-        let mut file = OpenOptions::new()
-            .write(true)
-            .read(true)
-            .create(true)
-            .open(path.as_ref())?;
-        let mut buffer = String::new();
-        file.read_to_string(&mut buffer)?;
-        let document: DocumentMut = buffer.parse()?;
-
-        debug!("Load TOML file at '{}'", path.as_ref().display());
-        Ok(Self { document, file, path: path.as_ref().into() })
-    }
-
-    /// Save TOML file at loaded `path`.
-    ///
-    /// # Errors
-    ///
-    /// Will fail if writing to loaded `path` cannot be done.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use anyhow::Result;
-    /// # fn main() -> Result<()> {
-    /// use ricer::config::Toml;
-    ///
-    /// let mut toml = Toml::load("/path/to/config.toml")?;
-    /// // Do some operations on `toml`...
-    /// toml.save()?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// # See also
-    ///
-    /// - [`std::io::Write::write`]
-    ///
-    /// [`std::io::Write::write`]: https://doc.rust-lang.org/std/io/trait.Write.html#tymethod.write
-    pub fn save(&mut self) -> Result<()> {
-        debug!("Save TOML file at '{}'", self.path.display());
-        let buffer = self.document.to_string();
-        self.file.write_all(buffer.as_bytes())?;
-        Ok(())
-    }
-
-    /// Get path to TOML file.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use anyhow::Result;
-    /// # fn main() -> Result<()> {
-    /// use ricer::config::Toml;
-    ///
-    /// let toml = Toml::load("/path/to/config.toml")?;
-    /// let path = toml.as_path();
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn as_path(&self) -> &Path {
-        &self.path
+        Self { doc: DocumentMut::new() }
     }
 }
 
 impl fmt::Display for Toml {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.document)
+        write!(f, "{}", self.doc)
     }
 }
