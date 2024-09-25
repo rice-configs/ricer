@@ -31,6 +31,7 @@ use anyhow::{anyhow, Result};
 use log::{debug, info, trace};
 use std::fmt;
 use toml_edit::{DocumentMut, Item, Key, Table};
+use std::str::FromStr;
 
 /// TOML file parser.
 ///
@@ -68,5 +69,14 @@ impl Toml {
 impl fmt::Display for Toml {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.doc)
+    }
+}
+
+impl FromStr for Toml {
+    type Err = anyhow::Error;
+
+    fn from_str(data: &str) -> Result<Self, Self::Err> {
+        let doc: DocumentMut = data.parse()?;
+        Ok(Self { doc })
     }
 }
