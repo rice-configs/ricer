@@ -30,14 +30,43 @@
 use anyhow::{anyhow, Result};
 use log::{debug, info, trace};
 use std::fmt;
-use toml_edit::{DocumentMut, Item, Key, Table};
 use std::str::FromStr;
+use toml_edit::{DocumentMut, Item, Key, Table};
 
 /// TOML parser.
 ///
+/// Parser only operates on string data, i.e., file I/O is left to the caller.
+/// Parsed string data is referred to as a _document_ or _TOML document_.
+///
+/// Interface of this parser works through _sections_ and _entries_. A _section_
+/// is the __topmost__ table housing a set of entries. An _entry_ is a key-value
+/// pair in a section. Here is an example of sections and entries:
+///
+/// ```markdown
+/// [repo.vim]
+/// branch = "master"
+/// remote = "origin"
+/// workdir_home = true
+///
+/// [repo.vim.bootstrap]
+/// os = any
+///
+/// [hooks]
+/// commit = "hook.sh"
+/// ```
+///
+/// From the example above, there are two sections: "repo" and "hooks", because
+/// "repo" and "hooks" are the topmost tables in the example. Everything else
+/// are considered entries to either the "repo" section or "hooks" section.
+/// This terminology makes it easier and more predictable to locate
+/// configuration data for serialization and deserialization.
+///
+/// Do note that Ricer does not use the root-table of a TOML document, hence
+/// why it is not considered in the previous example.
+///
 /// # Invariants
 ///
-/// Preserve original formatting for any modifications made to the file.
+/// Preserve original formatting for any modifications made to TOML document.
 #[derive(Clone, Default, Debug)]
 pub struct Toml {
     doc: DocumentMut,
@@ -54,8 +83,62 @@ impl Toml {
     /// let toml = Toml::new();
     /// ```
     pub fn new() -> Self {
-        trace!("Construct new TOML file parser");
+        trace!("Construct new TOML parser");
         Self { doc: DocumentMut::new() }
+    }
+
+    /// Get entry data from TOML document.
+    ///
+    /// Returns key-value pair reference to target entry data.
+    ///
+    /// # Errors
+    ///
+    /// Function will fail if `section` does not exist, `section` is not defined
+    /// as a table, or `key` does not exist in `section`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # use pretty_assertions::assert_eq;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::Toml;
+    ///
+    /// let config: Toml = r#"
+    ///     [test]
+    ///     foo = "some data"
+    /// "#.parse()?;
+    /// let (key, value) = config.get_entry("test", "foo")?;
+    /// assert_eq!("foo", key.get());
+    /// assert_eq!("some data", value.as_str().unwrap_or_default());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_entry<S>(&self, section: S, key: S) -> Result<(&Key, &Item)>
+    where
+        S: AsRef<str>,
+    {
+        info!("Get TOML entry '{}' from '{}' section", key.as_ref(), section.as_ref());
+        let table = self.get_section(section.as_ref())?;
+        let entry = table.get_key_value(key.as_ref()).ok_or(anyhow!(
+            "Entry '{}' does not exist in '{}' section",
+            key.as_ref(),
+            section.as_ref()
+        ))?;
+        Ok(entry)
+    }
+
+    /// Get section of TOML document.
+    ///
+    /// # Errors
+    ///
+    /// Function will fail if `section` does not exist, or `section` is not
+    /// defined as a table.
+    fn get_section(&self, name: &str) -> Result<&Table> {
+        let table =
+            self.doc.get(name.as_ref()).ok_or(anyhow!("Section '{}' does not exist", name))?;
+        let table = table.as_table().ok_or(anyhow!("Section '{}' not defined as table", name))?;
+        Ok(table)
     }
 }
 
