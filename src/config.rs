@@ -102,12 +102,13 @@ impl Toml {
     /// # use anyhow::Result;
     /// # use pretty_assertions::assert_eq;
     /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
     /// use ricer::config::Toml;
     ///
-    /// let config: Toml = r#"
+    /// let config: Toml = indoc! {r#"
     ///     [test]
     ///     foo = "some data"
-    /// "#.parse()?;
+    /// "#}.parse()?;
     /// let (key, value) = config.get_entry("test", "foo")?;
     /// assert_eq!("foo", key.get());
     /// assert_eq!("some data", value.as_str().unwrap_or_default());
@@ -119,7 +120,7 @@ impl Toml {
         S: AsRef<str>,
     {
         info!("Get TOML entry '{}' from '{}' section", key.as_ref(), section.as_ref());
-        let table = self.get_section(section.as_ref())?;
+        let table = self.section(section.as_ref())?;
         let entry = table.get_key_value(key.as_ref()).ok_or(anyhow!(
             "Entry '{}' does not exist in '{}' section",
             key.as_ref(),
@@ -189,16 +190,75 @@ impl Toml {
         Ok(old_entry)
     }
 
+    /// Remove entry from TOML document.
+    ///
+    /// Returns removed entry.
+    ///
+    /// # Errors
+    ///
+    /// Function will fail if `section` does not exist, `section` is not defined
+    /// as a table, or `key` does not exist in `section`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use anyhow::Result;
+    /// # use pretty_assertions::assert_eq;
+    /// # fn main() -> Result<()> {
+    /// use indoc::indoc;
+    /// use ricer::config::Toml;
+    ///
+    /// let mut config: Toml = indoc! {r#"
+    ///     [test]
+    ///     foo = "some data"
+    /// "#}.parse()?;
+    /// let (key, value) = config.remove("test", "foo")?;
+    /// let expect = "[test]\n";
+    /// let result = config.to_string();
+    /// assert_eq!(expect, result);
+    /// assert_eq!("foo", key.get());
+    /// assert_eq!("some data", value.as_str().unwrap_or_default());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn remove<S>(&mut self, section: S, key: S) -> Result<(Key, Item)>
+    where
+        S: AsRef<str>,
+    {
+        info!("Remove entry '{}' from '{}' section", key.as_ref(), section.as_ref());
+        let table = self.section_mut(section.as_ref())?;
+        let entry = table.remove_entry(key.as_ref()).ok_or(anyhow!(
+            "Entry '{}' does not exist in '{}' section",
+            key.as_ref(),
+            section.as_ref()
+        ))?;
+        Ok(entry)
+    }
+
     /// Get section of TOML document.
     ///
     /// # Errors
     ///
-    /// Function will fail if `section` does not exist, or `section` is not
+    /// Function will fail if section does not exist, or section is not
     /// defined as a table.
-    fn get_section(&self, name: &str) -> Result<&Table> {
+    fn section(&self, name: &str) -> Result<&Table> {
         let table =
             self.doc.get(name.as_ref()).ok_or(anyhow!("Section '{}' does not exist", name))?;
         let table = table.as_table().ok_or(anyhow!("Section '{}' not defined as table", name))?;
+        Ok(table)
+    }
+
+    /// Get mutable section of TOML document.
+    ///
+    /// # Errors
+    ///
+    /// Function will fail if section does not exist, or section is not defined
+    /// as a table.
+    fn section_mut(&mut self, name: &str) -> Result<&mut Table> {
+        let table =
+            self.doc.get_mut(name.as_ref()).ok_or(anyhow!("Section '{}' does not exist", name))?;
+        let table =
+            table.as_table_mut().ok_or(anyhow!("Section '{}' not defined as table", name))?;
         Ok(table)
     }
 }
