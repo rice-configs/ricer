@@ -705,6 +705,46 @@ impl RepoBootstrapBuilder {
     }
 }
 
+impl<'toml> Visit<'toml> for RepoBootstrapBuilder {
+    fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
+        match key {
+            "clone" => {
+                if let Some(clone) = node.as_str() {
+                    self.clone = Some(clone.to_string())
+                }
+            }
+            "os" => {
+                if let Some(os) = node.as_str() {
+                    self.os = Some(OsType::from(os))
+                }
+            }
+            "users" => {
+                if let Some(users) = node.as_array() {
+                    let data = users
+                        .into_iter()
+                        .map(|s| {
+                            s.as_str().unwrap().trim_matches(|c| c == '\"' || c == '\'').to_string()
+                        })
+                        .collect();
+                    self.users = Some(data)
+                }
+            }
+            "hosts" => {
+                if let Some(hosts) = node.as_array() {
+                    let data = hosts
+                        .into_iter()
+                        .map(|s| {
+                            s.as_str().unwrap().trim_matches(|c| c == '\"' || c == '\'').to_string()
+                        })
+                        .collect();
+                    self.hosts = Some(data)
+                }
+            }
+            &_ => visit_table_like_kv(self, key, node),
+        }
+        visit_table_like_kv(self, key, node);
+    }
+}
 
 /// Operating System settings.
 ///
