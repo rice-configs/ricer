@@ -385,25 +385,25 @@ impl Repo {
     /// ```
     pub fn to_toml(&self) -> (Key, Item) {
         let mut repo = Table::new();
-        let mut bootstrap = Table::new();
+        let mut repo_bootstrap = Table::new();
 
         repo.insert("branch", Item::Value(Value::from(&self.branch)));
         repo.insert("remote", Item::Value(Value::from(&self.remote)));
         repo.insert("workdir_home", Item::Value(Value::from(self.workdir_home)));
         if let Some(bootstrap) = &self.bootstrap {
             if let Some(clone) = &bootstrap.clone {
-                bootstrap.insert("clone", Item::Value(Value::from(clone)));
+                repo_bootstrap.insert("clone", Item::Value(Value::from(clone)));
             }
             if let Some(os) = &bootstrap.os {
-                bootstrap.insert("os", Item::Value(Value::from(os.to_string())));
+                repo_bootstrap.insert("os", Item::Value(Value::from(os.to_string())));
             }
             if let Some(users) = &bootstrap.users {
-                bootstrap.insert("users", Item::Value(Value::Array(Array::from_iter(users))));
+                repo_bootstrap.insert("users", Item::Value(Value::Array(Array::from_iter(users))));
             }
-            if let Some(hosts) &bootstrap.hosts {
-                bootstrap.insert("hosts", Item::Value(Value::Array(Array::from_iter(hosts))));
+            if let Some(hosts) = &bootstrap.hosts {
+                repo_bootstrap.insert("hosts", Item::Value(Value::Array(Array::from_iter(hosts))));
             }
-            repo.insert("bootstrap", Item::Table(bootstrap));
+            repo.insert("bootstrap", Item::Table(repo_bootstrap));
         }
 
         let key = Key::new(&self.name);
