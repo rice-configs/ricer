@@ -175,3 +175,48 @@ fn remove_no_error(good_toml: String) -> Result<()> {
     assert_eq!("some data", value.as_str().unwrap_or_default());
     Ok(())
 }
+
+#[rstest]
+fn rename_no_section_error(good_toml: String) -> Result<()> {
+    let mut config: Toml = good_toml.parse()?;
+    let result = config.rename("nonexistent", "fail", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
+fn rename_nontable_section_error(good_toml: String) -> Result<()> {
+    let mut config: Toml = good_toml.parse()?;
+    let result = config.rename("razz", "fail", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
+fn rename_no_key_error(good_toml: String) -> Result<()> {
+    let mut config: Toml = good_toml.parse()?;
+    let result = config.rename("test", "nonexistent", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
+fn rename_no_error(good_toml: String) -> Result<()> {
+    let mut config: Toml = good_toml.parse()?;
+    let (key, value) = config.rename("test", "foo", "lum")?;
+    let expect = indoc! {r#"
+        razz = "some data"
+
+        [test]
+        bar = "some data"
+        lum = "some data"
+
+        [test.baaz]
+        buzz = "some data"
+    "#};
+    let result = config.to_string();
+    assert_eq!(expect, result);
+    assert_eq!("foo", key.get());
+    assert_eq!("some data", value.as_str().unwrap_or_default());
+    Ok(())
+}
