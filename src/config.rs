@@ -818,5 +818,102 @@ pub struct Hook {
 }
 
 impl Hook {
-    // TODO: Implement this...
+    /// Build new hook definition.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::Hook;
+    ///
+    /// let hook = Hook::builder()
+    ///     .pre("hook.sh")
+    ///     .pre("hook.sh")
+    ///     .workdir("/path/to/work/dir/")
+    ///     .build();
+    /// ```
+    pub fn builder() -> HookBuilder {
+        HookBuilder::new()
+    }
+}
+
+/// Builder for [`Hook`].
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct HookBuilder {
+    pre: Option<String>,
+    post: Option<String>,
+    workdir: Option<PathBuf>,
+}
+
+impl HookBuilder {
+    /// Construct new hook builder.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookBuilder;
+    ///
+    /// let builder = HookBuilder::new();
+    /// ```
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Set hook to run _before_ command.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookBuilder;
+    ///
+    /// let builder = HookBuilder::new().pre("hook.sh");
+    /// ```
+    pub fn pre(mut self, script: impl Into<String>) -> Self {
+        self.pre = Some(script.into());
+        self
+    }
+
+    /// Set hook to run _after_ command.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookBuilder;
+    ///
+    /// let builder = HookBuilder::new().post("hook.sh");
+    /// ```
+    pub fn post(mut self, script: impl Into<String>) -> Self {
+        self.post = Some(script.into());
+        self
+    }
+
+    /// Set working directory of hook script.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookBuilder;
+    ///
+    /// let builder = HookBuilder::new().workdir("/path/to/work/dir");
+    /// ```
+    pub fn workdir(mut self, path: impl Into<PathBuf>) -> Self {
+        self.workdir = Some(path.into());
+        self
+    }
+
+    /// Build new [`Hook`].
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::HookBuilder;
+    ///
+    /// let hook = HookBuilder::new()
+    ///     .pre("hook.sh")
+    ///     .pre("hook.sh")
+    ///     .workdir("/path/to/work/dir/")
+    ///     .build();
+    /// ```
+    pub fn build(self) -> Hook {
+        Hook { pre: self.pre, post: self.post, workdir: self.workdir }
+    }
 }
