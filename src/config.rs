@@ -32,7 +32,7 @@ use log::{debug, info, trace};
 use std::fmt;
 use std::str::FromStr;
 use toml_edit::visit::{visit_table_like_kv, Visit};
-use toml_edit::{DocumentMut, Item, Key, Table};
+use toml_edit::{DocumentMut, Item, Key, Table, Value, Array};
 
 /// TOML parser.
 ///
@@ -352,7 +352,80 @@ pub struct Repo {
 }
 
 impl Repo {
-    // TODO: Implement this...
+    /// Build new repository settings.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// let ricer::config::Repo;
+    ///
+    /// let builder = Repo::builder("vim");
+    /// ```
+    pub fn builder(name: impl AsRef<str>) -> RepoBuilder {
+        RepoBuilder::new(name.as_ref())
+    }
+
+    /// Serialize repository settings to TOML document entry.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::{RepoBuilder, RepoBootstrap};
+    ///
+    /// let bootstrap = RepoBootstrap::builder()
+    ///     .clone("https://github.com/awkless/vim.git")
+    ///     .build();
+    /// let repo = Repo::builder("vim")
+    ///     .branch("master")
+    ///     .remote("origin")
+    ///     .workdir_home(true)
+    ///     .bootstrap(bootstrap)
+    ///     .build();
+    /// let entry = repo.to_toml();
+    /// ```
+    pub fn to_toml(&self) -> (Key, Item) {
+        let mut repo = Table::new();
+        let mut bootstrap = Table::new();
+
+        repo.insert("branch", Item::Value(Value::from(&self.branch)));
+        repo.insert("remote", Item::Value(Value::from(&self.remote)));
+        repo.insert("workdir_home", Item::Value(Value::from(self.workdir_home)));
+        if let Some(bootstrap) = &self.bootstrap {
+            if let Some(clone) = &bootstrap.clone {
+                bootstrap.insert("clone", Item::Value(Value::from(clone)));
+            }
+            if let Some(os) = &bootstrap.os {
+                bootstrap.insert("os", Item::Value(Value::from(os.to_string())));
+            }
+            if let Some(users) = &bootstrap.users {
+                bootstrap.insert("users", Item::Value(Value::Array(Array::from_iter(users))));
+            }
+            if let Some(hosts) &bootstrap.hosts {
+                bootstrap.insert("hosts", Item::Value(Value::Array(Array::from_iter(hosts))));
+            }
+            repo.insert("bootstrap", Item::Table(bootstrap));
+        }
+
+        let key = Key::new(&self.name);
+        let value = Item::Table(repo);
+        (key, value)
+    }
+}
+
+impl<'toml> From<(&'toml Key, &'toml Item)> for Repo {
+    fn from(entry: (&'toml Key, &'toml Item)) -> Self {
+        let (key, value) = entry;
+        let mut bootstrap = RepoBootstrap::builder();
+        let mut repo = Repo::builder(key.get());
+        bootstrap.visit_item(value);
+        repo.visit_item(value);
+
+        let bootstrap = bootstrap.build();
+        if !bootstrap.is_empty() {
+            repo = repo.bootstrap(bootstrap);
+        }
+        repo.build()
+    }
 }
 
 /// Builder for [`Repo`].
@@ -413,16 +486,54 @@ impl RepoBuilder {
         self
     }
 
+    /// Set repository to use user's home as the main working directory.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBuilder;
+    ///
+    /// let builder = RepoBuilder::new("vim").workdir_home(true);
+    /// ```
     pub fn workdir_home(mut self, choice: bool) -> Self {
         self.workdir_home = choice;
         self
     }
 
+    /// Set bootstrapping options for repository.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::{RepoBuilder, RepoBootstrap};
+    ///
+    /// let bootstrap = RepoBootstrap::builder()
+    ///     .clone("https://github.com/awkless/vim.git")
+    ///     .build();
+    /// let builder = RepoBuilder::new("vim").bootstrap(bootstrap);
+    /// ```
     pub fn bootstrap(mut self, bootstrap: RepoBootstrap) -> Self {
         self.bootstrap = Some(bootstrap);
         self
     }
 
+    /// Build new [`Repo`].
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::{RepoBuilder, RepoBootstrap};
+    ///
+    /// let bootstrap = RepoBootstrap::builder()
+    ///     .clone("https://github.com/awkless/vim.git")
+    ///     .build();
+    /// let repo = RepoBuilder::new("vim")
+    ///     .branch("master")
+    ///     .remote("origin")
+    ///     .workdir_home(true)
+    ///     .bootstrap(bootstrap)
+    ///     .build();
+    /// ```
     pub fn build(self) -> Repo {
         Repo {
             name: self.name,
@@ -431,6 +542,18 @@ impl RepoBuilder {
             workdir_home: self.workdir_home,
             bootstrap: self.bootstrap,
         }
+    }
+}
+
+impl<'toml> Visit<'toml> for RepoBuilder {
+    fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
+        match key {
+            "branch" => self.branch = node.as_str().unwrap_or_default().to_string(),
+            "remote" => self.remote = node.as_str().unwrap_or_default().to_string(),
+            "workdir_home" => self.workdir_home = node.as_bool().unwrap_or_default(),
+            &_ => visit_table_like_kv(self, key, node),
+        }
+        visit_table_like_kv(self, key, node);
     }
 }
 
@@ -473,4 +596,27 @@ pub enum OsType {
 
     /// Bootstrap to Windows system only.
     Windows,
+}
+
+impl From<&str> for OsType {
+    fn from(data: &str) -> Self {
+        match data {
+            "any" => Self::Any,
+            "unix" => Self::Unix,
+            "macos" => Self::MacOs,
+            "windows" => Self::Windows,
+            &_ => Self::Any,
+        }
+    }
+}
+
+impl fmt::Display for OsType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            OsType::Any => write!(f, "any"),
+            OsType::Unix => write!(f, "unix"),
+            OsType::MacOs => write!(f, "macos"),
+            OsType::Windows => write!(f, "windows"),
+        }
+    }
 }
