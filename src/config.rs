@@ -589,6 +589,20 @@ impl RepoBootstrap {
     pub fn builder() -> RepoBootstrapBuilder {
         RepoBootstrapBuilder::new()
     }
+
+    /// Determine if repository has not bootstrap settings.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ricer::config::RepoBootstrap;
+    ///
+    /// let bootstrap = RepoBootstrap::default();
+    /// assert!(bootsrap.is_empty());
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.clone.is_none() && self.os.is_none() && self.users.is_none() && self.hosts.is_none()
+    }
 }
 
 /// Repository bootstrap configuration settigns.
