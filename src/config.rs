@@ -31,6 +31,7 @@ use anyhow::{anyhow, Result};
 use log::{debug, info, trace};
 use std::fmt;
 use std::str::FromStr;
+use toml_edit::visit::{visit_table_like_kv, Visit};
 use toml_edit::{DocumentMut, Item, Key, Table};
 
 /// TOML parser.
@@ -325,4 +326,72 @@ impl FromStr for Toml {
         let doc: DocumentMut = data.parse()?;
         Ok(Self { doc })
     }
+}
+
+/// Repository configuration settings.
+///
+/// Intermediary structure meant to help make it easier to deserialize and
+/// serialize repository configuration file data.
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
+pub struct Repo {
+    /// Name of repository.
+    pub name: String,
+
+    /// Default branch.
+    pub branch: String,
+
+    /// Default remote.
+    pub remote: String,
+
+    /// Flag to determine if repository's working directory is the user's home
+    /// directory through _fake bare_ technique.
+    pub workdir_home: bool,
+
+    /// Bootstrap configuration for repository.
+    pub bootstrap: Option<RepoBootstrap>,
+}
+
+impl Repo {
+    // TODO: Implement this...
+}
+
+/// Repository bootstrap configuration settigns.
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
+pub struct RepoBootstrap {
+    /// URL to clone repository from.
+    pub clone: Option<String>,
+
+    /// Bootstrap repository if and only if user is using a specific OS.
+    pub os: Option<OsType>,
+
+    /// Bootstrap repository if and only if user is logged on to a specific
+    /// set of user accounts.
+    pub users: Option<Vec<String>>,
+
+    /// Bootstrap repository if and only if user is logged on to a specific
+    /// set of hosts.
+    pub hosts: Option<Vec<String>>,
+}
+
+impl RepoBootstrap {
+    // TODO: Implement this...
+}
+
+/// Operating System settings.
+///
+/// Simple enum used to determine the target OS user wants to bootstrap with.
+#[derive(Debug, Default, Eq, PartialEq, Copy, Clone)]
+pub enum OsType {
+    /// Bootstrap to any operating system.
+    #[default]
+    Any,
+
+    /// Bootstrap to Unix-like systems only.
+    Unix,
+
+    /// Bootstrap to MacOS systems only.
+    MacOs,
+
+    /// Bootstrap to Windows system only.
+    Windows,
 }
