@@ -576,8 +576,135 @@ pub struct RepoBootstrap {
 }
 
 impl RepoBootstrap {
-    // TODO: Implement this...
+    /// Build new bootstrap settings for repository.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBootstrap;
+    ///
+    /// let builder = RepoBootstrap::builder();
+    /// ```
+    pub fn builder() -> RepoBootstrapBuilder {
+        RepoBootstrapBuilder::new()
+    }
 }
+
+/// Repository bootstrap configuration settigns.
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
+pub struct RepoBootstrapBuilder {
+    clone: Option<String>,
+    os: Option<OsType>,
+    users: Option<Vec<String>>,
+    hosts: Option<Vec<String>>,
+}
+
+impl RepoBootstrapBuilder {
+    /// Construct new repository bootstrap settings builder.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBootstrapBuilder;
+    ///
+    /// let builder = RepoBootstrapBuilder::new();
+    /// ```
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Set URL to clone repository from.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBootstrap;
+    ///
+    /// let builder = RepoBootstrap::new().clone("https://github.com/awkless/vim.git");
+    /// ```
+    pub fn clone(mut self, url: impl Into<String>) -> Self {
+        self.clone = Some(url.into());
+        self
+    }
+
+    /// Set target operating system to bootstrap repository too.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBootstrap;
+    ///
+    /// let builder = RepoBootstrap::new().os(OsType::Any);
+    /// ```
+    pub fn os(mut self, os: OsType) -> Self {
+        self.os = Some(os);
+        self
+    }
+
+    /// Set target users to bootsrap repository too.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBootstrap;
+    ///
+    /// let builder = RepoBootstrap::new().users(["awkless", "turing"]);
+    /// ```
+    pub fn users<I, S>(mut self, users: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        let mut vec = Vec::new();
+        vec.extend(users.into_iter().map(Into::into));
+        self.users = Some(vec);
+        self
+    }
+
+    /// Set target hosts to bootstrap repository too.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBootstrap;
+    ///
+    /// let builder = RepoBootstrap::new().hosts(["awkless", "turing"]);
+    /// ```
+    pub fn hosts<I, S>(mut self, hosts: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        let mut vec = Vec::new();
+        vec.extend(hosts.into_iter().map(Into::into));
+        self.hosts = Some(vec);
+        self
+    }
+
+    /// Build [`RepoBootstrap`].
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::{RepoBootstrapBuilder, OsType};
+    ///
+    /// let bootstrap = RepoBootstrapBuilder::new()
+    ///     .clone("https://github.com/awkless/vim.git")
+    ///     .os(OsType::Unix)
+    ///     .users(["awkless", "knuth", "goodwill"])
+    ///     .hosts(["lovelace", "dijkstra", "turing"])
+    ///     .build();
+    /// ```
+    pub fn build(self) -> RepoBootstrap {
+        RepoBootstrap {
+            clone: self.clone,
+            os: self.os,
+            users: self.users,
+            hosts: self.hosts,
+        }
+    }
+}
+
 
 /// Operating System settings.
 ///
