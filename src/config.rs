@@ -355,6 +355,85 @@ impl Repo {
     // TODO: Implement this...
 }
 
+/// Builder for [`Repo`].
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
+pub struct RepoBuilder {
+    name: String,
+    branch: String,
+    remote: String,
+    workdir_home: bool,
+    bootstrap: Option<RepoBootstrap>,
+}
+
+impl RepoBuilder {
+    /// Construct new repository setting builder.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBuilder;
+    ///
+    /// let builder = RepoBuilder::new("vim");
+    /// ```
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            branch: Default::default(),
+            remote: Default::default(),
+            workdir_home: Default::default(),
+            bootstrap: Default::default(),
+        }
+    }
+
+    /// Set default branch to use in repository.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBuilder;
+    ///
+    /// let builder = RepoBuilder::new("vim").branch("master");
+    /// ```
+    pub fn branch(mut self, branch: impl Into<String>) -> Self {
+        self.branch = branch.into();
+        self
+    }
+
+    /// Set default remote to use in repository.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::RepoBuilder;
+    ///
+    /// let builder = RepoBuilder::new("vim").remote("origin");
+    /// ```
+    pub fn remote(mut self, remote: impl Into<String>) -> Self {
+        self.remote = remote.into();
+        self
+    }
+
+    pub fn workdir_home(mut self, choice: bool) -> Self {
+        self.workdir_home = choice;
+        self
+    }
+
+    pub fn bootstrap(mut self, bootstrap: RepoBootstrap) -> Self {
+        self.bootstrap = Some(bootstrap);
+        self
+    }
+
+    pub fn build(self) -> Repo {
+        Repo {
+            name: self.name,
+            branch: self.branch,
+            remote: self.remote,
+            workdir_home: self.workdir_home,
+            bootstrap: self.bootstrap,
+        }
+    }
+}
+
 /// Repository bootstrap configuration settigns.
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct RepoBootstrap {
