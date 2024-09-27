@@ -3,3 +3,4 @@
 
 mod toml;
 mod repo;
+mod cmd_hook;
