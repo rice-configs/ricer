@@ -869,7 +869,7 @@ impl CmdHook {
             decor.set_prefix("\n    ");
 
             if iter.peek().is_none() {
-                decor.set_prefix("\n");
+                decor.set_suffix("\n");
             }
 
             if let Some(pre) = &hook.pre {
