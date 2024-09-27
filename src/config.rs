@@ -843,6 +843,54 @@ impl CmdHook {
     pub fn add_hook(&mut self, hook: Hook) {
         self.hooks.push(hook);
     }
+
+    /// Serialize command hook into TOML document entry.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::{CmdHook, Hook};
+    ///
+    /// let mut cmd_hook = CmdHook::new("commit");
+    /// let hook = Hook::builder()
+    ///     .pre("hook.sh")
+    ///     .post("hook.sh")
+    ///     .workdir("/path/to/work/dir")
+    ///     .build();
+    /// cmd_hook.add_hook(hook);
+    /// let entry = cmd_hook.to_toml();
+    /// ```
+    pub fn to_toml(&self) -> (Key, Item) {
+        let mut tables = Array::new();
+        let mut iter = self.hooks.iter().enumerate().peekable();
+        while let Some((_, hook)) = iter.next() {
+            let mut inline = InlineTable::new();
+            let decor = inline.decor_mut();
+            decor.set_prefix("\n    ");
+
+            if iter.peek().is_none() {
+                decor.set_prefix("\n");
+            }
+
+            if let Some(pre) = &hook.pre {
+                inline.insert("pre", Value::from(pre));
+            }
+
+            if let Some(post) = &hook.post {
+                inline.insert("post", Value::from(post));
+            }
+
+            if let Some(workdir) = &hook.workdir {
+                inline.insert("workdir", Value::from(String::from(workdir.to_string_lossy())));
+            }
+
+            tables.push_formatted(Value::from(inline));
+        }
+
+        let key = Key::new(&self.cmd);
+        let value = Item::Value(Value::from(tables));
+        (key, value)
+    }
 }
 
 impl<'toml> From<(&'toml Key, &'toml Item)> for CmdHook {
