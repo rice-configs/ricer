@@ -32,8 +32,8 @@ use log::{debug, info, trace};
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
-use toml_edit::visit::{visit_table_like_kv, Visit};
-use toml_edit::{Array, DocumentMut, Item, Key, Table, Value};
+use toml_edit::visit::{visit_table_like_kv, visit_inline_table, Visit};
+use toml_edit::{Array, InlineTable, DocumentMut, Item, Key, Table, Value};
 
 /// TOML parser.
 ///
@@ -812,7 +812,62 @@ pub struct CmdHook {
 }
 
 impl CmdHook {
-    // TODO: Implement this...
+    /// Construct new command hook definition.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::CmdHook;
+    ///
+    /// let cmd_hook = CmdHook::new("commit");
+    /// ```
+    pub fn new(cmd: impl Into<String>) -> Self {
+        Self { cmd: cmd.into(), hooks: Default::default() }
+    }
+
+    /// Add hook definition into command hook list.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use ricer::config::{CmdHook, Hook};
+    ///
+    /// let mut cmd_hook = CmdHook::new("commit");
+    /// let hook = Hook::builder()
+    ///     .pre("hook.sh")
+    ///     .post("hook.sh")
+    ///     .workdir("/path/to/work/dir")
+    ///     .build();
+    /// cmd_hook.add_hook(hook);
+    /// ```
+    pub fn add_hook(&mut self, hook: Hook) {
+        self.hooks.push(hook);
+    }
+}
+
+impl<'toml> From<(&'toml Key, &'toml Item)> for CmdHook {
+    fn from(entry: (&'toml Key, &'toml Item)) -> Self {
+        let (key, value) = entry;
+        let mut cmd_hook = CmdHook::new(key.get());
+        cmd_hook.visit_item(value);
+        cmd_hook
+    }
+}
+
+impl<'toml> Visit<'toml> for CmdHook {
+    fn visit_inline_table(&mut self, node: &'toml InlineTable) {
+        let pre = if let Some(pre) = node.get("pre") { pre.as_str() } else { None };
+        let post = if let Some(post) = node.get("post") { post.as_str() } else { None };
+        let workdir = if let Some(workdir) = node.get("workdir") { workdir.as_str() } else { None };
+
+        let hook = Hook::builder();
+        let hook = if let Some(pre) = pre { hook.pre(pre) } else { hook };
+        let hook = if let Some(post) = post { hook.post(post) } else { hook };
+        let hook = if let Some(workdir) = workdir { hook.workdir(workdir) } else { hook };
+        self.add_hook(hook.build());
+
+        visit_inline_table(self, node);
+    }
 }
 
 /// Hook definition settings.
