@@ -31,7 +31,7 @@ use anyhow::{anyhow, Result};
 use log::{debug, info, trace};
 use std::fmt;
 use std::fs::OpenOptions;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
@@ -50,6 +50,13 @@ impl Config {
         file.read_to_string(&mut buffer)?;
         let doc: Toml = buffer.parse()?;
         Ok(Self { doc, path: path.as_ref().into() })
+    }
+
+    pub fn save(&mut self) -> Result<()> {
+        let mut file = OpenOptions::new().write(true).read(true).create(true).open(&self.path)?;
+        let buffer = self.doc.to_string();
+        file.write_all(buffer.as_bytes())?;
+        Ok(())
     }
 }
 
