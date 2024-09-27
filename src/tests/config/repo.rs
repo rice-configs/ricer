@@ -6,7 +6,7 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use toml_edit::{DocumentMut, Item, Key};
 
-use crate::config::{OsType, RepoBootstrap, Repo};
+use crate::config::{OsType, Repo, RepoBootstrap};
 
 fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
     let mut doc: DocumentMut = "[repos]".parse()?;
@@ -53,8 +53,7 @@ fn to_toml_serializes_correctly() -> Result<()> {
 
 #[test]
 fn to_toml_serializes_without_bootstrap_entry() -> Result<()> {
-    let repo =
-        Repo::builder("vim").branch("master").remote("origin").workdir_home(true).build();
+    let repo = Repo::builder("vim").branch("master").remote("origin").workdir_home(true).build();
     let entry = repo.to_toml();
     let doc = setup_toml_doc(entry)?;
     let expect = indoc! {r#"
@@ -84,22 +83,19 @@ fn from_deserializes_correctly() -> Result<()> {
         .build();
     let entry = expect.to_toml();
     let doc = setup_toml_doc(entry)?;
-    let result = Repo::from(
-        doc.get("repos").unwrap().as_table().unwrap().get_key_value("vim").unwrap(),
-    );
+    let result =
+        Repo::from(doc.get("repos").unwrap().as_table().unwrap().get_key_value("vim").unwrap());
     assert_eq!(expect, result);
     Ok(())
 }
 
 #[test]
 fn from_deserializes_without_bootstrap_entry() -> Result<()> {
-    let expect =
-        Repo::builder("vim").branch("master").remote("origin").workdir_home(true).build();
+    let expect = Repo::builder("vim").branch("master").remote("origin").workdir_home(true).build();
     let entry = expect.to_toml();
     let doc = setup_toml_doc(entry)?;
-    let result = Repo::from(
-        doc.get("repos").unwrap().as_table().unwrap().get_key_value("vim").unwrap(),
-    );
+    let result =
+        Repo::from(doc.get("repos").unwrap().as_table().unwrap().get_key_value("vim").unwrap());
     assert_eq!(expect, result);
     Ok(())
 }
