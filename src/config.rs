@@ -32,8 +32,8 @@ use log::{debug, info, trace};
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
-use toml_edit::visit::{visit_table_like_kv, visit_inline_table, Visit};
-use toml_edit::{Array, InlineTable, DocumentMut, Item, Key, Table, Value};
+use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
+use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
 
 /// TOML parser.
 ///

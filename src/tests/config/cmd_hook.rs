@@ -21,9 +21,7 @@ fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
 #[test]
 fn to_toml_serializes_correctly() -> Result<()> {
     let mut cmd_hook = CmdHook::new("commit");
-    cmd_hook.add_hook(
-        Hook::builder().pre("hook.sh").post("hook.sh").workdir("/some/path").build(),
-    );
+    cmd_hook.add_hook(Hook::builder().pre("hook.sh").post("hook.sh").workdir("/some/path").build());
     cmd_hook.add_hook(Hook::builder().pre("hook.sh").build());
     cmd_hook.add_hook(Hook::builder().post("hook.sh").build());
     let entry = cmd_hook.to_toml();
@@ -44,9 +42,7 @@ fn to_toml_serializes_correctly() -> Result<()> {
 #[test]
 fn from_deserializes_correctly() -> Result<()> {
     let mut expect = CmdHook::new("commit");
-    expect.add_hook(
-        Hook::builder().pre("hook.sh").post("hook.sh").workdir("/some/path").build(),
-    );
+    expect.add_hook(Hook::builder().pre("hook.sh").post("hook.sh").workdir("/some/path").build());
     expect.add_hook(Hook::builder().pre("hook.sh").build());
     expect.add_hook(Hook::builder().post("hook.sh").build());
     let entry = expect.to_toml();
