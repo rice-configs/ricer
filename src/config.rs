@@ -358,7 +358,7 @@ impl Repo {
     /// # Examples
     ///
     /// ```no_run
-    /// let ricer::config::Repo;
+    /// use ricer::config::Repo;
     ///
     /// let builder = Repo::builder("vim");
     /// ```
@@ -371,7 +371,7 @@ impl Repo {
     /// # Examples
     ///
     /// ```no_run
-    /// use ricer::config::{RepoBuilder, RepoBootstrap};
+    /// use ricer::config::{Repo, RepoBootstrap};
     ///
     /// let bootstrap = RepoBootstrap::builder()
     ///     .clone("https://github.com/awkless/vim.git")
@@ -598,7 +598,7 @@ impl RepoBootstrap {
     /// use ricer::config::RepoBootstrap;
     ///
     /// let bootstrap = RepoBootstrap::default();
-    /// assert!(bootsrap.is_empty());
+    /// assert!(bootstrap.is_empty());
     /// ```
     pub fn is_empty(&self) -> bool {
         self.clone.is_none() && self.os.is_none() && self.users.is_none() && self.hosts.is_none()
@@ -633,9 +633,9 @@ impl RepoBootstrapBuilder {
     /// # Examples
     ///
     /// ```no_run
-    /// use ricer::config::RepoBootstrap;
+    /// use ricer::config::RepoBootstrapBuilder;
     ///
-    /// let builder = RepoBootstrap::new().clone("https://github.com/awkless/vim.git");
+    /// let builder = RepoBootstrapBuilder::new().clone("https://github.com/awkless/vim.git");
     /// ```
     pub fn clone(mut self, url: impl Into<String>) -> Self {
         self.clone = Some(url.into());
@@ -647,9 +647,9 @@ impl RepoBootstrapBuilder {
     /// # Examples
     ///
     /// ```no_run
-    /// use ricer::config::RepoBootstrap;
+    /// use ricer::config::{RepoBootstrapBuilder, OsType};
     ///
-    /// let builder = RepoBootstrap::new().os(OsType::Any);
+    /// let builder = RepoBootstrapBuilder::new().os(OsType::Any);
     /// ```
     pub fn os(mut self, os: OsType) -> Self {
         self.os = Some(os);
@@ -661,9 +661,9 @@ impl RepoBootstrapBuilder {
     /// # Examples
     ///
     /// ```no_run
-    /// use ricer::config::RepoBootstrap;
+    /// use ricer::config::RepoBootstrapBuilder;
     ///
-    /// let builder = RepoBootstrap::new().users(["awkless", "turing"]);
+    /// let builder = RepoBootstrapBuilder::new().users(["awkless", "turing"]);
     /// ```
     pub fn users<I, S>(mut self, users: I) -> Self
     where
@@ -681,9 +681,9 @@ impl RepoBootstrapBuilder {
     /// # Examples
     ///
     /// ```no_run
-    /// use ricer::config::RepoBootstrap;
+    /// use ricer::config::RepoBootstrapBuilder;
     ///
-    /// let builder = RepoBootstrap::new().hosts(["awkless", "turing"]);
+    /// let builder = RepoBootstrapBuilder::new().hosts(["awkless", "turing"]);
     /// ```
     pub fn hosts<I, S>(mut self, hosts: I) -> Self
     where
