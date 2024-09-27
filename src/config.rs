@@ -30,10 +30,28 @@
 use anyhow::{anyhow, Result};
 use log::{debug, info, trace};
 use std::fmt;
-use std::path::PathBuf;
+use std::fs::OpenOptions;
+use std::io::Read;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
 use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
+
+#[derive(Debug)]
+pub struct Config {
+    doc: Toml,
+    path: PathBuf,
+}
+
+impl Config {
+    pub fn load(path: impl AsRef<Path>) -> Result<Self> {
+        let mut file = OpenOptions::new().write(true).read(true).create(true).open(path.as_ref())?;
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)?;
+        let doc: Toml = buffer.parse()?;
+        Ok(Self { doc, path: path.as_ref().into() })
+    }
+}
 
 /// TOML parser.
 ///
