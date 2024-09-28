@@ -297,6 +297,49 @@ where
     }
 }
 
+/// Repository configuration strategy.
+///
+/// Handles serialization and deserialization of repository settings.
+/// Repository settings are held within the "repos" section of a
+/// configuration file.
+///
+/// # Invariants
+///
+/// Will preserve existing formatting of configuration file if any.
+///
+/// # See also
+///
+/// - [`Toml`]
+/// - [`Repo`]
+pub struct RepoConfig;
+
+impl Config for RepoConfig {
+    type Entry = Repo;
+
+    fn get(&self, doc: &Toml, key: impl AsRef<str>) -> Result<Self::Entry> {
+        let entry = doc.get("repos",key.as_ref())?;
+        Ok(Repo::from(entry))
+    }
+
+    fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>> {
+        let entry = doc.add("repos",entry.to_toml())?.map(|e| Repo::from(e));
+        Ok(entry)
+    }
+
+    fn remove(&self, doc: &mut Toml, key: impl AsRef<str>) -> Result<Self::Entry> {
+        let entry = doc.remove("repos", key.as_ref())?;
+        Ok(Repo::from(entry))
+    }
+
+    fn rename<S>(&self, doc: &mut Toml, from: S, to: S) -> Result<Self::Entry>
+    where
+        S: AsRef<str>
+    {
+        let entry = doc.rename("repos", from.as_ref(), to.as_ref())?;
+        Ok(Repo::from(entry))
+    }
+}
+
 /// TOML parser.
 ///
 /// Parser only operates on string data, i.e., file I/O is left to the caller.
