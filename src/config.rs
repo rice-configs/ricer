@@ -318,12 +318,12 @@ impl Config for RepoConfig {
     type Entry = Repo;
 
     fn get(&self, doc: &Toml, key: impl AsRef<str>) -> Result<Self::Entry> {
-        let entry = doc.get("repos",key.as_ref())?;
+        let entry = doc.get("repos", key.as_ref())?;
         Ok(Repo::from(entry))
     }
 
     fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>> {
-        let entry = doc.add("repos",entry.to_toml())?.map(|e| Repo::from(e));
+        let entry = doc.add("repos", entry.to_toml())?.map(|e| Repo::from(e));
         Ok(entry)
     }
 
@@ -334,7 +334,7 @@ impl Config for RepoConfig {
 
     fn rename<S>(&self, doc: &mut Toml, from: S, to: S) -> Result<Self::Entry>
     where
-        S: AsRef<str>
+        S: AsRef<str>,
     {
         let entry = doc.rename("repos", from.as_ref(), to.as_ref())?;
         Ok(Repo::from(entry))
@@ -377,7 +377,7 @@ impl Config for CmdHookConfig {
 
     fn rename<S>(&self, doc: &mut Toml, from: S, to: S) -> Result<Self::Entry>
     where
-        S: AsRef<str>
+        S: AsRef<str>,
     {
         let entry = doc.rename("hooks", from.as_ref(), to.as_ref())?;
         Ok(CmdHook::from(entry))
@@ -763,17 +763,17 @@ impl Repo {
 }
 
 fn repo_from<'toml>(entry: (&'toml Key, &'toml Item)) -> Repo {
-        let (key, value) = entry;
-        let mut bootstrap = RepoBootstrap::builder();
-        let mut repo = Repo::builder(key.get());
-        bootstrap.visit_item(value);
-        repo.visit_item(value);
+    let (key, value) = entry;
+    let mut bootstrap = RepoBootstrap::builder();
+    let mut repo = Repo::builder(key.get());
+    bootstrap.visit_item(value);
+    repo.visit_item(value);
 
-        let bootstrap = bootstrap.build();
-        if !bootstrap.is_empty() {
-            repo = repo.bootstrap(bootstrap);
-        }
-        repo.build()
+    let bootstrap = bootstrap.build();
+    if !bootstrap.is_empty() {
+        repo = repo.bootstrap(bootstrap);
+    }
+    repo.build()
 }
 
 impl<'toml> From<(&'toml Key, &'toml Item)> for Repo {
@@ -1254,10 +1254,10 @@ impl CmdHook {
 }
 
 fn cmd_hook_from<'toml>(entry: (&'toml Key, &'toml Item)) -> CmdHook {
-        let (key, value) = entry;
-        let mut cmd_hook = CmdHook::new(key.get());
-        cmd_hook.visit_item(value);
-        cmd_hook
+    let (key, value) = entry;
+    let mut cmd_hook = CmdHook::new(key.get());
+    cmd_hook.visit_item(value);
+    cmd_hook
 }
 
 impl<'toml> From<(&'toml Key, &'toml Item)> for CmdHook {
@@ -1266,7 +1266,7 @@ impl<'toml> From<(&'toml Key, &'toml Item)> for CmdHook {
     }
 }
 
-impl <'toml> From<(Key, Item)> for CmdHook {
+impl<'toml> From<(Key, Item)> for CmdHook {
     fn from(entry: (Key, Item)) -> Self {
         let (key, value) = entry;
         cmd_hook_from((&key, &value))
