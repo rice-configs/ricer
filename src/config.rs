@@ -115,8 +115,12 @@ where
     /// # }
     /// ```
     pub fn load(config: C, path: impl AsRef<Path>) -> Result<Self> {
-        let mut file =
-            OpenOptions::new().write(true).read(true).create(true).open(path.as_ref())?;
+        let mut file = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .create(true)
+            .truncate(true)
+            .open(path.as_ref())?;
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)?;
         let doc: Toml = buffer.parse()?;
@@ -150,7 +154,12 @@ where
     ///
     /// [`load`]: #method.load
     pub fn save(&mut self) -> Result<()> {
-        let mut file = OpenOptions::new().write(true).read(true).create(true).open(&self.path)?;
+        let mut file = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .create(true)
+            .truncate(true)
+            .open(&self.path)?;
         let buffer = self.doc.to_string();
         file.write_all(buffer.as_bytes())?;
         Ok(())
@@ -323,7 +332,7 @@ impl Config for RepoConfig {
     }
 
     fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>> {
-        let entry = doc.add("repos", entry.to_toml())?.map(|e| Repo::from(e));
+        let entry = doc.add("repos", entry.to_toml())?.map(Repo::from);
         Ok(entry)
     }
 
@@ -1266,7 +1275,7 @@ impl<'toml> From<(&'toml Key, &'toml Item)> for CmdHook {
     }
 }
 
-impl<'toml> From<(Key, Item)> for CmdHook {
+impl From<(Key, Item)> for CmdHook {
     fn from(entry: (Key, Item)) -> Self {
         let (key, value) = entry;
         cmd_hook_from((&key, &value))
