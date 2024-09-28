@@ -212,7 +212,8 @@ where
     /// let repo = Repo::builder("vim")
     ///     .branch("master")
     ///     .remote("origin")
-    ///     .workdir_home(true);
+    ///     .workdir_home(true)
+    ///     .build();
     /// let replaced = config.add(repo)?;
     /// # Ok(())
     /// # }
@@ -337,6 +338,49 @@ impl Config for RepoConfig {
     {
         let entry = doc.rename("repos", from.as_ref(), to.as_ref())?;
         Ok(Repo::from(entry))
+    }
+}
+
+/// Command hook configuration strategy.
+///
+/// Handles serialization and deserialization of command hook settings.
+/// Command hook settings are held within the "hooks" section of a
+/// configuration file.
+///
+/// # Invariants
+///
+/// Will preserve existing formatting of configuration file if any.
+///
+/// # See also
+///
+/// - [`Toml`]
+/// - [`CmdHook`]
+pub struct CmdHookConfig;
+
+impl Config for CmdHookConfig {
+    type Entry = CmdHook;
+
+    fn get(&self, doc: &Toml, key: impl AsRef<str>) -> Result<Self::Entry> {
+        let entry = doc.get("hooks", key.as_ref())?;
+        Ok(CmdHook::from(entry))
+    }
+
+    fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>> {
+        let entry = doc.add("hooks", entry.to_toml())?.map(CmdHook::from);
+        Ok(entry)
+    }
+
+    fn remove(&self, doc: &mut Toml, key: impl AsRef<str>) -> Result<Self::Entry> {
+        let entry = doc.remove("hooks", key.as_ref())?;
+        Ok(CmdHook::from(entry))
+    }
+
+    fn rename<S>(&self, doc: &mut Toml, from: S, to: S) -> Result<Self::Entry>
+    where
+        S: AsRef<str>
+    {
+        let entry = doc.rename("hooks", from.as_ref(), to.as_ref())?;
+        Ok(CmdHook::from(entry))
     }
 }
 
@@ -1209,12 +1253,23 @@ impl CmdHook {
     }
 }
 
-impl<'toml> From<(&'toml Key, &'toml Item)> for CmdHook {
-    fn from(entry: (&'toml Key, &'toml Item)) -> Self {
+fn cmd_hook_from<'toml>(entry: (&'toml Key, &'toml Item)) -> CmdHook {
         let (key, value) = entry;
         let mut cmd_hook = CmdHook::new(key.get());
         cmd_hook.visit_item(value);
         cmd_hook
+}
+
+impl<'toml> From<(&'toml Key, &'toml Item)> for CmdHook {
+    fn from(entry: (&'toml Key, &'toml Item)) -> Self {
+        cmd_hook_from(entry)
+    }
+}
+
+impl <'toml> From<(Key, Item)> for CmdHook {
+    fn from(entry: (Key, Item)) -> Self {
+        let (key, value) = entry;
+        cmd_hook_from((&key, &value))
     }
 }
 
