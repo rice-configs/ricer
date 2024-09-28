@@ -37,26 +37,263 @@ use std::str::FromStr;
 use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
 use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
 
-#[derive(Debug)]
-pub struct Config {
-    doc: Toml,
-    path: PathBuf,
+/// Configuration strategy interface.
+///
+/// Provides standard routines that each configuration file data type
+/// should perform. Configurations typically handle one category of
+/// configuration file data: repository data, or command hook data.
+/// Each category is responsible for a _section_ of TOML file data.
+///
+/// # See also
+///
+/// - [`Toml`]
+pub trait Config {
+    type Entry;
+
+    fn get(&self, doc: &Toml, key: impl AsRef<str>) -> Result<Self::Entry>;
+
+    fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>>;
+
+    fn remove(&self, doc: &mut Toml, key: impl AsRef<str>) -> Result<Self::Entry>;
+
+    fn rename<S>(&self, doc: &mut Toml, from: S, to: S) -> Result<Self::Entry>
+    where
+        S: AsRef<str>;
 }
 
-impl Config {
-    pub fn load(path: impl AsRef<Path>) -> Result<Self> {
-        let mut file = OpenOptions::new().write(true).read(true).create(true).open(path.as_ref())?;
+/// Configuration file construct.
+///
+/// Manage configuration file data by selecting which configuration
+/// startegy to use, i.e., which configuration category to handle.
+/// Expected section to serialize and deserialize will depend on the
+/// configuration strategy selected by caller.
+///
+/// # Invariants
+///
+/// Will preserve existing formatting of configuration file if any.
+///
+/// # See also
+///
+/// - [`Config`]
+/// - [`Toml`]
+#[derive(Clone, Debug, Default)]
+pub struct ConfigFile<C>
+where
+    C: Config,
+{
+    doc: Toml,
+    path: PathBuf,
+    config: C,
+}
+
+impl<C> ConfigFile<C>
+where
+    C: Config,
+{
+    /// Load configuration file.
+    ///
+    /// Will load configuration file at `path` using `config` strategy. If
+    /// configuration file does not exist at `path`, then it will be
+    /// created at `path` instead.
+    ///
+    /// # Errors
+    ///
+    /// This function will fail if directory component to `path` does not
+    /// exist, file contains invalid UTF-8, file contains invalid TOML
+    /// formatting, or function does not have proper permission to access
+    /// and/or create the file at `path`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::{ConfigFile, RepoConfig};
+    ///
+    /// let config = ConfigFile::load(RepoConfig, "/path/to/repo.toml")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn load(config: C, path: impl AsRef<Path>) -> Result<Self> {
+        let mut file =
+            OpenOptions::new().write(true).read(true).create(true).open(path.as_ref())?;
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)?;
         let doc: Toml = buffer.parse()?;
-        Ok(Self { doc, path: path.as_ref().into() })
+        Ok(Self { doc, path: path.as_ref().into(), config })
     }
 
+    /// Save changes made to parsed configuration file document.
+    ///
+    /// Will write file to path constructed with from [`load`]. If file does
+    /// not exist at path, then it will be created and then written too.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if directory component to path does not exist, or if function
+    /// does not have proper permission to access and/or create the file at
+    /// path.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::{ConfigFile, RepoConfig};
+    ///
+    /// let mut config = ConfigFile::load(RepoConfig, "/path/to/repo.toml")?;
+    /// // Do stuff to configuration file document...
+    /// config.save()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`load`]: #method.load
     pub fn save(&mut self) -> Result<()> {
         let mut file = OpenOptions::new().write(true).read(true).create(true).open(&self.path)?;
         let buffer = self.doc.to_string();
         file.write_all(buffer.as_bytes())?;
         Ok(())
+    }
+
+    /// Get document entry.
+    ///
+    /// Will deserialize TOML document data into usable structure.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if entry cannot be located in TOML document. Will also fail
+    /// if expected section in configuration file does not exist or was not
+    /// defined as a table.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::{ConfigFile, RepoConfig};
+    ///
+    /// let config = ConfigFile::load(RepoConfig, "/path/to/repos.toml")?;
+    /// let entry = config.get("vim")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # See also
+    ///
+    /// - [`Toml`]
+    /// - [`Repo`]
+    /// - [`CmdHook`]
+    pub fn get(&self, key: impl AsRef<str>) -> Result<C::Entry> {
+        self.config.get(&self.doc, key.as_ref())
+    }
+
+    /// Add entry to document.
+    ///
+    /// Will serialize `entry` into TOML document. If entry already exists
+    /// then it will be replaced. The old replaced entry data will be
+    /// returned, or `None` will be returned if no replacement took place,
+    /// i.e., `entry` was new to TOML document.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if `entry` cannot be added in due to the user not
+    /// defining expected TOML document section for given configuration
+    /// as a table.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::{ConfigFile, RepoConfig, Repo};
+    ///
+    /// let mut config = ConfigFile::load(RepoConfig, "/path/to/repos.toml")?;
+    /// let repo = Repo::builder("vim")
+    ///     .branch("master")
+    ///     .remote("origin")
+    ///     .workdir_home(true);
+    /// let replaced = config.add(repo)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # See also
+    ///
+    /// - [`Toml`]
+    /// - [`Repo`]
+    /// - [`CmdHook`]
+    pub fn add(&mut self, entry: C::Entry) -> Result<Option<C::Entry>> {
+        self.config.add(&mut self.doc, entry)
+    }
+
+    /// Remove entry from TOML document.
+    ///
+    /// Will remove entry from TOML document returning removed entry in
+    /// deserialized form.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if entry does not exist in configuration file. Will also
+    /// fail if expected section of configuration file does not exist or
+    /// was not defined as a table.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::{ConfigFile, RepoConfig};
+    ///
+    /// let mut config = ConfigFile::load(RepoConfig, "/path/to/repos.toml")?;
+    /// let entry = config.remove("vim")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # See also
+    ///
+    /// - [`Toml`]
+    /// - [`Repo`]
+    /// - [`CmdHook`]
+    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<C::Entry> {
+        self.config.remove(&mut self.doc, key.as_ref())
+    }
+
+    /// Rename entry in TOML document.
+    ///
+    /// Will rename an entry in TOML document, returning the old entry before
+    /// it was renamed in deserialized form.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if entry does not exist in configuration file. Will also
+    /// fail if expected section of configuration file does not exist or
+    /// was not defined as a table.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use anyhow::Result;
+    /// # fn main() -> Result<()> {
+    /// use ricer::config::{ConfigFile, RepoConfig};
+    ///
+    /// let mut config = ConfigFile::load(RepoConfig, "/path/to/repos.toml")?;
+    /// let entry = config.rename("vim", "neovim")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # See also
+    ///
+    /// - [`Toml`]
+    /// - [`Repo`]
+    /// - [`CmdHook`]
+    pub fn rename<S>(&mut self, from: S, to: S) -> Result<C::Entry>
+    where
+        S: AsRef<str>,
+    {
+        self.config.rename(&mut self.doc, from.as_ref(), to.as_ref())
     }
 }
 
@@ -438,8 +675,7 @@ impl Repo {
     }
 }
 
-impl<'toml> From<(&'toml Key, &'toml Item)> for Repo {
-    fn from(entry: (&'toml Key, &'toml Item)) -> Self {
+fn repo_from<'toml>(entry: (&'toml Key, &'toml Item)) -> Repo {
         let (key, value) = entry;
         let mut bootstrap = RepoBootstrap::builder();
         let mut repo = Repo::builder(key.get());
@@ -451,6 +687,18 @@ impl<'toml> From<(&'toml Key, &'toml Item)> for Repo {
             repo = repo.bootstrap(bootstrap);
         }
         repo.build()
+}
+
+impl<'toml> From<(&'toml Key, &'toml Item)> for Repo {
+    fn from(entry: (&'toml Key, &'toml Item)) -> Self {
+        repo_from(entry)
+    }
+}
+
+impl From<(Key, Item)> for Repo {
+    fn from(entry: (Key, Item)) -> Self {
+        let (key, value) = entry;
+        repo_from((&key, &value))
     }
 }
 
