@@ -50,15 +50,13 @@ use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
 pub trait Config {
     type Entry;
 
-    fn get(&self, doc: &Toml, key: impl AsRef<str>) -> Result<Self::Entry>;
+    fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry>;
 
     fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>>;
 
-    fn remove(&self, doc: &mut Toml, key: impl AsRef<str>) -> Result<Self::Entry>;
+    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry>;
 
-    fn rename<S>(&self, doc: &mut Toml, from: S, to: S) -> Result<Self::Entry>
-    where
-        S: AsRef<str>;
+    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry>;
 }
 
 /// Configuration file construct.
@@ -326,7 +324,7 @@ pub struct RepoConfig;
 impl Config for RepoConfig {
     type Entry = Repo;
 
-    fn get(&self, doc: &Toml, key: impl AsRef<str>) -> Result<Self::Entry> {
+    fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry> {
         let entry = doc.get("repos", key.as_ref())?;
         Ok(Repo::from(entry))
     }
@@ -336,15 +334,12 @@ impl Config for RepoConfig {
         Ok(entry)
     }
 
-    fn remove(&self, doc: &mut Toml, key: impl AsRef<str>) -> Result<Self::Entry> {
+    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry> {
         let entry = doc.remove("repos", key.as_ref())?;
         Ok(Repo::from(entry))
     }
 
-    fn rename<S>(&self, doc: &mut Toml, from: S, to: S) -> Result<Self::Entry>
-    where
-        S: AsRef<str>,
-    {
+    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry> {
         let entry = doc.rename("repos", from.as_ref(), to.as_ref())?;
         Ok(Repo::from(entry))
     }
@@ -369,7 +364,7 @@ pub struct CmdHookConfig;
 impl Config for CmdHookConfig {
     type Entry = CmdHook;
 
-    fn get(&self, doc: &Toml, key: impl AsRef<str>) -> Result<Self::Entry> {
+    fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry> {
         let entry = doc.get("hooks", key.as_ref())?;
         Ok(CmdHook::from(entry))
     }
@@ -379,15 +374,12 @@ impl Config for CmdHookConfig {
         Ok(entry)
     }
 
-    fn remove(&self, doc: &mut Toml, key: impl AsRef<str>) -> Result<Self::Entry> {
+    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry> {
         let entry = doc.remove("hooks", key.as_ref())?;
         Ok(CmdHook::from(entry))
     }
 
-    fn rename<S>(&self, doc: &mut Toml, from: S, to: S) -> Result<Self::Entry>
-    where
-        S: AsRef<str>,
-    {
+    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry> {
         let entry = doc.rename("hooks", from.as_ref(), to.as_ref())?;
         Ok(CmdHook::from(entry))
     }
