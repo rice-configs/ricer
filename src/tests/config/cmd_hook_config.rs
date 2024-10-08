@@ -48,3 +48,26 @@ fn get_config_error(
     assert!(matches!(result, Err(..)));
     Ok(())
 }
+
+#[rstest]
+#[case("", cmd_hook_de_commit(), None, cmd_hook_toml_commit())]
+fn add_no_error(
+    #[case] input: &str,
+    #[case] entry: CmdHook,
+    #[case] de_expect: Option<CmdHook>,
+    #[case] toml_expect: String,
+) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = CmdHookConfig.add(&mut doc, entry)?;
+    assert_eq!(de_expect, result);
+    assert_eq!(toml_expect, doc.to_string());
+    Ok(())
+}
+
+#[rstest]
+fn add_config_error(#[values("hooks = 'not a table'")] input: &str) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = CmdHookConfig.add(&mut doc, CmdHook::default());
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
