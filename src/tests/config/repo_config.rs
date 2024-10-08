@@ -1,0 +1,42 @@
+// SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
+// SPDX-License-Identifier: MIT
+
+use anyhow::Result;
+use indoc::indoc;
+use rstest::{fixture, rstest};
+
+use crate::config::{Config, Repo, RepoConfig, Toml};
+
+#[fixture]
+fn repo_toml_vim() -> String {
+    String::from(indoc! {r#"
+        [repos.vim]
+        branch = "master"
+        remote = "origin"
+        workdir_home = true
+    "#})
+}
+
+#[fixture]
+fn repo_de_vim() -> Repo {
+    Repo::builder("vim").branch("master").remote("origin").workdir_home(true).build()
+}
+
+#[rstest]
+#[case(repo_toml_vim(), repo_de_vim())]
+fn get_deserialize_no_error(#[case] input: String, #[case] expect: Repo) -> Result<()> {
+    let doc: Toml = input.parse()?;
+    let result = RepoConfig.get(&doc, "vim")?;
+    assert_eq!(expect, result);
+    Ok(())
+}
+
+#[rstest]
+fn get_config_error(
+    #[values("[no_repos]", "repos = 'not a table'", "[repos]")] input: &str,
+) -> Result<()> {
+    let doc: Toml = input.parse()?;
+    let result = RepoConfig.get(&doc, "inexistent");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
