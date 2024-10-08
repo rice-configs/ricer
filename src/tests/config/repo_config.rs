@@ -60,3 +60,24 @@ fn remove_config_error(
     assert!(matches!(result, Err(..)));
     Ok(())
 }
+
+#[rstest]
+#[case(repo_toml_vim(), repo_de_vim(), repo_toml_vim().replace("vim", "neovim"))]
+fn rename_no_error(#[case] input: String, #[case] repo_expect: Repo, #[case] toml_expect: String) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = RepoConfig.rename(&mut doc, "vim", "neovim")?;
+    assert_eq!(repo_expect, result);
+    assert_eq!(toml_expect, doc.to_string());
+    Ok(())
+}
+
+#[rstest]
+fn rename_config_error(
+    #[values("[no_repos]", "repos = 'not a table'", "[repos]")] input: &str,
+) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = RepoConfig.rename(&mut doc, "inexistent", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
