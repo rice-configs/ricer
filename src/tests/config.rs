@@ -3,4 +3,5 @@
 
 mod cmd_hook;
 mod repo;
+mod repo_config;
 mod toml;
