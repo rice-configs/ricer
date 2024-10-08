@@ -3,6 +3,7 @@
 
 use anyhow::Result;
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 use rstest::{fixture, rstest};
 
 use crate::config::{Config, Repo, RepoConfig, Toml};
@@ -42,8 +43,35 @@ fn get_config_error(
 }
 
 #[rstest]
+#[case("", repo_de_vim(), None, repo_toml_vim())]
+fn add_no_error(
+    #[case] input: &str,
+    #[case] entry: Repo,
+    #[case] de_expect: Option<Repo>,
+    #[case] toml_expect: String,
+) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = RepoConfig.add(&mut doc, entry)?;
+    assert_eq!(de_expect, result);
+    assert_eq!(toml_expect, doc.to_string());
+    Ok(())
+}
+
+#[rstest]
+fn add_config_error(#[values("repos = 'not a table'")] input: &str) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = RepoConfig.add(&mut doc, Repo::default());
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
 #[case(repo_toml_vim(), repo_de_vim(), "")]
-fn remove_no_error(#[case] input: String, #[case] repo_expect: Repo, #[case] toml_expect: &str) -> Result<()> {
+fn remove_no_error(
+    #[case] input: String,
+    #[case] repo_expect: Repo,
+    #[case] toml_expect: &str,
+) -> Result<()> {
     let mut doc: Toml = input.parse()?;
     let result = RepoConfig.remove(&mut doc, "vim")?;
     assert_eq!(repo_expect, result);
@@ -63,7 +91,11 @@ fn remove_config_error(
 
 #[rstest]
 #[case(repo_toml_vim(), repo_de_vim(), repo_toml_vim().replace("vim", "neovim"))]
-fn rename_no_error(#[case] input: String, #[case] repo_expect: Repo, #[case] toml_expect: String) -> Result<()> {
+fn rename_no_error(
+    #[case] input: String,
+    #[case] repo_expect: Repo,
+    #[case] toml_expect: String,
+) -> Result<()> {
     let mut doc: Toml = input.parse()?;
     let result = RepoConfig.rename(&mut doc, "vim", "neovim")?;
     assert_eq!(repo_expect, result);
@@ -80,4 +112,3 @@ fn rename_config_error(
     assert!(matches!(result, Err(..)));
     Ok(())
 }
-
