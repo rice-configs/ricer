@@ -95,3 +95,27 @@ fn remove_config_error(
     assert!(matches!(result, Err(..)));
     Ok(())
 }
+
+#[rstest]
+#[case(cmd_hook_toml_commit(), cmd_hook_de_commit(), cmd_hook_toml_commit().replace("commit", "push"))]
+fn rename_no_error(
+    #[case] input: String,
+    #[case] de_expect: CmdHook,
+    #[case] toml_expect: String,
+) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = CmdHookConfig.rename(&mut doc, "commit", "push")?;
+    assert_eq!(de_expect, result);
+    assert_eq!(toml_expect, doc.to_string());
+    Ok(())
+}
+
+#[rstest]
+fn rename_config_error(
+    #[values("[no_hooks]", "hooks = 'not a table'", "[hooks]")] input: &str,
+) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = CmdHookConfig.rename(&mut doc, "inexistent", "fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
