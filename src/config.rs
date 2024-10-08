@@ -117,7 +117,7 @@ where
             .write(true)
             .read(true)
             .create(true)
-            .truncate(true)
+            .truncate(false)
             .open(path.as_ref())?;
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)?;
@@ -156,7 +156,7 @@ where
             .write(true)
             .read(true)
             .create(true)
-            .truncate(true)
+            .truncate(false)
             .open(&self.path)?;
         let buffer = self.doc.to_string();
         file.write_all(buffer.as_bytes())?;
@@ -303,6 +303,20 @@ where
     {
         self.config.rename(&mut self.doc, from.as_ref(), to.as_ref())
     }
+
+    /// Get path configuration file was loaded from.
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+impl<C> fmt::Display for ConfigFile<C>
+where
+    C: Config,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.doc)
+    }
 }
 
 /// Repository configuration strategy.
@@ -319,6 +333,7 @@ where
 ///
 /// - [`Toml`]
 /// - [`Repo`]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RepoConfig;
 
 impl Config for RepoConfig {
@@ -359,6 +374,7 @@ impl Config for RepoConfig {
 ///
 /// - [`Toml`]
 /// - [`CmdHook`]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CmdHookConfig;
 
 impl Config for CmdHookConfig {
