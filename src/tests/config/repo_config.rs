@@ -40,3 +40,23 @@ fn get_config_error(
     assert!(matches!(result, Err(..)));
     Ok(())
 }
+
+#[rstest]
+#[case(repo_toml_vim(), repo_de_vim(), "")]
+fn remove_no_error(#[case] input: String, #[case] repo_expect: Repo, #[case] toml_expect: &str) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = RepoConfig.remove(&mut doc, "vim")?;
+    assert_eq!(repo_expect, result);
+    assert_eq!(toml_expect, doc.to_string());
+    Ok(())
+}
+
+#[rstest]
+fn remove_config_error(
+    #[values("[no_repos]", "repos = 'not a table'", "[repos]")] input: &str,
+) -> Result<()> {
+    let mut doc: Toml = input.parse()?;
+    let result = RepoConfig.remove(&mut doc, "inexistent");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
