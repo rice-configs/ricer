@@ -3,6 +3,7 @@
 
 mod cmd_hook;
 mod cmd_hook_config;
+mod config_file;
 mod repo;
 mod repo_config;
 mod toml;
