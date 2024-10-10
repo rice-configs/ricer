@@ -172,3 +172,30 @@ fn add_inserts_new_section(empty_config: &FakeConfigDir) -> Result<()> {
     assert_eq!(expect, config.to_string());
     Ok(())
 }
+
+#[rstest]
+fn remove_catches_errors(good_config: &FakeConfigDir) -> Result<()> {
+    let mut mock_cfg_file = MockConfig::new();
+    mock_cfg_file.expect_remove().returning(|_, _| Err(anyhow!("fail for whatever reason")));
+    let fixture = good_config.get_config_file("fixture.toml");
+    let mut config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
+    let result = config.remove("fail");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
+fn remove_give_deleted_entry(good_config: &FakeConfigDir) -> Result<()> {
+    let mut mock_cfg_file = MockConfig::new();
+    mock_cfg_file.expect_remove().returning(|doc, key| {
+        let entry = doc.remove("repos", key.as_ref())?;
+        Ok(Repo::from(entry))
+    });
+    let fixture = good_config.get_config_file("fixture.toml");
+    let mut config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
+    let result = config.remove("vim")?;
+    let expect = Repo::builder("vim").branch("main").remote("origin").workdir_home(true).build();
+    assert_eq!(expect, result);
+    assert_eq!("", config.to_string());
+    Ok(())
+}
