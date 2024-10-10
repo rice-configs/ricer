@@ -2,43 +2,39 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::{anyhow, Result};
-use rstest::{fixture, rstest};
-use indoc::indoc;
+use indoc::{formatdoc, indoc};
 use pretty_assertions::assert_eq;
-use ricer_test_tools::fakes::{FakeHomeDir, FakeConfigDir};
+use ricer_test_tools::fakes::{FakeConfigDir, FakeHomeDir};
+use rstest::{fixture, rstest};
 
 use crate::config::{ConfigFile, MockConfig, Repo};
 
-
 #[fixture]
 #[once]
-fn good_config() ->  FakeConfigDir {
+fn good_config() -> FakeConfigDir {
     FakeConfigDir::builder()
-        .config_file("fixture.toml", indoc! {r#"
+        .config_file(
+            "fixture.toml",
+            indoc! {r#"
             [repos.vim]
             branch = "main"
             remote = "origin"
             workdir_home = true
-        "#})
+        "#},
+        )
         .build()
 }
 
 #[fixture]
 #[once]
-fn expect_de_vim() -> Repo {
-    Repo::builder("vim")
-        .branch("main")
-        .remote("origin")
-        .workdir_home(true)
-        .build()
+fn empty_config() -> FakeConfigDir {
+    FakeConfigDir::builder().config_file("fixture.toml", "# empty").build()
 }
 
 #[fixture]
 #[once]
 fn bad_toml_config() -> FakeConfigDir {
-    FakeConfigDir::builder()
-        .config_file("fixture.toml", r#"this "will fail" "#)
-        .build()
+    FakeConfigDir::builder().config_file("fixture.toml", r#"this "will fail" "#).build()
 }
 
 #[rstest]
@@ -66,7 +62,7 @@ fn load_catches_invalid_toml(bad_toml_config: &FakeConfigDir) -> Result<()> {
     let mock_cfg_file = MockConfig::new();
     let fixture = bad_toml_config.get_config_file("fixture.toml");
     let result = ConfigFile::load(mock_cfg_file, fixture.as_path());
-    assert!(matches!(result, Err(..))); 
+    assert!(matches!(result, Err(..)));
     Ok(())
 }
 
@@ -82,7 +78,7 @@ fn get_catches_error(good_config: &FakeConfigDir) -> Result<()> {
 }
 
 #[rstest]
-fn get_deserialize_no_error(good_config: &FakeConfigDir, expect_de_vim: &Repo) -> Result<()> {
+fn get_deserialize_no_error(good_config: &FakeConfigDir) -> Result<()> {
     let mut mock_cfg_file = MockConfig::new();
     mock_cfg_file.expect_get().returning(|doc, key| {
         let data = doc.get("repos", key)?;
@@ -91,6 +87,88 @@ fn get_deserialize_no_error(good_config: &FakeConfigDir, expect_de_vim: &Repo) -
     let fixture = good_config.get_config_file("fixture.toml");
     let config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
     let result = config.get("vim")?;
-    assert_eq!(expect_de_vim, &result);
+    let expect = Repo::builder("vim").branch("main").remote("origin").workdir_home(true).build();
+    assert_eq!(expect, result);
+    Ok(())
+}
+
+#[rstest]
+fn add_catches_error(good_config: &FakeConfigDir) -> Result<()> {
+    let mut mock_cfg_file = MockConfig::new();
+    mock_cfg_file.expect_add().returning(|_, _| Err(anyhow!("fail for whatever reason")));
+    let fixture = good_config.get_config_file("fixture.toml");
+    let mut config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
+    let result = config.add(Repo::default());
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
+fn add_inserts_new_entry(good_config: &FakeConfigDir) -> Result<()> {
+    let mut mock_cfg_file = MockConfig::new();
+    mock_cfg_file.expect_add().returning(|doc, entry| {
+        let entry = doc.add("repos", entry.to_toml())?.map(Repo::from);
+        Ok(entry)
+    });
+    let fixture = good_config.get_config_file("fixture.toml");
+    let mut config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
+    let entry = Repo::builder("dwm").branch("main").remote("origin").workdir_home(true).build();
+    let result = config.add(entry)?;
+    let expect = formatdoc! {r#"
+        {}
+        [repos.dwm]
+        branch = "main"
+        remote = "origin"
+        workdir_home = true
+    "#, fixture.data()};
+    assert_eq!(result, None);
+    assert_eq!(expect, config.to_string());
+    Ok(())
+}
+
+#[rstest]
+fn add_replaces_entry(good_config: &FakeConfigDir) -> Result<()> {
+    let mut mock_cfg_file = MockConfig::new();
+    mock_cfg_file.expect_add().returning(|doc, entry| {
+        let entry = doc.add("repos", entry.to_toml())?.map(Repo::from);
+        Ok(entry)
+    });
+    let fixture = good_config.get_config_file("fixture.toml");
+    let mut config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
+    let entry = Repo::builder("vim").branch("master").remote("origin").workdir_home(true).build();
+    let result = config.add(entry)?;
+    let ret_expect =
+        Some(Repo::builder("vim").branch("main").remote("origin").workdir_home(true).build());
+    let str_expect = indoc! {r#"
+        [repos.vim]
+        branch = "master"
+        remote = "origin"
+        workdir_home = true
+    "#};
+    assert_eq!(ret_expect, result);
+    assert_eq!(str_expect, config.to_string());
+    Ok(())
+}
+
+#[rstest]
+fn add_inserts_new_section(empty_config: &FakeConfigDir) -> Result<()> {
+    let mut mock_cfg_file = MockConfig::new();
+    mock_cfg_file.expect_add().returning(|doc, entry| {
+        let entry = doc.add("repos", entry.to_toml())?.map(Repo::from);
+        Ok(entry)
+    });
+    let fixture = empty_config.get_config_file("fixture.toml");
+    let mut config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
+    let entry = Repo::builder("vim").branch("master").remote("origin").workdir_home(true).build();
+    let result = config.add(entry)?;
+    let expect = formatdoc! {r#"
+        [repos.vim]
+        branch = "master"
+        remote = "origin"
+        workdir_home = true
+        {}"#,
+    fixture.data()};
+    assert_eq!(result, None);
+    assert_eq!(expect, config.to_string());
     Ok(())
 }
