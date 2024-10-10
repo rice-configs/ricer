@@ -37,6 +37,9 @@ use std::str::FromStr;
 use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
 use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
 
+#[cfg(test)]
+use mockall::automock;
+
 /// Configuration strategy interface.
 ///
 /// Provides standard routines that each configuration file data type
@@ -47,6 +50,7 @@ use toml_edit::{Array, DocumentMut, InlineTable, Item, Key, Table, Value};
 /// # See also
 ///
 /// - [`Toml`]
+#[cfg_attr(test, automock(type Entry = Repo;))]
 pub trait Config {
     type Entry;
 
