@@ -199,3 +199,36 @@ fn remove_give_deleted_entry(good_config: &FakeConfigDir) -> Result<()> {
     assert_eq!("", config.to_string());
     Ok(())
 }
+
+#[rstest]
+fn rename_catches_errors(good_config: &FakeConfigDir) -> Result<()> {
+    let mut mock_cfg_file = MockConfig::new();
+    mock_cfg_file.expect_rename().returning(|_, _, _| Err(anyhow!("fail for whatever reason")));
+    let fixture = good_config.get_config_file("fixture.toml");
+    let mut config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
+    let result = config.rename("foo", "bar");
+    assert!(matches!(result, Err(..)));
+    Ok(())
+}
+
+#[rstest]
+fn rename_give_replaced_entry(good_config: &FakeConfigDir) -> Result<()> {
+    let mut mock_cfg_file = MockConfig::new();
+    mock_cfg_file.expect_rename().returning(|doc, from, to| {
+        let entry = doc.rename("repos", from.as_ref(), to.as_ref())?;
+        Ok(Repo::from(entry))
+    });
+    let fixture = good_config.get_config_file("fixture.toml");
+    let mut config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
+    let result = config.rename("vim", "neovim")?;
+    let ret_expect = Repo::builder("vim").branch("main").remote("origin").workdir_home(true).build();
+    let str_expect = indoc! {r#"
+        [repos.neovim]
+        branch = "main"
+        remote = "origin"
+        workdir_home = true
+    "#};
+    assert_eq!(ret_expect, result);
+    assert_eq!(str_expect, config.to_string());
+    Ok(())
+}
