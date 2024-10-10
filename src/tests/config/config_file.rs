@@ -221,7 +221,8 @@ fn rename_give_replaced_entry(good_config: &FakeConfigDir) -> Result<()> {
     let fixture = good_config.get_config_file("fixture.toml");
     let mut config = ConfigFile::load(mock_cfg_file, fixture.as_path())?;
     let result = config.rename("vim", "neovim")?;
-    let ret_expect = Repo::builder("vim").branch("main").remote("origin").workdir_home(true).build();
+    let ret_expect =
+        Repo::builder("vim").branch("main").remote("origin").workdir_home(true).build();
     let str_expect = indoc! {r#"
         [repos.neovim]
         branch = "main"
