@@ -85,6 +85,12 @@ pub struct CloneOpts {
     pub repo: Option<String>,
 }
 
+#[derive(Args, Debug)]
+pub struct DeleteOpts {
+    /// Target repository to delete.
+    pub repo: String,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
     /// Bootstrap available repository configurations.
@@ -95,6 +101,9 @@ pub enum CmdSet {
 
     /// Commit changes to all repositories.
     Commit(CommitOpts),
+
+    /// Delete target repository.
+    Delete(DeleteOpts),
 
     /// Run user's Git binary on target repository.
     #[command(external_subcommand)]
