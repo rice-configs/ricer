@@ -94,7 +94,16 @@ contributing to the Ricer project.
 
 ## Copyright and Licensing
 
-__TODO__
+The Ricer coding project uses the MIT license as its main license for its
+source code and documentation. Ricer also uses the CC0-1.0 license to place
+files in the public domain that are to small or generic to place copyright over.
+
+This project uses the [REUSE version 3 specification][reuse-v3-spec] to make it
+easier to determine who owns the copyright and licensing of any given file in
+the codebase with SPDX identifiers. Ricer also employs the [Developer
+Certificate of Origin version 1.1][linux-dco] to ensure that any contributions
+made have the right to be merged into the project, and can be distributed with
+the project under its main license.
 
 [build-status]: https://img.shields.io/github/actions/workflow/status/rice-configs/ricer/quality_check.yaml?style=for-the-badge&label=Quality%20Check
 [reuse-compliance]: https://img.shields.io/github/actions/workflow/status/rice-configs/ricer/reuse.yaml?style=for-the-badge&label=REUSE%203.0
@@ -106,3 +115,5 @@ __TODO__
 [vcsh-repo]: https://github.com/RichiH/vcsh
 [libgit2-rs]: https://github.com/rust-lang/git2-rs
 [arch-wiki]: https://wiki.archlinux.org/title/Dotfiles#Tracking_dotfiles_directly_with_Git
+[reuse-v3-spec]: https://reuse.software/spec-3.0/
+[linux-dco]: https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin
