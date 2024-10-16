@@ -5,7 +5,7 @@ use clap::{Args, Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use std::ffi::OsString;
 
-use crate::context::HookAction;
+use crate::context::{HookAction, FixupAction};
 
 const EXTERNAL_SUBCOMMANDS: &str = r#"
 Command Shortcuts:
@@ -50,7 +50,6 @@ pub struct SharedOpts {
     pub run_hook: HookAction,
 }
 
-/// Options for bootstrap command.
 #[derive(Args, Debug)]
 pub struct BootstrapOpts {
     /// Activate bootstrap wizard to configure target repository.
@@ -66,10 +65,24 @@ pub struct BootstrapOpts {
     pub only: Option<Vec<String>>,
 }
 
+#[derive(Args, Debug)]
+pub struct CommitOpts {
+    /// Amend or reword current commit.
+    #[arg(long, short, value_name = "ACTION", value_enum)]
+    pub fixup: Option<FixupAction>,
+
+    /// Use MSG as the commit message.
+    #[arg(long, short, value_name = "MSG")]
+    pub message: Option<String>,
+} 
+
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
     /// Bootstrap available repository configurations.
     Bootstrap(BootstrapOpts),
+
+    /// Commit changes to all repositories.
+    Commit(CommitOpts),
 
     /// Run user's Git binary on target repository.
     #[command(external_subcommand)]
