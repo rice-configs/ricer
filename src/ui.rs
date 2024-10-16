@@ -39,10 +39,11 @@ impl Cli {
 #[derive(Debug, Args)]
 #[command(next_help_heading = "Command Options")]
 pub struct SharedOpts {
-
+    #[arg(default_value_t = HookAction::default(), long, short, value_enum, value_name = "ACTION")]
+    pub run_hook: HookAction,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
-
+    
 }
