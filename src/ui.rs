@@ -76,10 +76,22 @@ pub struct CommitOpts {
     pub message: Option<String>,
 } 
 
+#[derive(Args, Debug)]
+pub struct CloneOpts {
+    /// Remove to clone from.
+    pub remote: String,
+
+    /// Set name of cloned repository.
+    pub repo: Option<String>,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
     /// Bootstrap available repository configurations.
     Bootstrap(BootstrapOpts),
+
+    /// Clone existing repository from a remote.
+    Clone(CloneOpts),
 
     /// Commit changes to all repositories.
     Commit(CommitOpts),
