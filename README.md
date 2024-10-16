@@ -65,13 +65,23 @@ contribute to the project.
 
 __TODO__
 
-## Acknowledgements
-
-__TODO__
-
 ## Contributing
 
 __TODO__
+
+## Acknowledgements
+
+1. Richard Hartmann's [vcsh][vcsh-repo] inspired Ricer's creation, and provided a
+   basic foundation for Ricer's command set and functionality.
+
+1. The [git2-rs][libgit2-rs] library for offering a more idomatic way of
+   integrating Git into Ricer. Originally, Ricer was just going to wrap Git with
+   `std::process::Command` all over the place.
+
+1. The [Arch Linux Wiki][arch-wiki] provides a very detailed explaination of
+   dotfiles and ricing. It also gives a good explaination of how to use Git for
+   dotfile management through bare repositories. This unique way of using Git
+   provided a basic idea on how to implement Ricer's core functionality.
 
 ## Copyright and Licensing
 
@@ -83,3 +93,6 @@ __TODO__
 [explain-ricing]: pesos.github.io/2020/07/14/what-is-ricing.html
 [git-scm]: https://git-scm.com/downloads
 [rust-lang]: https://www.rust-lang.org/learn/get-started
+[vcsh-repo]: https://github.com/RichiH/vcsh
+[libgit2-rs]: https://github.com/rust-lang/git2-rs
+[arch-wiki]: https://wiki.archlinux.org/title/Dotfiles#Tracking_dotfiles_directly_with_Git
