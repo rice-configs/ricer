@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
+# SPDX-License-Identifier: MIT
+
+[package]
+name = "ricer"
+description = "Experimental dotfile manager that allows to treat your home directory like a Git repository"
+keywords = ["dotfile-manager", "ricing", "cli-tool"]
+categories = ["command-line-utilities"]
+repository = "https://github.com/rice-configs/ricer"
+readme = "README.md"
+authors = ["Jason Pena <jasonpena@awkless.com>"]
+edition = "2021"
+license = "MIT"
+version = "0.1.0"
+rust-version = "1.77.2"
