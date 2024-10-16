@@ -25,7 +25,18 @@ the user is still given the ability to directly use Git itself when they need
 to. Ricer's command set itself resembles Git's command set in order to make it
 easier to pick up for anyone familiar with Git in the first place.
 
-## Install
+## Requirements
+
+Ricer requires the following to build:
+
+- [Git][git-scm] [>= 2.25.0]
+- [Rust][rust-lang] [>= 1.74.1]
+
+Git is needed due to Ricer basing its core functionality around it. Rust is
+required, because this project uses it as the primary programming language.
+Ricer also uses Cargo to manage its dependencies.
+
+## Installation
 
 __TODO__
 
@@ -49,3 +60,5 @@ __TODO__
 [reuse-compliance]: https://img.shields.io/github/actions/workflow/status/rice-configs/ricer/reuse.yaml?style=for-the-badge&label=REUSE%203.0
 [version]: https://img.shields.io/github/v/tag/rice-configs/ricer?style=for-the-badge
 [explain-ricing]: pesos.github.io/2020/07/14/what-is-ricing.html
+[git-scm]: https://git-scm.com/downloads
+[rust-lang]: https://www.rust-lang.org/learn/get-started
