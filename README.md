@@ -63,7 +63,85 @@ contribute to the project.
 
 ## Usage
 
-__TODO__
+As an example of using Ricer, lets create a new Vim editor configuration. First
+we need to initialize a new repository under Ricer:
+
+```
+# ricer init vim --workdir_home
+```
+
+The above command will initialize a new repository named "vim" for Ricer to keep
+track of. The `--workdir_home` flag tells Ricer that the "vim" repository will
+use our home directory as the working directory, which will make the repository
+bare, and allow us to manage it through our home directory.
+
+Now in our home directory we have a `.vimrc` file full of configuration
+information for Vim. We will add it to the "vim" repository so Ricer can keep
+track of our changes:
+
+```
+# ricer vim add .vimrc
+```
+
+Now we will commit our changes through Ricer:
+
+```
+# ricer vim commit -m "inital commit to vim"
+```
+
+Lets specify the remote and push our changes to it:
+
+```
+# ricer vim remote add origin https://url/to/vim/remote.git
+# ricer push
+```
+
+Now, lets setup a hook that will install the plug.vim plugin manager. First we
+need a hook script that must be defined at `$XDG_CONFIG_HOME/ricer/hooks/`. Lets
+call the script `$XDG_CONFIG_HOME/ricer/hooks/vim_plug.sh`. It will contain the
+following shell code:
+
+```
+#!/bin/sh
+
+curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+```
+
+Secondly, we need to specify the hook script to execute _after_ a given Ricer
+command in the `$XDG_CONFIG_HOME/ricer/hooks.toml` file. Lets use the
+__bootstrap__ command hook like so:
+
+```
+[hooks]
+bootstrap = [
+    { post = "vim_plug.sh" }
+]
+```
+
+Now, whenever we execute the bootstrap command, this new hook we created will be
+executed _after_ the command has finished running.
+
+Finally, lets specify bootstrap options for the "vim" repository so we can
+quickly obtain our new Vim configuration across different machines:
+
+```
+# ricer bootstrap --config vim
+```
+
+The above command will make Ricer display its bootstrap option configuration
+wizard. All we have to do is follow the wizard's instructions.
+
+Now on a new machine, we can quickly obtain a valid instance of our "vim"
+repository like so:
+
+```
+# ricer bootstrap "https://url/to/remote/we/told/wizard/to/use.git
+```
+
+The above command will boostrap the "vim" repository, and execute the special
+hook we specified for it. For more information about using Ricer, refer to its
+help menu via `--help` flag.
 
 ## Contributing
 
