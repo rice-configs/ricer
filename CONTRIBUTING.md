@@ -67,9 +67,27 @@ Signed-off-by: <name> <email>
 
 ## Rules of Licensing and Copyright
 
-__TODO__
+This project abides by the [REUSE 3.0][reuse3] specification to determine the
+licensing and copyright of files in the code base. Thus, all files must have the
+proper SPDX copyright and licensing tags at the top always. Contributors can
+Use the [reuse tool][reuse-tool] to determine if their changes are REUSE 3.0
+compliant.
+
+Ricer uses the MIT license as its main source code and documentation license.
+Ricer also uses the CC0-1.0 license to place files in the public domain that are
+considered to be to small or generic to place copyright over. Thus, for almost
+all contributions you will use the MIT license.
+
+Do not forget to include the following SPDX copyright identifier at the top of
+any file you create along with the SPDX copyright identifier:
+
+```
+SPDX-FileCopyrightText: <year> <name> <email>
+```
 
 [rust-lang]: doc.rust-lang.org
 [rust-style]: doc.rust-lang.org/beta/style-guide/index.html
 [cc1.0.0]: https://www.conventionalcommits.org/en/v1.0.0/
 [linux-dco]: https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin
+[reuse3]: https://reuse.software/spec/
+[reuse-tool]: https://reuse.software/tutorial/
