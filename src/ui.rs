@@ -7,9 +7,16 @@ use std::ffi::OsString;
 
 use crate::context::HookAction;
 
+const EXTERNAL_SUBCOMMANDS: &str = r#"
+Command Shortcuts:
+  <REPO> <GIT_CMD>  Shortcut to execute a Git command directory on a target repository
+"#;
+
 #[derive(Debug, Parser)]
 #[command(
     about,
+    after_help = EXTERNAL_SUBCOMMANDS,
+    after_long_help = EXTERNAL_SUBCOMMANDS,
     long_about = None,
     subcommand_help_heading = "Ricer Command Set",
     version,
@@ -45,5 +52,6 @@ pub struct SharedOpts {
 
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
-    
+    #[command(external_subcommand)]
+    Git(Vec<OsString>),
 }
