@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 SPDX-License-Identifier: MIT
 -->
 
-![GitHub Actions Workflow Status][build-status] ![REUSE 3.0 Compliance][reuse-compliance] ![GitHub Tag][version]
+![Build Status][build-status] ![REUSE 3.0 Compliance][reuse-compliance] ![License][license]
 
 # Ricer
 
@@ -183,9 +183,9 @@ Certificate of Origin version 1.1][linux-dco] to ensure that any contributions
 made have the right to be merged into the project, and can be distributed with
 the project under its main license.
 
-[build-status]: https://img.shields.io/github/actions/workflow/status/rice-configs/ricer/quality_check.yaml?style=for-the-badge&label=Quality%20Check
+[build-status]: https://img.shields.io/github/actions/workflow/status/rice-configs/ricer/quality.yaml?style=for-the-badge&label=Quality%20Check
 [reuse-compliance]: https://img.shields.io/github/actions/workflow/status/rice-configs/ricer/reuse.yaml?style=for-the-badge&label=REUSE%203.0
-[version]: https://img.shields.io/github/v/tag/rice-configs/ricer?style=for-the-badge
+[license]: https://img.shields.io/github/license/rice-configs/ricer?style=for-the-badge
 [explain-ricing]: pesos.github.io/2020/07/14/what-is-ricing.html
 [git-scm]: https://git-scm.com/downloads
 [rust-lang]: https://www.rust-lang.org/learn/get-started
