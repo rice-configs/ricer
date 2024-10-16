@@ -39,7 +39,31 @@ anything in the codebase.
 
 ## Commit Style
 
-__TODO__
+All commits in Ricer must abide by the [Conventional Commits 1.0.0][cc1.0.0]
+specification. Here are the following valid types for commits accepted by this
+project:
+
+- __chore__: General change that does not affect production code.
+- __feat__: Change that implements a feature in production code.
+- __fix__: Change that fixes a bug in production code.
+- __doc__: Improvements or fixes to documentation.
+- __style__: Improvements or fixes to the formatting of code.
+- __refactor__: Changes involve refactoring the code base.
+- __revert__: A set of commits were revereted.
+- __test__: Test functionality of code base.
+- __perf__: Improvements to performance of code base.
+
+Try keep the subject, body, and trailer of your commits below 80 characters. Try
+to keep commit history linear. Make sure that large changes get represented as a
+series of commits rather than one massive commit. Make sure that your commits are
+clear and descriptive.
+
+Finally, The Ricer project uses the [Developer Certificate of Origin version
+1.1][linux-dco]. All commits need to have the following trailer:
+
+```
+Signed-off-by: <name> <email>
+```
 
 ## Rules of Licensing and Copyright
 
@@ -47,3 +71,5 @@ __TODO__
 
 [rust-lang]: doc.rust-lang.org
 [rust-style]: doc.rust-lang.org/beta/style-guide/index.html
+[cc1.0.0]: https://www.conventionalcommits.org/en/v1.0.0/
+[linux-dco]: https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin
