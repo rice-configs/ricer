@@ -3,6 +3,9 @@
 
 use clap::{Args, Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
+use std::ffi::OsString;
+
+use crate::context::HookAction;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -21,6 +24,16 @@ pub struct Cli {
     
     #[command(subcommand)]
     pub cmd_set: CmdSet,
+}
+
+impl Cli {
+    pub fn parse_args<I, T>(args: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        Self::parse_from(args)
+    }
 }
 
 #[derive(Debug, Args)]
