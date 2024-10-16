@@ -38,7 +38,28 @@ Ricer also uses Cargo to manage its dependencies.
 
 ## Installation
 
-__TODO__
+Ricer is available through \<<https://crates.io>\> as a lib+bin crate. Thus,
+anyone can obtain a functioning release through Cargo like so:
+
+```
+# cargo install ricer
+```
+
+The above method of installation will only provide the latest release published
+to \<<https://crates.io>\>. However, if the latest changes to the project are
+desired, then build Ricer through a clone of the project repository:
+
+```
+# git clone https://github.com/rice-configs/ricer.git
+# cd ricer
+# cargo build
+# cargo install
+```
+
+It is recommended to install release versions of Ricer rather than directly
+installing the latest changes made to the project repository. The clone and
+build method previously shown should generally be used by those who intend to
+contribute to the project.
 
 ## Usage
 
