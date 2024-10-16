@@ -67,7 +67,16 @@ __TODO__
 
 ## Contributing
 
-__TODO__
+The Ricer coding project is open to the following forms of contribution:
+
+1. Improvements or additions to production code.
+1. Improvements or additions to test code.
+1. Improvements or additions to build system.
+1. Improvements or additions to documentation.
+1. Improvements or additions to CI/CD pipelines.
+
+See the [contribution guidelines][contrib-guide] for more information about
+contributing to the Ricer project.
 
 ## Acknowledgements
 
@@ -93,6 +102,7 @@ __TODO__
 [explain-ricing]: pesos.github.io/2020/07/14/what-is-ricing.html
 [git-scm]: https://git-scm.com/downloads
 [rust-lang]: https://www.rust-lang.org/learn/get-started
+[contrib-guide]: CONTRIBUTING.md
 [vcsh-repo]: https://github.com/RichiH/vcsh
 [libgit2-rs]: https://github.com/rust-lang/git2-rs
 [arch-wiki]: https://wiki.archlinux.org/title/Dotfiles#Tracking_dotfiles_directly_with_Git
