@@ -9,7 +9,7 @@ use crate::context::HookAction;
 
 const EXTERNAL_SUBCOMMANDS: &str = r#"
 Command Shortcuts:
-  <REPO> <GIT_CMD>  Shortcut to execute a Git command directory on a target repository
+  <REPO> <GIT_CMD>  Shortcut to run user's Git binary on a target repository
 "#;
 
 #[derive(Debug, Parser)]
@@ -50,8 +50,28 @@ pub struct SharedOpts {
     pub run_hook: HookAction,
 }
 
+/// Options for bootstrap command.
+#[derive(Args, Debug)]
+pub struct BootstrapOpts {
+    /// Activate bootstrap wizard to configure target repository.
+    #[arg(long, short, value_name = "REPO")]
+    pub config: Option<String>,
+
+    /// Bootstrap from core remote.
+    #[arg(long, short, value_name = "URL")]
+    pub from: Option<String>,
+
+    /// Bootstrap only a set of specific repositories.
+    #[arg(long, short, value_name = "REPOS")]
+    pub only: Option<Vec<String>>,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
+    /// Bootstrap available repository configurations.
+    Bootstrap(BootstrapOpts),
+
+    /// Run user's Git binary on target repository.
     #[command(external_subcommand)]
     Git(Vec<OsString>),
 }
