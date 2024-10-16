@@ -30,7 +30,12 @@ merge commits.
 
 ## Coding Style
 
-__TODO__
+The Ricer project uses the [Rust][rust-lang] programming langauge. Rust already
+comes with a general [style and coding standard][rust-style] that should be
+followed. To make development easier, use the `rustfmt` tool to automaically
+format any piece of code, use `clippy` to lint your code, and use `cargo test`
+to activate unit and integration testing to see if your code does not break
+anything in the codebase.
 
 ## Commit Style
 
@@ -39,3 +44,6 @@ __TODO__
 ## Rules of Licensing and Copyright
 
 __TODO__
+
+[rust-lang]: doc.rust-lang.org
+[rust-style]: doc.rust-lang.org/beta/style-guide/index.html
