@@ -2,4 +2,4 @@
 // SPDX-License-Identifier: MIT
 
 pub mod ui;
-
+pub mod error;
