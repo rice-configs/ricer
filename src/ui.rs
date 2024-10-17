@@ -92,6 +92,12 @@ pub struct DeleteOpts {
 }
 
 #[derive(Args, Debug)]
+pub struct EnterOpts {
+    /// Target repository to enter.
+    pub repo: String,
+}
+
+#[derive(Args, Debug)]
 pub struct InitOpts {
     /// Name of repository to initialize.
     pub name: String,
@@ -156,6 +162,9 @@ pub enum CmdSet {
 
     /// Delete target repository.
     Delete(DeleteOpts),
+
+    /// Enter a target repository.
+    Enter(EnterOpts),
 
     /// Initialize a new repository.
     Init(InitOpts),
