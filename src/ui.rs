@@ -136,6 +136,13 @@ pub struct RenameOpts {
     pub to: String,
 }
 
+#[derive(Args, Debug)]
+pub struct StatusOpts {
+    /// Give a short status report.
+    #[arg(long, short)]
+    pub terse: bool,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
     /// Bootstrap available repository configurations.
@@ -161,6 +168,9 @@ pub enum CmdSet {
 
     /// Rename a repository.
     Rename(RenameOpts),
+
+    /// Show status of repositories.
+    Status(StatusOpts),
 
     /// Run user's Git binary on target repository.
     #[command(external_subcommand)]
