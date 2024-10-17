@@ -12,3 +12,11 @@ pub enum HookAction {
 
     Never,
 }
+
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
+pub enum FixupAction {
+    #[default]
+    Amend,
+
+    Reword,
+}
