@@ -3,20 +3,25 @@
 
 use clap::{Args, Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
+use indoc::indoc;
 use std::ffi::OsString;
 
-use crate::context::{HookAction, FixupAction};
+use crate::context::{FixupAction, HookAction};
 
-const EXTERNAL_SUBCOMMANDS: &str = r#"
-Command Shortcuts:
-  <REPO> <GIT_CMD>  Shortcut to run user's Git binary on a target repository
-"#;
+macro_rules! explain_cmd_shortcuts {
+    () => {
+        indoc! {r#"
+        Command Shortcuts:
+          <REPO> <GIT_CMD>  Shortcut to run user's Git binary on a target repository
+        "#}
+    };
+}
 
 #[derive(Debug, Parser)]
 #[command(
     about,
-    after_help = EXTERNAL_SUBCOMMANDS,
-    after_long_help = EXTERNAL_SUBCOMMANDS,
+    after_help = explain_cmd_shortcuts!(),
+    after_long_help = explain_cmd_shortcuts!(),
     long_about = None,
     subcommand_help_heading = "Ricer Command Set",
     version,
@@ -28,7 +33,7 @@ pub struct Cli {
 
     #[command(flatten)]
     pub shared_opts: SharedOpts,
-    
+
     #[command(subcommand)]
     pub cmd_set: CmdSet,
 }
@@ -74,7 +79,7 @@ pub struct CommitOpts {
     /// Use MSG as the commit message.
     #[arg(long, short, value_name = "MSG")]
     pub message: Option<String>,
-} 
+}
 
 #[derive(Args, Debug)]
 pub struct CloneOpts {
@@ -199,3 +204,6 @@ pub enum CmdSet {
     #[command(external_subcommand)]
     Git(Vec<OsString>),
 }
+
+#[cfg(test)]
+mod tests {}
