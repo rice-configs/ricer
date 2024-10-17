@@ -91,6 +91,24 @@ pub struct DeleteOpts {
     pub repo: String,
 }
 
+#[derive(Args, Debug)]
+pub struct InitOpts {
+    /// Name of repository to initialize.
+    pub name: String,
+
+    /// Use $HOME as working directory.
+    #[arg(short, long)]
+    pub workdir_home: bool,
+
+    /// Set default branch to use.
+    #[arg(short, long, value_name = "BRANCH")]
+    pub branch: Option<String>,
+
+    /// Set default remote to use.
+    #[arg(short, long, value_name = "ORIGIN")]
+    pub remote: Option<String>,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
     /// Bootstrap available repository configurations.
@@ -104,6 +122,9 @@ pub enum CmdSet {
 
     /// Delete target repository.
     Delete(DeleteOpts),
+
+    /// Initialize a new repository.
+    Init(InitOpts),
 
     /// Run user's Git binary on target repository.
     #[command(external_subcommand)]
