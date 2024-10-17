@@ -116,6 +116,17 @@ pub struct InitOpts {
 }
 
 #[derive(Args, Debug)]
+pub struct ListOpts {
+    /// Show all tracked files in repositories.
+    #[arg(short, long)]
+    pub tracked: bool,
+
+    /// Show all untracked files in repositories.
+    #[arg(short, long)]
+    pub untracked: bool,
+}
+
+#[derive(Args, Debug)]
 pub struct PushOpts {
     /// Target remote to push to.
     pub remote: Option<String>,
@@ -168,6 +179,9 @@ pub enum CmdSet {
 
     /// Initialize a new repository.
     Init(InitOpts),
+
+    /// List current set of repositories.
+    List(ListOpts),
 
     /// Push changes from all repositories.
     Push(PushOpts),
