@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+use crate::context::{FixupAction, HookAction};
+
 use clap::{Args, Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use indoc::indoc;
 use std::ffi::OsString;
-
-use crate::context::{FixupAction, HookAction};
 
 macro_rules! explain_cmd_shortcuts {
     () => {
@@ -206,4 +206,13 @@ pub enum CmdSet {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+
+    use clap::CommandFactory;
+
+    #[test]
+    fn verify_cli_structure() {
+        Cli::command().debug_assert();
+    }
+}
