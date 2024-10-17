@@ -127,6 +127,15 @@ pub struct PullOpts {
     pub branch: Option<String>,
 }
 
+#[derive(Args, Debug)]
+pub struct RenameOpts {
+    /// Target repository to rename.
+    pub from: String,
+
+    /// New name to give target repository.
+    pub to: String,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
     /// Bootstrap available repository configurations.
@@ -149,6 +158,9 @@ pub enum CmdSet {
 
     /// Pull changes to all repositories.
     Pull(PullOpts),
+
+    /// Rename a repository.
+    Rename(RenameOpts),
 
     /// Run user's Git binary on target repository.
     #[command(external_subcommand)]
