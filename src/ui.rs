@@ -109,6 +109,15 @@ pub struct InitOpts {
     pub remote: Option<String>,
 }
 
+#[derive(Args, Debug)]
+pub struct PushOpts {
+    /// Target remote to push to.
+    pub remote: Option<String>,
+
+    /// Target branch to push to.
+    pub branch: Option<String>,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum CmdSet {
     /// Bootstrap available repository configurations.
@@ -125,6 +134,9 @@ pub enum CmdSet {
 
     /// Initialize a new repository.
     Init(InitOpts),
+
+    /// Push changes from all repositories.
+    Push(PushOpts),
 
     /// Run user's Git binary on target repository.
     #[command(external_subcommand)]
