@@ -12,6 +12,7 @@ pub enum Context {
     Delete(DeleteContext),
     Enter(EnterContext),
     Init(InitContext),
+    List(ListContext),
 }
 
 impl From<Cli> for Context {
@@ -22,6 +23,7 @@ impl From<Cli> for Context {
             CommandSet::Delete(_) => Self::Delete(DeleteContext::from(opts)),
             CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
             CommandSet::Init(_) => Self::Init(InitContext::from(opts)),
+            CommandSet::List(_) => Self::List(ListContext::from(opts)),
             _ => todo!(),
         }
     }
@@ -139,6 +141,29 @@ impl From<Cli> for InitContext {
             workdir_home: cmd_set.workdir_home,
             branch: cmd_set.branch,
             remote: cmd_set.remote,
+            shared: shared_opts.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ListContext {
+    pub tracked: bool,
+    pub untracked: bool,
+    pub shared: SharedContext,
+}
+
+impl From<Cli> for ListContext {
+    fn from(opts: Cli) -> Self {
+        let Cli { shared_opts, cmd_set, .. } = opts;
+        let cmd_set = match cmd_set {
+            CommandSet::List(opts) => opts,
+            _ => unreachable!("This should never happen. The command is not 'list'!"),
+        };
+
+        Self {
+            tracked: cmd_set.tracked,
+            untracked: cmd_set.untracked,
             shared: shared_opts.into(),
         }
     }
