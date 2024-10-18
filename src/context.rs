@@ -11,6 +11,7 @@ pub enum Context {
     Clone(CloneContext),
     Delete(DeleteContext),
     Enter(EnterContext),
+    Init(InitContext),
 }
 
 impl From<Cli> for Context {
@@ -20,6 +21,7 @@ impl From<Cli> for Context {
             CommandSet::Clone(_) => Self::Clone(CloneContext::from(opts)),
             CommandSet::Delete(_) => Self::Delete(DeleteContext::from(opts)),
             CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
+            CommandSet::Init(_) => Self::Init(InitContext::from(opts)),
             _ => todo!(),
         }
     }
@@ -110,6 +112,33 @@ impl From<Cli> for EnterContext {
 
         Self {
             repo: cmd_set.repo,
+            shared: shared_opts.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct InitContext {
+    pub name: String,
+    pub workdir_home: bool,
+    pub branch: Option<String>,
+    pub remote: Option<String>,
+    pub shared: SharedContext,
+}
+
+impl From<Cli> for InitContext {
+    fn from(opts: Cli) -> Self {
+        let Cli { shared_opts, cmd_set, .. } = opts;
+        let cmd_set = match cmd_set {
+            CommandSet::Init(opts) => opts,
+            _ => unreachable!("This should never happen. The command is not 'init'!"),
+        };
+
+        Self {
+            name: cmd_set.name,
+            workdir_home: cmd_set.workdir_home,
+            branch: cmd_set.branch,
+            remote: cmd_set.remote,
             shared: shared_opts.into(),
         }
     }
