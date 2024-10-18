@@ -5,6 +5,7 @@ use anyhow::Result;
 use log::error;
 use std::ffi::OsString;
 
+use ricer::context::Context;
 use ricer::error::ExitCode;
 use ricer::ui::Cli;
 
@@ -33,6 +34,9 @@ where
         .format_indent(Some(8))
         .filter_level(opts.log_opts.log_level_filter())
         .init();
+
+    let ctx = Context::from(opts);
+    println!("{:#?}", ctx);
 
     Ok(ExitCode::Success)
 }
