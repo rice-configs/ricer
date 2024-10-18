@@ -32,10 +32,10 @@ pub struct Cli {
     pub log_opts: Verbosity<InfoLevel>,
 
     #[command(flatten)]
-    pub shared_opts: SharedOpts,
+    pub shared_opts: SharedOptions,
 
     #[command(subcommand)]
-    pub cmd_set: CmdSet,
+    pub cmd_set: CommandSet,
 }
 
 impl Cli {
@@ -50,13 +50,53 @@ impl Cli {
 
 #[derive(Debug, Args)]
 #[command(next_help_heading = "Command Options")]
-pub struct SharedOpts {
+pub struct SharedOptions {
     #[arg(default_value_t = HookAction::default(), long, short, value_enum, value_name = "ACTION")]
     pub run_hook: HookAction,
 }
 
+#[derive(Debug, Subcommand)]
+pub enum CommandSet {
+    /// Bootstrap available repository configurations.
+    Bootstrap(BootstrapOptions),
+
+    /// Clone existing repository from a remote.
+    Clone(CloneOptions),
+
+    /// Commit changes to all repositories.
+    Commit(CommitOptions),
+
+    /// Delete target repository.
+    Delete(DeleteOptions),
+
+    /// Enter a target repository.
+    Enter(EnterOptions),
+
+    /// Initialize a new repository.
+    Init(InitOptions),
+
+    /// List current set of repositories.
+    List(ListOptions),
+
+    /// Push changes from all repositories.
+    Push(PushOptions),
+
+    /// Pull changes to all repositories.
+    Pull(PullOptions),
+
+    /// Rename a repository.
+    Rename(RenameOptions),
+
+    /// Show status of repositories.
+    Status(StatusOptions),
+
+    /// Run user's Git binary on target repository.
+    #[command(external_subcommand)]
+    Git(Vec<OsString>),
+}
+
 #[derive(Args, Debug)]
-pub struct BootstrapOpts {
+pub struct BootstrapOptions {
     /// Activate bootstrap wizard to configure target repository.
     #[arg(long, short, value_name = "REPO")]
     pub config: Option<String>,
@@ -71,7 +111,7 @@ pub struct BootstrapOpts {
 }
 
 #[derive(Args, Debug)]
-pub struct CommitOpts {
+pub struct CommitOptions {
     /// Amend or reword current commit.
     #[arg(long, short, value_name = "ACTION", value_enum)]
     pub fixup: Option<FixupAction>,
@@ -82,7 +122,7 @@ pub struct CommitOpts {
 }
 
 #[derive(Args, Debug)]
-pub struct CloneOpts {
+pub struct CloneOptions {
     /// Remove to clone from.
     pub remote: String,
 
@@ -91,19 +131,19 @@ pub struct CloneOpts {
 }
 
 #[derive(Args, Debug)]
-pub struct DeleteOpts {
+pub struct DeleteOptions {
     /// Target repository to delete.
     pub repo: String,
 }
 
 #[derive(Args, Debug)]
-pub struct EnterOpts {
+pub struct EnterOptions {
     /// Target repository to enter.
     pub repo: String,
 }
 
 #[derive(Args, Debug)]
-pub struct InitOpts {
+pub struct InitOptions {
     /// Name of repository to initialize.
     pub name: String,
 
@@ -121,7 +161,7 @@ pub struct InitOpts {
 }
 
 #[derive(Args, Debug)]
-pub struct ListOpts {
+pub struct ListOptions {
     /// Show all tracked files in repositories.
     #[arg(short, long)]
     pub tracked: bool,
@@ -132,7 +172,7 @@ pub struct ListOpts {
 }
 
 #[derive(Args, Debug)]
-pub struct PushOpts {
+pub struct PushOptions {
     /// Target remote to push to.
     pub remote: Option<String>,
 
@@ -141,7 +181,7 @@ pub struct PushOpts {
 }
 
 #[derive(Args, Debug)]
-pub struct PullOpts {
+pub struct PullOptions {
     /// Target remote to push to.
     pub remote: Option<String>,
 
@@ -150,7 +190,7 @@ pub struct PullOpts {
 }
 
 #[derive(Args, Debug)]
-pub struct RenameOpts {
+pub struct RenameOptions {
     /// Target repository to rename.
     pub from: String,
 
@@ -159,50 +199,10 @@ pub struct RenameOpts {
 }
 
 #[derive(Args, Debug)]
-pub struct StatusOpts {
+pub struct StatusOptions {
     /// Give a short status report.
     #[arg(long, short)]
     pub terse: bool,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum CmdSet {
-    /// Bootstrap available repository configurations.
-    Bootstrap(BootstrapOpts),
-
-    /// Clone existing repository from a remote.
-    Clone(CloneOpts),
-
-    /// Commit changes to all repositories.
-    Commit(CommitOpts),
-
-    /// Delete target repository.
-    Delete(DeleteOpts),
-
-    /// Enter a target repository.
-    Enter(EnterOpts),
-
-    /// Initialize a new repository.
-    Init(InitOpts),
-
-    /// List current set of repositories.
-    List(ListOpts),
-
-    /// Push changes from all repositories.
-    Push(PushOpts),
-
-    /// Pull changes to all repositories.
-    Pull(PullOpts),
-
-    /// Rename a repository.
-    Rename(RenameOpts),
-
-    /// Show status of repositories.
-    Status(StatusOpts),
-
-    /// Run user's Git binary on target repository.
-    #[command(external_subcommand)]
-    Git(Vec<OsString>),
 }
 
 #[cfg(test)]
