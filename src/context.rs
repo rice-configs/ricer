@@ -517,4 +517,34 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn init_ctx_from_cli() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "init",
+            "foo",
+            "--workdir-home",
+            "--branch",
+            "main",
+            "--remote",
+            "origin",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Init(ctx) => ctx,
+            other => panic!("Failed to get init context, instead got {:#?}", other),
+        };
+        let expect = InitContext {
+            name: "foo".into(),
+            workdir_home: true,
+            branch: Some("main".into()),
+            remote: Some("origin".into()),
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
