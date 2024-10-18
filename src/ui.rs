@@ -106,7 +106,7 @@ pub struct BootstrapOptions {
     pub from: Option<String>,
 
     /// Bootstrap only a set of specific repositories.
-    #[arg(long, short, value_name = "REPOS")]
+    #[arg(long, short, value_name = "REPOS", num_args = 1.., value_delimiter = ',')]
     pub only: Option<Vec<String>>,
 }
 
@@ -208,7 +208,6 @@ pub struct StatusOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use clap::CommandFactory;
 
     #[test]
