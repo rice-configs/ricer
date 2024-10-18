@@ -619,4 +619,28 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn rename_ctx_from_cli() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "rename",
+            "foo",
+            "bar",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Rename(ctx) => ctx,
+            other => panic!("Failed to get rename context, instead got {:#?}", other),
+        };
+        let expect = RenameContext {
+            from: "foo".into(),
+            to: "bar".into(),
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
