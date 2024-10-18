@@ -3,7 +3,7 @@
 
 use clap::ValueEnum;
 
-use crate::ui::Cli;
+use crate::ui::{Cli, SharedOpts};
 
 #[derive(Debug)]
 pub enum Context {
@@ -15,6 +15,17 @@ impl From<Cli> for Context {
         match opts.cmd_set {
             _ => todo!(),
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct SharedCtx {
+    pub run_hook: HookAction,
+}
+
+impl From<SharedOpts> for SharedCtx {
+    fn from(opts: SharedOpts) -> Self {
+        Self { run_hook: opts.run_hook }
     }
 }
 
