@@ -15,6 +15,7 @@ pub enum Context {
     List(ListContext),
     Push(PushContext),
     Pull(PullContext),
+    Rename(RenameContext),
 }
 
 impl From<Cli> for Context {
@@ -28,6 +29,7 @@ impl From<Cli> for Context {
             CommandSet::List(_) => Self::List(ListContext::from(opts)),
             CommandSet::Push(_) => Self::Push(PushContext::from(opts)),
             CommandSet::Pull(_) => Self::Pull(PullContext::from(opts)),
+            CommandSet::Rename(_) => Self::Rename(RenameContext::from(opts)),
             _ => todo!(),
         }
     }
@@ -214,6 +216,29 @@ impl From<Cli> for PullContext {
         Self {
             remote: cmd_set.remote,
             branch: cmd_set.branch,
+            shared: shared_opts.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct RenameContext {
+    pub from: String,
+    pub to: String,
+    pub shared: SharedContext,
+}
+
+impl From<Cli> for RenameContext {
+    fn from(opts: Cli) -> Self {
+        let Cli { shared_opts, cmd_set, .. } = opts;
+        let cmd_set = match cmd_set {
+            CommandSet::Rename(opts) => opts,
+            _ => unreachable!("This should never happen. The command is not 'rename'!"),
+        };
+
+        Self {
+            from: cmd_set.from,
+            to: cmd_set.to,
             shared: shared_opts.into(),
         }
     }
