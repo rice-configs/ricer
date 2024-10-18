@@ -473,4 +473,26 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn delete_ctx_from_cli() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "delete",
+            "foo",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Delete(ctx) => ctx,
+            other => panic!("Failed to get delete context, instead got {:#?}", other),
+        };
+        let expect = DeleteContext {
+            repo: "foo".into(),
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
