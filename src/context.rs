@@ -3,6 +3,21 @@
 
 use clap::ValueEnum;
 
+use crate::ui::Cli;
+
+#[derive(Debug)]
+pub enum Context {
+
+}
+
+impl From<Cli> for Context {
+    fn from(opts: Cli) -> Self {
+        match opts.cmd_set {
+            _ => todo!(),
+        }
+    }
+}
+
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
 pub enum HookAction {
     Always,
