@@ -14,6 +14,7 @@ pub enum Context {
     Init(InitContext),
     List(ListContext),
     Push(PushContext),
+    Pull(PullContext),
 }
 
 impl From<Cli> for Context {
@@ -26,6 +27,7 @@ impl From<Cli> for Context {
             CommandSet::Init(_) => Self::Init(InitContext::from(opts)),
             CommandSet::List(_) => Self::List(ListContext::from(opts)),
             CommandSet::Push(_) => Self::Push(PushContext::from(opts)),
+            CommandSet::Pull(_) => Self::Pull(PullContext::from(opts)),
             _ => todo!(),
         }
     }
@@ -184,6 +186,29 @@ impl From<Cli> for PushContext {
         let cmd_set = match cmd_set {
             CommandSet::Push(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'push'!"),
+        };
+
+        Self {
+            remote: cmd_set.remote,
+            branch: cmd_set.branch,
+            shared: shared_opts.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct PullContext {
+    pub branch: Option<String>,
+    pub remote: Option<String>,
+    pub shared: SharedContext,
+}
+
+impl From<Cli> for PullContext {
+    fn from(opts: Cli) -> Self {
+        let Cli { shared_opts, cmd_set, .. } = opts;
+        let cmd_set = match cmd_set {
+            CommandSet::Pull(opts) => opts,
+            _ => unreachable!("This should never happen. The command is not 'pull'!"),
         };
 
         Self {
