@@ -547,4 +547,28 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn list_ctx_from_cli() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "list",
+            "--tracked",
+            "--untracked"
+        ]);
+        let result = match Context::from(opts) {
+            Context::List(ctx) => ctx,
+            other => panic!("Failed to get list context, instead got {:#?}", other),
+        };
+        let expect = ListContext {
+            tracked: true,
+            untracked: true,
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
