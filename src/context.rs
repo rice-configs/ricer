@@ -571,4 +571,28 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn push_ctx_from_cli() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "push",
+            "origin",
+            "main",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Push(ctx) => ctx,
+            other => panic!("Failed to get push context, instead got {:#?}", other),
+        };
+        let expect = PushContext {
+            remote: Some("origin".into()),
+            branch: Some("main".into()),
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
