@@ -643,4 +643,26 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn status_ctx_from_cli() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "status",
+            "--terse",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Status(ctx) => ctx,
+            other => panic!("Failed to get status context, instead got {:#?}", other),
+        };
+        let expect = StatusContext {
+            terse: true,
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
