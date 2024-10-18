@@ -51,11 +51,7 @@ pub struct BootstrapContext {
 
 impl From<Cli> for BootstrapContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Bootstrap(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'bootstrap'!"),
@@ -79,21 +75,13 @@ pub struct CloneContext {
 
 impl From<Cli> for CloneContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Clone(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'clone'!"),
         };
 
-        Self {
-            remote: cmd_set.remote,
-            repo: cmd_set.repo,
-            shared: shared_opts.into(),
-        }
+        Self { remote: cmd_set.remote, repo: cmd_set.repo, shared: shared_opts.into() }
     }
 }
 
@@ -106,21 +94,13 @@ pub struct CommitContext {
 
 impl From<Cli> for CommitContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Commit(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'commit'!"),
         };
 
-        Self {
-            fixup: cmd_set.fixup,
-            message: cmd_set.message,
-            shared: shared_opts.into(),
-        }
+        Self { fixup: cmd_set.fixup, message: cmd_set.message, shared: shared_opts.into() }
     }
 }
 
@@ -132,20 +112,13 @@ pub struct DeleteContext {
 
 impl From<Cli> for DeleteContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Delete(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'delete'!"),
         };
 
-        Self {
-            repo: cmd_set.repo,
-            shared: shared_opts.into(),
-        }
+        Self { repo: cmd_set.repo, shared: shared_opts.into() }
     }
 }
 
@@ -157,20 +130,13 @@ pub struct EnterContext {
 
 impl From<Cli> for EnterContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Enter(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'enter'!"),
         };
 
-        Self {
-            repo: cmd_set.repo,
-            shared: shared_opts.into(),
-        }
+        Self { repo: cmd_set.repo, shared: shared_opts.into() }
     }
 }
 
@@ -185,11 +151,7 @@ pub struct InitContext {
 
 impl From<Cli> for InitContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Init(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'init'!"),
@@ -214,21 +176,13 @@ pub struct ListContext {
 
 impl From<Cli> for ListContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::List(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'list'!"),
         };
 
-        Self {
-            tracked: cmd_set.tracked,
-            untracked: cmd_set.untracked,
-            shared: shared_opts.into(),
-        }
+        Self { tracked: cmd_set.tracked, untracked: cmd_set.untracked, shared: shared_opts.into() }
     }
 }
 
@@ -241,21 +195,13 @@ pub struct PushContext {
 
 impl From<Cli> for PushContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Push(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'push'!"),
         };
 
-        Self {
-            remote: cmd_set.remote,
-            branch: cmd_set.branch,
-            shared: shared_opts.into(),
-        }
+        Self { remote: cmd_set.remote, branch: cmd_set.branch, shared: shared_opts.into() }
     }
 }
 
@@ -268,21 +214,13 @@ pub struct PullContext {
 
 impl From<Cli> for PullContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Pull(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'pull'!"),
         };
 
-        Self {
-            remote: cmd_set.remote,
-            branch: cmd_set.branch,
-            shared: shared_opts.into(),
-        }
+        Self { remote: cmd_set.remote, branch: cmd_set.branch, shared: shared_opts.into() }
     }
 }
 
@@ -295,21 +233,13 @@ pub struct RenameContext {
 
 impl From<Cli> for RenameContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Rename(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'rename'!"),
         };
 
-        Self {
-            from: cmd_set.from,
-            to: cmd_set.to,
-            shared: shared_opts.into(),
-        }
+        Self { from: cmd_set.from, to: cmd_set.to, shared: shared_opts.into() }
     }
 }
 
@@ -321,20 +251,13 @@ pub struct StatusContext {
 
 impl From<Cli> for StatusContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Status(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'status'!"),
         };
 
-        Self {
-            terse: cmd_set.terse,
-            shared: shared_opts.into(),
-        }
+        Self { terse: cmd_set.terse, shared: shared_opts.into() }
     }
 }
 
@@ -352,10 +275,7 @@ impl From<Cli> for GitContext {
             _ => unreachable!("This should not happen. The command is not git shortcut!"),
         };
 
-        Self {
-            repo: cmd_set[0].clone(),
-            git_args: cmd_set[1..].to_vec(),
-        }
+        Self { repo: cmd_set[0].clone(), git_args: cmd_set[1..].to_vec() }
     }
 }
 
@@ -366,9 +286,7 @@ pub struct SharedContext {
 
 impl From<SharedOptions> for SharedContext {
     fn from(opts: SharedOptions) -> Self {
-        Self {
-            run_hook: opts.run_hook,
-        }
+        Self { run_hook: opts.run_hook }
     }
 }
 
@@ -396,7 +314,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn bootstrap_opts_to_ctx() {
+    fn bootstrap_ctx_from_cli() {
         let opts = Cli::parse_args([
             "ricer",
             "--run-hook",
@@ -417,15 +335,13 @@ mod tests {
             config: Some("vim".into()),
             from: Some("https://some/url.git".into()),
             only: Some(vec!["sh".into(), "mutt".into(), "vim".into()]),
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
 
     #[test]
-    fn commit_opts_to_ctx() {
+    fn commit_ctx_from_cli() {
         let opts = Cli::parse_args([
             "ricer",
             "--run-hook",
@@ -443,9 +359,7 @@ mod tests {
         let expect = CommitContext {
             fixup: Some(FixupAction::Amend),
             message: Some("hello world".into()),
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
@@ -467,53 +381,35 @@ mod tests {
         let expect = CloneContext {
             remote: "https://some/url.git".into(),
             repo: Some("foo".into()),
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
 
     #[test]
     fn delete_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "delete",
-            "foo",
-        ]);
+        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "delete", "foo"]);
         let result = match Context::from(opts) {
             Context::Delete(ctx) => ctx,
             other => panic!("Failed to get delete context, instead got {:#?}", other),
         };
         let expect = DeleteContext {
             repo: "foo".into(),
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
 
     #[test]
     fn enter_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "enter",
-            "foo",
-        ]);
+        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "enter", "foo"]);
         let result = match Context::from(opts) {
             Context::Enter(ctx) => ctx,
             other => panic!("Failed to get enter context, instead got {:#?}", other),
         };
         let expect = EnterContext {
             repo: "foo".into(),
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
@@ -541,23 +437,15 @@ mod tests {
             workdir_home: true,
             branch: Some("main".into()),
             remote: Some("origin".into()),
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
 
     #[test]
     fn list_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "list",
-            "--tracked",
-            "--untracked"
-        ]);
+        let opts =
+            Cli::parse_args(["ricer", "--run-hook", "never", "list", "--tracked", "--untracked"]);
         let result = match Context::from(opts) {
             Context::List(ctx) => ctx,
             other => panic!("Failed to get list context, instead got {:#?}", other),
@@ -565,23 +453,14 @@ mod tests {
         let expect = ListContext {
             tracked: true,
             untracked: true,
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
 
     #[test]
     fn push_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "push",
-            "origin",
-            "main",
-        ]);
+        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "push", "origin", "main"]);
         let result = match Context::from(opts) {
             Context::Push(ctx) => ctx,
             other => panic!("Failed to get push context, instead got {:#?}", other),
@@ -589,23 +468,14 @@ mod tests {
         let expect = PushContext {
             remote: Some("origin".into()),
             branch: Some("main".into()),
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
 
     #[test]
     fn pull_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "pull",
-            "origin",
-            "main",
-        ]);
+        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "pull", "origin", "main"]);
         let result = match Context::from(opts) {
             Context::Pull(ctx) => ctx,
             other => panic!("Failed to get pull context, instead got {:#?}", other),
@@ -613,23 +483,14 @@ mod tests {
         let expect = PullContext {
             remote: Some("origin".into()),
             branch: Some("main".into()),
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
 
     #[test]
     fn rename_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "rename",
-            "foo",
-            "bar",
-        ]);
+        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "rename", "foo", "bar"]);
         let result = match Context::from(opts) {
             Context::Rename(ctx) => ctx,
             other => panic!("Failed to get rename context, instead got {:#?}", other),
@@ -637,51 +498,32 @@ mod tests {
         let expect = RenameContext {
             from: "foo".into(),
             to: "bar".into(),
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
+            shared: SharedContext { run_hook: HookAction::Never },
         };
         assert_eq!(expect, result);
     }
 
     #[test]
     fn status_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "status",
-            "--terse",
-        ]);
+        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "status", "--terse"]);
         let result = match Context::from(opts) {
             Context::Status(ctx) => ctx,
             other => panic!("Failed to get status context, instead got {:#?}", other),
         };
-        let expect = StatusContext {
-            terse: true,
-            shared: SharedContext {
-                run_hook: HookAction::Never,
-            },
-        };
+        let expect =
+            StatusContext { terse: true, shared: SharedContext { run_hook: HookAction::Never } };
         assert_eq!(expect, result);
     }
 
     #[test]
     fn git_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "foo",
-            "add",
-            "file.txt",
-        ]);
+        let opts = Cli::parse_args(["ricer", "foo", "add", "file.txt"]);
         let result = match Context::from(opts) {
             Context::Git(ctx) => ctx,
             other => panic!("Failed to get git context, instead got {:#?}", other),
         };
-        let expect = GitContext {
-            repo: "foo".into(),
-            git_args: vec!["add".into(), "file.txt".into()],
-        };
+        let expect =
+            GitContext { repo: "foo".into(), git_args: vec!["add".into(), "file.txt".into()] };
         assert_eq!(expect, result);
     }
 }
