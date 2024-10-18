@@ -16,6 +16,7 @@ pub enum Context {
     Push(PushContext),
     Pull(PullContext),
     Rename(RenameContext),
+    Status(StatusContext),
 }
 
 impl From<Cli> for Context {
@@ -30,6 +31,7 @@ impl From<Cli> for Context {
             CommandSet::Push(_) => Self::Push(PushContext::from(opts)),
             CommandSet::Pull(_) => Self::Pull(PullContext::from(opts)),
             CommandSet::Rename(_) => Self::Rename(RenameContext::from(opts)),
+            CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
             _ => todo!(),
         }
     }
@@ -239,6 +241,27 @@ impl From<Cli> for RenameContext {
         Self {
             from: cmd_set.from,
             to: cmd_set.to,
+            shared: shared_opts.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct StatusContext {
+    pub terse: bool,
+    pub shared: SharedContext,
+}
+
+impl From<Cli> for StatusContext {
+    fn from(opts: Cli) -> Self {
+        let Cli { shared_opts, cmd_set, .. } = opts;
+        let cmd_set = match cmd_set {
+            CommandSet::Status(opts) => opts,
+            _ => unreachable!("This should never happen. The command is not 'status'!"),
+        };
+
+        Self {
+            terse: cmd_set.terse,
             shared: shared_opts.into(),
         }
     }
