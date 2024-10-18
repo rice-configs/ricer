@@ -423,4 +423,30 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn commit_opts_to_ctx() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "commit",
+            "--fixup",
+            "amend",
+            "--message",
+            "hello world",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Commit(ctx) => ctx,
+            other => panic!("Failed to get commit context, instead got {:#?}", other),
+        };
+        let expect = CommitContext {
+            fixup: Some(FixupAction::Amend),
+            message: Some("hello world".into()),
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
