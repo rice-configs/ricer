@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use clap::ValueEnum;
+use std::ffi::OsString;
 
 use crate::ui::{CommandSet, Cli, SharedOptions};
 
@@ -17,6 +18,7 @@ pub enum Context {
     Pull(PullContext),
     Rename(RenameContext),
     Status(StatusContext),
+    Git(GitContext),
 }
 
 impl From<Cli> for Context {
@@ -32,6 +34,7 @@ impl From<Cli> for Context {
             CommandSet::Pull(_) => Self::Pull(PullContext::from(opts)),
             CommandSet::Rename(_) => Self::Rename(RenameContext::from(opts)),
             CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
+            CommandSet::Git(_) => Self::Git(GitContext::from(opts)),
             _ => todo!(),
         }
     }
@@ -264,6 +267,24 @@ impl From<Cli> for StatusContext {
             terse: cmd_set.terse,
             shared: shared_opts.into(),
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct GitContext {
+    pub repo: OsString,
+    pub git_args: Vec<OsString>,
+}
+
+impl From<Cli> for GitContext {
+    fn from(opts: Cli) -> Self {
+        let Cli { cmd_set, .. } = opts;
+        let cmd_set = match cmd_set {
+            CommandSet::Git(opts) => opts,
+            _ => unreachable!("This should not happen. The command is not git shortcut!"),
+        };
+
+        Self { repo: cmd_set[0].clone(), git_args: cmd_set[1..].to_vec() }
     }
 }
 
