@@ -10,6 +10,7 @@ pub enum Context {
     Bootstrap(BootstrapContext),
     Clone(CloneContext),
     Delete(DeleteContext),
+    Enter(EnterContext),
 }
 
 impl From<Cli> for Context {
@@ -18,6 +19,7 @@ impl From<Cli> for Context {
             CommandSet::Bootstrap(_) => Self::Bootstrap(BootstrapContext::from(opts)),
             CommandSet::Clone(_) => Self::Clone(CloneContext::from(opts)),
             CommandSet::Delete(_) => Self::Delete(DeleteContext::from(opts)),
+            CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
             _ => todo!(),
         }
     }
@@ -82,7 +84,28 @@ impl From<Cli> for DeleteContext {
         let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Delete(opts) => opts,
-            _ => unreachable!("This should never happen. The command is not 'clone'!"),
+            _ => unreachable!("This should never happen. The command is not 'delete'!"),
+        };
+
+        Self {
+            repo: cmd_set.repo,
+            shared: shared_opts.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct EnterContext {
+    pub repo: String,
+    pub shared: SharedContext,
+}
+
+impl From<Cli> for EnterContext {
+    fn from(opts: Cli) -> Self {
+        let Cli { shared_opts, cmd_set, .. } = opts;
+        let cmd_set = match cmd_set {
+            CommandSet::Enter(opts) => opts,
+            _ => unreachable!("This should never happen. The command is not 'enter'!"),
         };
 
         Self {
