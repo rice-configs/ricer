@@ -665,4 +665,23 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn git_ctx_from_cli() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "foo",
+            "add",
+            "file.txt",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Git(ctx) => ctx,
+            other => panic!("Failed to get git context, instead got {:#?}", other),
+        };
+        let expect = GitContext {
+            repo: "foo".into(),
+            git_args: vec!["add".into(), "file.txt".into()],
+        };
+        assert_eq!(expect, result);
+    }
 }
