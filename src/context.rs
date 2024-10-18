@@ -495,4 +495,26 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn enter_ctx_from_cli() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "enter",
+            "foo",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Enter(ctx) => ctx,
+            other => panic!("Failed to get enter context, instead got {:#?}", other),
+        };
+        let expect = EnterContext {
+            repo: "foo".into(),
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
