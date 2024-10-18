@@ -10,6 +10,7 @@ use crate::ui::{CommandSet, Cli, SharedOptions};
 pub enum Context {
     Bootstrap(BootstrapContext),
     Clone(CloneContext),
+    Commit(CommitContext),
     Delete(DeleteContext),
     Enter(EnterContext),
     Init(InitContext),
@@ -26,6 +27,7 @@ impl From<Cli> for Context {
         match opts.cmd_set {
             CommandSet::Bootstrap(_) => Self::Bootstrap(BootstrapContext::from(opts)),
             CommandSet::Clone(_) => Self::Clone(CloneContext::from(opts)),
+            CommandSet::Commit(_) => Self::Commit(CommitContext::from(opts)),
             CommandSet::Delete(_) => Self::Delete(DeleteContext::from(opts)),
             CommandSet::Enter(_) => Self::Enter(EnterContext::from(opts)),
             CommandSet::Init(_) => Self::Init(InitContext::from(opts)),
@@ -35,7 +37,6 @@ impl From<Cli> for Context {
             CommandSet::Rename(_) => Self::Rename(RenameContext::from(opts)),
             CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
             CommandSet::Git(_) => Self::Git(GitContext::from(opts)),
-            _ => todo!(),
         }
     }
 }
@@ -83,6 +84,29 @@ impl From<Cli> for CloneContext {
         Self {
             remote: cmd_set.remote,
             repo: cmd_set.repo,
+            shared: shared_opts.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct CommitContext {
+    pub fixup: Option<FixupAction>,
+    pub message: Option<String>,
+    pub shared: SharedContext,
+}
+
+impl From<Cli> for CommitContext {
+    fn from(opts: Cli) -> Self {
+        let Cli { shared_opts, cmd_set, .. } = opts;
+        let cmd_set = match cmd_set {
+            CommandSet::Commit(opts) => opts,
+            _ => unreachable!("This should never happen. The command is not 'commit'!"),
+        };
+
+        Self {
+            fixup: cmd_set.fixup,
+            message: cmd_set.message,
             shared: shared_opts.into(),
         }
     }
