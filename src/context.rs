@@ -4,9 +4,9 @@
 use clap::ValueEnum;
 use std::ffi::OsString;
 
-use crate::ui::{CommandSet, Cli, SharedOptions};
+use crate::ui::{Cli, CommandSet, SharedOptions};
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Context {
     Bootstrap(BootstrapContext),
     Clone(CloneContext),
@@ -41,7 +41,7 @@ impl From<Cli> for Context {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct BootstrapContext {
     pub config: Option<String>,
     pub from: Option<String>,
@@ -51,7 +51,11 @@ pub struct BootstrapContext {
 
 impl From<Cli> for BootstrapContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Bootstrap(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'bootstrap'!"),
@@ -66,7 +70,7 @@ impl From<Cli> for BootstrapContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct CloneContext {
     pub remote: String,
     pub repo: Option<String>,
@@ -75,7 +79,11 @@ pub struct CloneContext {
 
 impl From<Cli> for CloneContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Clone(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'clone'!"),
@@ -89,7 +97,7 @@ impl From<Cli> for CloneContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct CommitContext {
     pub fixup: Option<FixupAction>,
     pub message: Option<String>,
@@ -98,7 +106,11 @@ pub struct CommitContext {
 
 impl From<Cli> for CommitContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Commit(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'commit'!"),
@@ -112,7 +124,7 @@ impl From<Cli> for CommitContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct DeleteContext {
     pub repo: String,
     pub shared: SharedContext,
@@ -120,7 +132,11 @@ pub struct DeleteContext {
 
 impl From<Cli> for DeleteContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Delete(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'delete'!"),
@@ -133,7 +149,7 @@ impl From<Cli> for DeleteContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct EnterContext {
     pub repo: String,
     pub shared: SharedContext,
@@ -141,7 +157,11 @@ pub struct EnterContext {
 
 impl From<Cli> for EnterContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Enter(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'enter'!"),
@@ -154,7 +174,7 @@ impl From<Cli> for EnterContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct InitContext {
     pub name: String,
     pub workdir_home: bool,
@@ -165,7 +185,11 @@ pub struct InitContext {
 
 impl From<Cli> for InitContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Init(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'init'!"),
@@ -181,7 +205,7 @@ impl From<Cli> for InitContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ListContext {
     pub tracked: bool,
     pub untracked: bool,
@@ -190,7 +214,11 @@ pub struct ListContext {
 
 impl From<Cli> for ListContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::List(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'list'!"),
@@ -204,7 +232,7 @@ impl From<Cli> for ListContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct PushContext {
     pub remote: Option<String>,
     pub branch: Option<String>,
@@ -213,7 +241,11 @@ pub struct PushContext {
 
 impl From<Cli> for PushContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Push(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'push'!"),
@@ -227,7 +259,7 @@ impl From<Cli> for PushContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct PullContext {
     pub branch: Option<String>,
     pub remote: Option<String>,
@@ -236,7 +268,11 @@ pub struct PullContext {
 
 impl From<Cli> for PullContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Pull(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'pull'!"),
@@ -250,7 +286,7 @@ impl From<Cli> for PullContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct RenameContext {
     pub from: String,
     pub to: String,
@@ -259,7 +295,11 @@ pub struct RenameContext {
 
 impl From<Cli> for RenameContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Rename(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'rename'!"),
@@ -273,7 +313,7 @@ impl From<Cli> for RenameContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct StatusContext {
     pub terse: bool,
     pub shared: SharedContext,
@@ -281,7 +321,11 @@ pub struct StatusContext {
 
 impl From<Cli> for StatusContext {
     fn from(opts: Cli) -> Self {
-        let Cli { shared_opts, cmd_set, .. } = opts;
+        let Cli {
+            shared_opts,
+            cmd_set,
+            ..
+        } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Status(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'status'!"),
@@ -294,7 +338,7 @@ impl From<Cli> for StatusContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct GitContext {
     pub repo: OsString,
     pub git_args: Vec<OsString>,
@@ -308,18 +352,23 @@ impl From<Cli> for GitContext {
             _ => unreachable!("This should not happen. The command is not git shortcut!"),
         };
 
-        Self { repo: cmd_set[0].clone(), git_args: cmd_set[1..].to_vec() }
+        Self {
+            repo: cmd_set[0].clone(),
+            git_args: cmd_set[1..].to_vec(),
+        }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct SharedContext {
     pub run_hook: HookAction,
 }
 
 impl From<SharedOptions> for SharedContext {
     fn from(opts: SharedOptions) -> Self {
-        Self { run_hook: opts.run_hook }
+        Self {
+            run_hook: opts.run_hook,
+        }
     }
 }
 
@@ -339,4 +388,39 @@ pub enum FixupAction {
     Amend,
 
     Reword,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn bootstrap_opts_to_ctx() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "bootstrap",
+            "--config",
+            "vim",
+            "--only",
+            "sh,mutt,vim",
+            "--from",
+            "https://some/url.git",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Bootstrap(ctx) => ctx,
+            other => panic!("Failed to get bootstrap context, instead got {:#?}", other),
+        };
+        let expect = BootstrapContext {
+            config: Some("vim".into()),
+            from: Some("https://some/url.git".into()),
+            only: Some(vec!["sh".into(), "mutt".into(), "vim".into()]),
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
