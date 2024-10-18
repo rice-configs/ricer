@@ -449,4 +449,28 @@ mod tests {
         };
         assert_eq!(expect, result);
     }
+
+    #[test]
+    fn clone_ctx_from_cli() {
+        let opts = Cli::parse_args([
+            "ricer",
+            "--run-hook",
+            "never",
+            "clone",
+            "https://some/url.git",
+            "foo",
+        ]);
+        let result = match Context::from(opts) {
+            Context::Clone(ctx) => ctx,
+            other => panic!("Failed to get clone context, instead got {:#?}", other),
+        };
+        let expect = CloneContext {
+            remote: "https://some/url.git".into(),
+            repo: Some("foo".into()),
+            shared: SharedContext {
+                run_hook: HookAction::Never,
+            },
+        };
+        assert_eq!(expect, result);
+    }
 }
