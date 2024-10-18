@@ -3,11 +3,11 @@
 
 use clap::ValueEnum;
 
-use crate::ui::{CmdSet, Cli, SharedOpts};
+use crate::ui::{CommandSet, Cli, SharedOptions};
 
 #[derive(Debug)]
 pub enum Context {
-
+    Bootstrap(BootstrapContext),
 }
 
 impl From<Cli> for Context {
@@ -19,18 +19,18 @@ impl From<Cli> for Context {
 }
 
 #[derive(Debug)]
-pub struct BootstrapCtx {
+pub struct BootstrapContext {
     pub config: Option<String>,
     pub from: Option<String>,
     pub only: Option<Vec<String>>,
-    pub shared: SharedCtx,
+    pub shared: SharedContext,
 }
 
-impl From<Cli> for BootstrapCtx {
+impl From<Cli> for BootstrapContext {
     fn from(opts: Cli) -> Self {
         let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
-            CmdSet::Bootstrap(opts) => opts,
+            CommandSet::Bootstrap(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'bootstrap'!"),
         };
 
@@ -44,12 +44,12 @@ impl From<Cli> for BootstrapCtx {
 }
 
 #[derive(Debug)]
-pub struct SharedCtx {
+pub struct SharedContext {
     pub run_hook: HookAction,
 }
 
-impl From<SharedOpts> for SharedCtx {
-    fn from(opts: SharedOpts) -> Self {
+impl From<SharedOptions> for SharedContext {
+    fn from(opts: SharedOptions) -> Self {
         Self { run_hook: opts.run_hook }
     }
 }
