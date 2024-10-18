@@ -9,6 +9,7 @@ use crate::ui::{CommandSet, Cli, SharedOptions};
 pub enum Context {
     Bootstrap(BootstrapContext),
     Clone(CloneContext),
+    Delete(DeleteContext),
 }
 
 impl From<Cli> for Context {
@@ -16,6 +17,7 @@ impl From<Cli> for Context {
         match opts.cmd_set {
             CommandSet::Bootstrap(_) => Self::Bootstrap(BootstrapContext::from(opts)),
             CommandSet::Clone(_) => Self::Clone(CloneContext::from(opts)),
+            CommandSet::Delete(_) => Self::Delete(DeleteContext::from(opts)),
             _ => todo!(),
         }
     }
@@ -63,6 +65,27 @@ impl From<Cli> for CloneContext {
 
         Self {
             remote: cmd_set.remote,
+            repo: cmd_set.repo,
+            shared: shared_opts.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct DeleteContext {
+    pub repo: String,
+    pub shared: SharedContext,
+}
+
+impl From<Cli> for DeleteContext {
+    fn from(opts: Cli) -> Self {
+        let Cli { shared_opts, cmd_set, .. } = opts;
+        let cmd_set = match cmd_set {
+            CommandSet::Delete(opts) => opts,
+            _ => unreachable!("This should never happen. The command is not 'clone'!"),
+        };
+
+        Self {
             repo: cmd_set.repo,
             shared: shared_opts.into(),
         }
