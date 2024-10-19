@@ -1,6 +1,20 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+//! Command context layer.
+//!
+//! A __context__ in Ricer is a definitive and flattened set of options required
+//! for a Ricer command to function.
+//!
+//! The various CLI options provide an interface for the user, which
+//! produces a tree-like structure that can be annoying to use internally. Thus,
+//! the context layer converts CLI options into a flattened structure with
+//! at most one to two levels of indirection.
+//!
+//! Command context also provides a layer of abstraction between the CLI and
+//! command set implementations. So, changes to the CLI will not directly effect
+//! any implementations of the command set in the codebase.
+
 use clap::ValueEnum;
 use std::ffi::OsString;
 
