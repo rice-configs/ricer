@@ -1,6 +1,19 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+//! User interface for Ricer binary.
+//!
+//! This module provides user interface implementations for Ricer's binary. The
+//! CLI is implemented here. The general design of Ricer's CLI boils down to:
+//!
+//! ```markdown
+//! # ricer [OPTIONS] <COMMAND> [CMD_ARGS]
+//! ```
+//!
+//! Where `[OPTIONS]` are top-level options that are shareable with most of
+//! Ricer's command set, `<COMMAND>` is the name of the Ricer command, and
+//! `[CMD_ARGS]` are the arguments to execute with.
+
 use crate::context::{FixupAction, HookAction};
 
 use clap::{Args, Parser, Subcommand};
@@ -39,6 +52,11 @@ pub struct Cli {
 }
 
 impl Cli {
+    /// Parse a set of command-line arguments.
+    ///
+    /// # Panics
+    ///
+    /// Will panic for invalid command-line arguments.
     pub fn parse_args<I, T>(args: I) -> Self
     where
         I: IntoIterator<Item = T>,
