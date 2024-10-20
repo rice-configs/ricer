@@ -51,6 +51,7 @@
 //! [contrib-guide]: https://github.com/rice-configs/ricer/blob/main/CONTRIBUTING.md
 
 pub mod cli;
+pub mod config;
 pub mod context;
 
 #[cfg(test)]
