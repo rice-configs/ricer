@@ -53,3 +53,6 @@
 pub mod context;
 pub mod error;
 pub mod ui;
+
+#[cfg(test)]
+mod tests;
