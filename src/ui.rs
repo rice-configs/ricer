@@ -32,6 +32,17 @@ macro_rules! explain_cmd_shortcuts {
     };
 }
 
+/// Command-line interface parser.
+///
+/// The general design of Ricer's CLI boils down to:
+///
+/// ```markdown
+/// # ricer [OPTIONS] <COMMAND> [CMD_ARGS]
+/// ```
+///
+/// Where `[OPTIONS]` are top-level options that are shareable with most of
+/// Ricer's command set, `<COMMAND>` is the name of the Ricer command, and
+/// `[CMD_ARGS]` are the arguments to execute with.
 #[derive(Debug, Parser)]
 #[command(
     about,
@@ -60,7 +71,7 @@ impl Cli {
     ///
     /// Will return [`RicerError::General`] for invalid command-line arguments.
     ///
-    /// [`RicerError::General`]: crate::error::RicerError::General
+    /// [`RicerError::General`]: crate::error::RicerError::Unrecoverable
     pub fn parse_args<I, T>(args: I) -> RicerResult<Self>
     where
         I: IntoIterator<Item = T>,

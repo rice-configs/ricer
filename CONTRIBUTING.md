@@ -85,8 +85,8 @@ any file you create along with the SPDX copyright identifier:
 SPDX-FileCopyrightText: <year> <name> <email>
 ```
 
-[rust-lang]: doc.rust-lang.org
-[rust-style]: doc.rust-lang.org/beta/style-guide/index.html
+[rust-lang]: https://doc.rust-lang.org
+[rust-style]: https://doc.rust-lang.org/beta/style-guide/index.html
 [cc1.0.0]: https://www.conventionalcommits.org/en/v1.0.0/
 [linux-dco]: https://en.wikipedia.org/wiki/Developer_Certificate_of_Origin
 [reuse3]: https://reuse.software/spec/

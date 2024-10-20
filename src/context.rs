@@ -6,10 +6,10 @@
 //! A __context__ in Ricer is a definitive and flattened set of options required
 //! for a Ricer command to function.
 //!
-//! The various CLI options provide an interface for the user, which
-//! produces a tree-like structure that can be annoying to use internally. Thus,
-//! the context layer converts CLI options into a flattened structure with
-//! at most one to two levels of indirection.
+//! The various CLI options provide an interface for the user, which produces a
+//! tree-like structure that can be annoying to use internally. Thus, the
+//! context layer converts CLI options into a flattened structure with at most
+//! one to two levels of indirection.
 //!
 //! Command context also provides a layer of abstraction between the CLI and
 //! command set implementations. So, changes to the CLI will not directly effect
@@ -275,6 +275,16 @@ impl From<Cli> for StatusContext {
     }
 }
 
+/// Git shorcut context.
+///
+/// Does not use shareable context, because the Git shortcut is a system call
+/// to Git binary on user's system. Thus, this shortcut cannot be made to
+/// reliably use shareable context without somehow making the Git binary aware
+/// of said shareable context.
+///
+/// # Invariant
+///
+/// - Will not use [`SharedContext`].
 #[derive(Debug, Eq, PartialEq)]
 pub struct GitContext {
     pub repo: OsString,
@@ -293,6 +303,11 @@ impl From<Cli> for GitContext {
     }
 }
 
+/// Context for shareable options between commands.
+///
+/// # Invariant
+///
+/// - [`GitContext`] will not have shareable context.
 #[derive(Debug, Eq, PartialEq)]
 pub struct SharedContext {
     pub run_hook: HookAction,
@@ -304,21 +319,28 @@ impl From<SharedOptions> for SharedContext {
     }
 }
 
+/// Behavior types for hook execution in shareable `--run-hook` flag.
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
 pub enum HookAction {
+    /// Always execute hooks no questions asked.
     Always,
 
+    /// Prompt user with hook's contents, and execute it if and only if user accepts it.
     #[default]
     Prompt,
 
+    /// Never execute hooks no questions asked.
     Never,
 }
 
+/// Fixup actions for `--fixup` flag in commit command.
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
 pub enum FixupAction {
+    /// Amend changes in latest commit to all repositories.
     #[default]
     Amend,
 
+    /// Fix text of latest commit to all repositories.
     Reword,
 }
 
