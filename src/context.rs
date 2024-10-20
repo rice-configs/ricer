@@ -325,219 +325,122 @@ pub enum FixupAction {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use anyhow::Result;
     use pretty_assertions::assert_eq;
+    use rstest::rstest;
+    use std::ffi::OsString;
 
-    #[test]
-    fn bootstrap_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "bootstrap",
-            "--config",
-            "vim",
-            "--only",
-            "sh,mutt,vim",
-            "--from",
-            "https://some/url.git",
-        ]);
-        let result = match Context::from(opts) {
-            Context::Bootstrap(ctx) => ctx,
-            other => panic!("Failed to get bootstrap context, instead got {:#?}", other),
-        };
-        let expect = BootstrapContext {
+    #[rstest]
+    #[case::shared_run_hook(
+        ["ricer", "--run-hook", "always", "enter", "foo"],
+        Context::Enter(EnterContext {
+            repo: "foo".into(),
+            shared: SharedContext { run_hook: HookAction::Always },
+        })
+    )]
+    #[case::bootstrap(
+        ["ricer", "bootstrap", "--config", "vim", "--only", "sh,mutt,vim", "--from", "url"],
+        Context::Bootstrap(BootstrapContext {
             config: Some("vim".into()),
-            from: Some("https://some/url.git".into()),
+            from: Some("url".into()),
             only: Some(vec!["sh".into(), "mutt".into(), "vim".into()]),
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn commit_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "commit",
-            "--fixup",
-            "amend",
-            "--message",
-            "hello world",
-        ]);
-        let result = match Context::from(opts) {
-            Context::Commit(ctx) => ctx,
-            other => panic!("Failed to get commit context, instead got {:#?}", other),
-        };
-        let expect = CommitContext {
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::commit(["ricer", "commit", "--fixup", "amend", "--message", "hello world"],
+        Context::Commit(CommitContext {
             fixup: Some(FixupAction::Amend),
             message: Some("hello world".into()),
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn clone_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "clone",
-            "https://some/url.git",
-            "foo",
-        ]);
-        let result = match Context::from(opts) {
-            Context::Clone(ctx) => ctx,
-            other => panic!("Failed to get clone context, instead got {:#?}", other),
-        };
-        let expect = CloneContext {
-            remote: "https://some/url.git".into(),
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::clone(
+        ["never", "clone", "url", "foo"],
+        Context::Clone(CloneContext {
+            remote: "url".into(),
             repo: Some("foo".into()),
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn delete_ctx_from_cli() {
-        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "delete", "foo"]);
-        let result = match Context::from(opts) {
-            Context::Delete(ctx) => ctx,
-            other => panic!("Failed to get delete context, instead got {:#?}", other),
-        };
-        let expect = DeleteContext {
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::delete(
+        ["ricer", "delete", "foo"],
+        Context::Delete( DeleteContext {
             repo: "foo".into(),
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn enter_ctx_from_cli() {
-        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "enter", "foo"]);
-        let result = match Context::from(opts) {
-            Context::Enter(ctx) => ctx,
-            other => panic!("Failed to get enter context, instead got {:#?}", other),
-        };
-        let expect = EnterContext {
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::enter(
+        ["ricer", "enter", "foo"],
+        Context::Enter(EnterContext {
             repo: "foo".into(),
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn init_ctx_from_cli() {
-        let opts = Cli::parse_args([
-            "ricer",
-            "--run-hook",
-            "never",
-            "init",
-            "foo",
-            "--workdir-home",
-            "--branch",
-            "main",
-            "--remote",
-            "origin",
-        ]);
-        let result = match Context::from(opts) {
-            Context::Init(ctx) => ctx,
-            other => panic!("Failed to get init context, instead got {:#?}", other),
-        };
-        let expect = InitContext {
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::init(
+        ["ricer", "init", "foo", "--workdir-home", "--branch", "main", "--remote", "origin"],
+        Context::Init(InitContext {
             name: "foo".into(),
             workdir_home: true,
             branch: Some("main".into()),
             remote: Some("origin".into()),
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn list_ctx_from_cli() {
-        let opts =
-            Cli::parse_args(["ricer", "--run-hook", "never", "list", "--tracked", "--untracked"]);
-        let result = match Context::from(opts) {
-            Context::List(ctx) => ctx,
-            other => panic!("Failed to get list context, instead got {:#?}", other),
-        };
-        let expect = ListContext {
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::list(
+        ["ricer", "list", "--tracked", "--untracked"],
+        Context::List(ListContext {
             tracked: true,
             untracked: true,
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn push_ctx_from_cli() {
-        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "push", "origin", "main"]);
-        let result = match Context::from(opts) {
-            Context::Push(ctx) => ctx,
-            other => panic!("Failed to get push context, instead got {:#?}", other),
-        };
-        let expect = PushContext {
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::push(
+        ["ricer", "push", "origin", "main"],
+        Context::Push(PushContext {
             remote: Some("origin".into()),
             branch: Some("main".into()),
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn pull_ctx_from_cli() {
-        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "pull", "origin", "main"]);
-        let result = match Context::from(opts) {
-            Context::Pull(ctx) => ctx,
-            other => panic!("Failed to get pull context, instead got {:#?}", other),
-        };
-        let expect = PullContext {
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::pull(
+        ["ricer", "pull", "origin", "main"],
+        Context::Pull(PullContext {
             remote: Some("origin".into()),
             branch: Some("main".into()),
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn rename_ctx_from_cli() {
-        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "rename", "foo", "bar"]);
-        let result = match Context::from(opts) {
-            Context::Rename(ctx) => ctx,
-            other => panic!("Failed to get rename context, instead got {:#?}", other),
-        };
-        let expect = RenameContext {
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::rename(
+        ["ricer", "rename", "foo", "bar"],
+        Context::Rename(RenameContext {
             from: "foo".into(),
             to: "bar".into(),
-            shared: SharedContext { run_hook: HookAction::Never },
-        };
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::status(
+        ["ricer", "status", "--terse"],
+        Context::Status(StatusContext {
+            terse: true,
+            shared: SharedContext { run_hook: HookAction::default() },
+        })
+    )]
+    #[case::git_shortcut(
+        ["ricer", "foo", "add", "file.txt"],
+        Context::Git(GitContext {
+            repo: "foo".into(),
+            git_args: vec!["add".into(), "file.txt".into()]
+        })
+    )]
+    fn valid_ctx_from_cli<I, T>(#[case] args: I, #[case] expect: Context) -> Result<()>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        let opts = Cli::parse_args(args)?;
+        let result = Context::from(opts);
         assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn status_ctx_from_cli() {
-        let opts = Cli::parse_args(["ricer", "--run-hook", "never", "status", "--terse"]);
-        let result = match Context::from(opts) {
-            Context::Status(ctx) => ctx,
-            other => panic!("Failed to get status context, instead got {:#?}", other),
-        };
-        let expect =
-            StatusContext { terse: true, shared: SharedContext { run_hook: HookAction::Never } };
-        assert_eq!(expect, result);
-    }
-
-    #[test]
-    fn git_ctx_from_cli() {
-        let opts = Cli::parse_args(["ricer", "foo", "add", "file.txt"]);
-        let result = match Context::from(opts) {
-            Context::Git(ctx) => ctx,
-            other => panic!("Failed to get git context, instead got {:#?}", other),
-        };
-        let expect =
-            GitContext { repo: "foo".into(), git_args: vec!["add".into(), "file.txt".into()] };
-        assert_eq!(expect, result);
+        Ok(())
     }
 }
