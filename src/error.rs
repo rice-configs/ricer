@@ -6,8 +6,8 @@
 //! This module defines various error types that can be encountered inside
 //! Ricer's internal library. The `anyhow::Result` type is used to indicate
 //! that the caller of a function/method is not expected to perform error
-//! recovery, even if there is a method to do so. The [`RicerResult`] type is
-//! used to tell the caller that they are responsible in performing error
+//! recovery, even if there is a method to do so. The `RicerResult` type is
+//! used to tell the caller that they are responsible for performing error
 //! recovery when they can.
 
 use anyhow::Result;
