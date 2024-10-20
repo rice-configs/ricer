@@ -15,7 +15,9 @@
 //! `[CMD_ARGS]` are the arguments to execute with.
 
 use crate::context::{FixupAction, HookAction};
+use crate::error::RicerResult;
 
+use anyhow::anyhow;
 use clap::{Args, Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use indoc::indoc;
@@ -54,15 +56,17 @@ pub struct Cli {
 impl Cli {
     /// Parse a set of command-line arguments.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Will panic for invalid command-line arguments.
-    pub fn parse_args<I, T>(args: I) -> Self
+    /// Will return [`RicerError::General`] for invalid command-line arguments.
+    ///
+    /// [`RicerError::General`]: crate::error::RicerError::General
+    pub fn parse_args<I, T>(args: I) -> RicerResult<Self>
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        Self::parse_from(args)
+        Self::try_parse_from(args).map_err(|e| anyhow!("{}", e).into())
     }
 }
 
