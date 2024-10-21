@@ -4,10 +4,10 @@
 use crate::error::{RicerError, RicerResult};
 
 use anyhow::anyhow;
-use log::trace;
+use log::{trace, info, debug};
 use std::fmt;
 use std::str::FromStr;
-use toml_edit::{DocumentMut, Key, Item};
+use toml_edit::{DocumentMut, Item, Key, Table};
 
 #[derive(Clone, Default, Debug)]
 pub struct Toml {
@@ -20,7 +20,11 @@ impl Toml {
         Self { doc: DocumentMut::new() }
     }
 
-    pub fn add(&mut self, table: impl AsRef<str>, entry: (Key, Item)) -> RicerResult<Option<(Key, Item)>> {
+    pub fn add(
+        &mut self,
+        table: impl AsRef<str>,
+        entry: (Key, Item),
+    ) -> RicerResult<Option<(Key, Item)>> {
         todo!();
     }
 
@@ -43,6 +47,19 @@ impl Toml {
         S: AsRef<str>,
     {
         todo!();
+    }
+
+    pub(crate) fn get_table(&self, key: &str) -> RicerResult<&Table> {
+        debug!("Get TOML table '{key}'");
+        let table = self
+            .doc
+            .get(key)
+            .ok_or_else(|| anyhow!("TOML entry '{key}' does not exist"))
+            .map_err(RicerError::TomlEntryNotFound)?;
+        let table = table.as_table()
+            .ok_or_else(|| anyhow!("TOML entry '{key}' is not a table"))
+            .map_err(RicerError::TomlEntryNonTable)?;
+        Ok(table)
     }
 }
 
