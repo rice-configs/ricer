@@ -4,7 +4,7 @@
 use crate::error::{RicerError, RicerResult};
 
 use anyhow::anyhow;
-use log::{trace, info, debug};
+use log::{debug, info, trace};
 use std::fmt;
 use std::str::FromStr;
 use toml_edit::{DocumentMut, Item, Key, Table};
@@ -28,11 +28,35 @@ impl Toml {
         todo!();
     }
 
+    /// Get entry from target table in document.
+    ///
+    /// Return reference to full key-value pair in document.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`RicerError::TomlTableNotFound`] if target table is not found
+    ///   in document.
+    /// - Return [`RicerError::TomlNonTable`] if target table was not defined as
+    ///   a table.
+    /// - Return [`RicerError::TomlKeyValueNotFound`] if target key-value pair
+    ///   is not found in document.
+    ///
+    /// [`RicerError::TomlTableNotFound`]: crate::error::RicerError::TomlTableNotFound
+    /// [`RicerError::TomlNonTable`]: crate::error::RicerError::TomlNonTable
+    /// [`RicerError::TomlKeyValueNotFound`]: crate::error::RicerError::TomlKeyValueNotFound
     pub fn get<S>(&self, table: S, key: S) -> RicerResult<(&Key, &Item)>
     where
         S: AsRef<str>,
     {
-        todo!();
+        info!("Get TOML entry '{}' from '{}' table", key.as_ref(), table.as_ref());
+        let entry = self.get_table(table.as_ref())?;
+        let entry = entry
+            .get_key_value(key.as_ref())
+            .ok_or_else(|| {
+                anyhow!("TOML entry '{}' not found in '{}' table", key.as_ref(), table.as_ref())
+            })
+            .map_err(RicerError::TomlKeyValueNotFound)?;
+        Ok(entry)
     }
 
     pub fn rename<S>(&mut self, table: S, from: S, to: S) -> RicerResult<(Key, Item)>
@@ -49,16 +73,30 @@ impl Toml {
         todo!();
     }
 
+    /// Get target table in document.
+    ///
+    /// Return reference to target table in document.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`RicerError::TomlTableNotFound`] if target table is not found
+    ///   in document.
+    /// - Return [`RicerError::TomlNonTable`] if target table was not defined as
+    ///   a table.
+    ///
+    /// [`RicerError::TomlTableNotFound`]: crate::error::RicerError::TomlTableNotFound
+    /// [`RicerError::TomlNonTable`]: crate::error::RicerError::TomlNonTable
     pub(crate) fn get_table(&self, key: &str) -> RicerResult<&Table> {
         debug!("Get TOML table '{key}'");
         let table = self
             .doc
             .get(key)
             .ok_or_else(|| anyhow!("TOML entry '{key}' does not exist"))
-            .map_err(RicerError::TomlEntryNotFound)?;
-        let table = table.as_table()
+            .map_err(RicerError::TomlTableNotFound)?;
+        let table = table
+            .as_table()
             .ok_or_else(|| anyhow!("TOML entry '{key}' is not a table"))
-            .map_err(RicerError::TomlEntryNonTable)?;
+            .map_err(RicerError::TomlNonTable)?;
         Ok(table)
     }
 }
