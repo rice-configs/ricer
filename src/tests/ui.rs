@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::error::RicerError;
-use crate::ui::*;
+use crate::cli::*;
 
 use clap::CommandFactory;
 use rstest::rstest;
@@ -32,5 +31,5 @@ where
     T: Into<OsString> + Clone,
 {
     let result = Cli::parse_args(args);
-    assert!(matches!(result, Err(RicerError::Unrecoverable(..))));
+    assert!(matches!(result, Err(CliError::BadParse { .. })));
 }

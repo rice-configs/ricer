@@ -1,13 +1,12 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+use ricer::cli::Cli;
+use ricer::context::Context;
+
 use anyhow::Result;
 use log::{error, info, LevelFilter};
 use std::ffi::OsString;
-
-use ricer::context::Context;
-use ricer::error::ExitCode;
-use ricer::cli::Cli;
 
 fn main() {
     env_logger::Builder::new()
@@ -41,4 +40,19 @@ where
     info!("{:#?}", ctx);
 
     Ok(ExitCode::Success)
+}
+
+#[derive(Debug)]
+pub enum ExitCode {
+    Success,
+    Failure,
+}
+
+impl From<ExitCode> for i32 {
+    fn from(code: ExitCode) -> Self {
+        match code {
+            ExitCode::Success => 0,
+            ExitCode::Failure => 1,
+        }
+    }
 }

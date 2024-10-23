@@ -50,9 +50,8 @@
 //! [explain-ricing]: pesos.github.io/2020/07/14/what-is-ricing.html
 //! [contrib-guide]: https://github.com/rice-configs/ricer/blob/main/CONTRIBUTING.md
 
-pub mod context;
-pub mod error;
 pub mod cli;
+pub mod context;
 
 #[cfg(test)]
 mod tests;
