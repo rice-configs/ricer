@@ -15,11 +15,11 @@
 //! `[CMD_ARGS]` are the arguments to execute with.
 
 mod error;
-mod option;
+mod options;
 
 #[doc(inline)]
 pub use error::*;
-pub use option::*;
+pub use options::*;
 
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
