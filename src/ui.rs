@@ -14,10 +14,13 @@
 //! Ricer's command set, `<COMMAND>` is the name of the Ricer command, and
 //! `[CMD_ARGS]` are the arguments to execute with.
 
-use crate::context::{FixupAction, HookAction};
-use crate::error::RicerResult;
+mod error;
 
-use anyhow::anyhow;
+#[doc(inline)]
+pub use error::*;
+
+use crate::context::{FixupAction, HookAction};
+
 use clap::{Args, Parser, Subcommand};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use indoc::indoc;
@@ -72,12 +75,12 @@ impl Cli {
     /// Will return [`RicerError::General`] for invalid command-line arguments.
     ///
     /// [`RicerError::General`]: crate::error::RicerError::Unrecoverable
-    pub fn parse_args<I, T>(args: I) -> RicerResult<Self>
+    pub fn parse_args<I, T>(args: I) -> Result<Self, CliError>
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        Self::try_parse_from(args).map_err(|e| anyhow!("{}", e).into())
+        Self::try_parse_from(args).map_err(|err| CliError::BadParse { source: err })
     }
 }
 
