@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+use crate::cli::Cli;
 use crate::context::*;
-use crate::ui::Cli;
 
 use anyhow::Result;
 use pretty_assertions::assert_eq;
