@@ -6,7 +6,6 @@ mod error;
 #[doc(inline)]
 pub use error::*;
 
-use anyhow::anyhow;
 use log::{debug, info, trace};
 use std::fmt;
 use std::str::FromStr;
@@ -23,6 +22,21 @@ impl Toml {
         Self { doc: DocumentMut::new() }
     }
 
+    /// Add TOML entry into document.
+    ///
+    /// Will add given `entry` into target `table`. If `table` does not exist, then it
+    /// will be created and `entry` will be inserted into it.
+    ///
+    /// Will replace any entries that match the key in `entry`, returning the
+    /// old entry that was replaced. If no replacement took place, then `None`
+    /// is returned instead.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`TomlError::NotTable`] if target table was not defined as
+    ///   a table.
+    ///
+    /// [`TomlError::NotTable`]: crate::config::TomlError::NotTable
     pub fn add(
         &mut self,
         table: impl AsRef<str>,
@@ -30,7 +44,16 @@ impl Toml {
     ) -> Result<Option<(Key, Item)>, TomlError> {
         let (key, value) = entry;
         info!("Add TOML entry '{}' to '{}' table", key.get(), table.as_ref());
-        let entry = self.get_table_mut(table.as_ref())?;
+        let entry = match self.get_table_mut(table.as_ref()) {
+            Ok(table) => table,
+            Err(TomlError::TableNotFound { .. }) => {
+                let mut new_table = Table::new();
+                new_table.set_implicit(true);
+                self.doc.insert(table.as_ref(), Item::Table(new_table));
+                self.doc[table.as_ref()].as_table_mut().unwrap()
+            }
+            Err(err) => return Err(err),
+        };
         let entry = entry.insert(key.get(), value).map(|old| (key, old));
         Ok(entry)
     }
