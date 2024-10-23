@@ -7,7 +7,7 @@ use std::ffi::OsString;
 
 use ricer::context::Context;
 use ricer::error::ExitCode;
-use ricer::ui::Cli;
+use ricer::cli::Cli;
 
 fn main() {
     env_logger::Builder::new()

@@ -18,7 +18,7 @@
 use clap::ValueEnum;
 use std::ffi::OsString;
 
-use crate::ui::{Cli, CommandSet, SharedOptions};
+use crate::cli::{Cli, CommandSet, SharedOptions};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Context {

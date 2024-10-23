@@ -52,7 +52,7 @@
 
 pub mod context;
 pub mod error;
-pub mod ui;
+pub mod cli;
 
 #[cfg(test)]
 mod tests;
