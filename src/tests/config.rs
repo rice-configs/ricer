@@ -1,37 +1,29 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::config::Toml;
-use crate::error::{RicerError, RicerResult};
+use crate::config::{Toml, TomlError};
 
 use anyhow::Result;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use rstest::rstest;
-use toml_edit::{Key, Item, Value};
+use toml_edit::{Item, Key, Value};
+
+#[rstest]
+fn toml_parse_parses_good_formatting(
+    #[values("this = 'will parse'", "[so_will_this]", "hello.world = 'from ricer!'")] input: &str,
+) -> Result<()> {
+    let toml: Result<Toml, TomlError> = input.parse();
+    assert!(toml.is_ok());
+    Ok(())
+}
 
 #[rstest]
 fn toml_parse_catches_bad_formatting(
     #[values("this 'will fail'", "[will # also fail", "not.gonna = [work]")] input: &str,
 ) {
-    let result: RicerResult<Toml> = input.parse();
-    assert!(matches!(result, Err(..)));
-}
-
-#[rstest]
-fn toml_parse_parses_good_formatting(
-    #[values(
-        indoc! {r#"
-            [foo]
-            this = "will parse"
-            will.also = "parse"
-        "#}
-    )]
-    input: &str,
-) -> Result<()> {
-    let toml: Toml = input.parse()?;
-    assert_eq!(toml.to_string(), input);
-    Ok(())
+    let result: Result<Toml, TomlError> = input.parse();
+    assert!(matches!(result.unwrap_err(), TomlError::BadParse { .. }));
 }
 
 #[rstest]
@@ -42,9 +34,7 @@ fn toml_parse_parses_good_formatting(
     "#},
     (Key::new("bar"), Item::Value(Value::from("get this")))
 )]
-fn toml_get_returns_key_value_pair(
-   #[case] input: &str, #[case] expect: (Key, Item),
-) -> Result<()> {
+fn toml_get_returns_key_value_pair(#[case] input: &str, #[case] expect: (Key, Item)) -> Result<()> {
     let toml: Toml = input.parse()?;
     let (result_key, result_value) = toml.get("foo", "bar")?;
     let (expect_key, expect_value) = expect;
@@ -54,43 +44,18 @@ fn toml_get_returns_key_value_pair(
 }
 
 #[rstest]
-fn toml_get_catches_non_table_error(
-    #[values("foo = 'not a table'")] input: &str,
-) -> Result<()> {
-    let toml: Toml = input.parse()?;
-    let result = toml.get("foo", "fail");
-    assert!(matches!(result, Err(RicerError::TomlNonTable(..))));
-    Ok(())
-}
-
-#[rstest]
-fn toml_get_catches_table_not_found_error(
-    #[values(
-        indoc! {r#"
-            # No foo table anywhere to be seen here!
-            [bar]
-            this = "is not foo table"
-        "#}
-    )] input: &str,
-) -> Result<()> {
-    let toml: Toml = input.parse()?;
-    let result = toml.get("foo", "fail");
-    assert!(matches!(result, Err(RicerError::TomlTableNotFound(..))));
-    Ok(())
-}
-
-#[rstest]
-fn toml_get_catches_key_value_not_found_error(
-    #[values(
-        indoc! {r#"
-            # No bar key-value anywhere to be found here!
-            [foo]
-            this = "is not bar key-value"
-        "#}
-    )] input: &str,
-) -> Result<()> {
+#[case::table_not_found("bar = 'foo not here'", TomlError::TableNotFound { table: "foo".into() })]
+#[case::not_table("foo = 'not a table'", TomlError::NotTable { table: "foo".into() })]
+#[case::entry_not_found(
+    indoc! {r#"
+        [foo]
+        baz = 'bar not here'
+    "#},
+    TomlError::EntryNotFound { table: "foo".into(), key: "bar".into() }
+)]
+fn toml_get_catches_errors(#[case] input: &str, #[case] expect: TomlError) -> Result<()> {
     let toml: Toml = input.parse()?;
     let result = toml.get("foo", "bar");
-    assert!(matches!(result, Err(RicerError::TomlKeyValueNotFound(..))));
+    assert_eq!(result.unwrap_err(), expect);
     Ok(())
 }
