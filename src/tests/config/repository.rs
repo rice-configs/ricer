@@ -32,7 +32,7 @@ fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
         workdir_home = true
     "#}
 )]
-#[case::no_bootstrap(
+#[case::with_bootstrap(
     Repository::new("vim")
         .branch("master")
         .remote("origin")
@@ -60,5 +60,32 @@ fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
 fn to_toml_serializes(#[case] repo: Repository, #[case] expect: &str) -> Result<()> {
     let doc = setup_toml_doc(repo.to_toml())?;
     assert_eq!(doc.to_string(), expect);
+    Ok(())
+}
+
+#[rstest]
+#[case::no_bootstrap(
+    Repository::new("vim")
+        .branch("master")
+        .remote("origin")
+        .workdir_home(true),
+)]
+#[case::with_bootstrap(
+    Repository::new("vim")
+        .branch("master")
+        .remote("origin")
+        .workdir_home(true)
+        .bootstrap(
+            Bootstrap::new()
+                .clone("https://github.com/awkless/vim.git")
+                .os(OsType::Unix)
+                .users(["awkless", "sedgwick"])
+                .hosts(["lovelace", "turing"])
+        ),
+)]
+fn from_entry_deserializes(#[case] expect: Repository) -> Result<()> {
+    let doc = setup_toml_doc(expect.to_toml())?;
+    let result = Repository::from(doc["repos"].as_table().unwrap().get_key_value("vim").unwrap());
+    assert_eq!(result, expect);
     Ok(())
 }
