@@ -76,6 +76,44 @@ pub struct Bootstrap {
     pub hosts: Option<Vec<String>>,
 }
 
+impl Bootstrap {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn clone(mut self, url: impl Into<String>) -> Self {
+        self.clone = Some(url.into());
+        self
+    }
+
+    pub fn os(mut self, os: OsType) -> Self {
+        self.os = Some(os);
+        self
+    }
+
+    pub fn users<I, S>(mut self, users: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        let mut vec = Vec::new();
+        vec.extend(users.into_iter().map(Into::into));
+        self.users = Some(vec);
+        self
+    }
+
+    pub fn hosts<I, S>(mut self, hosts: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        let mut vec = Vec::new();
+        vec.extend(hosts.into_iter().map(Into::into));
+        self.hosts = Some(vec);
+        self
+    }
+}
+
 /// Operating System settings.
 ///
 /// Simple enum used to determine the target OS user wants to bootstrap with.
