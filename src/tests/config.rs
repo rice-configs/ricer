@@ -140,6 +140,54 @@ fn toml_add_catches_errors(#[case] input: &str, #[case] expect: TomlError) -> Re
     toml_input(),
     "test",
     "foo",
+    "baz",
+    (Key::new("foo"), Item::Value(Value::from("world"))),
+    toml_input().replace("foo", "baz"),
+)]
+#[case(
+    toml_input(),
+    "test",
+    "bar",
+    "baz",
+    (Key::new("bar"), Item::Value(Value::from(true))),
+    toml_input().replace("bar", "baz"),
+)]
+fn toml_rename_renames_entry(
+    #[case] input: String,
+    #[case] table: &str,
+    #[case] from: &str,
+    #[case] to: &str,
+    #[case] expect: (Key, Item),
+    #[case] output: String,
+) -> Result<()> {
+    let mut toml: Toml = input.parse()?;
+    let (return_key, return_value) = toml.rename(table, from, to)?;
+    let (expect_key, expect_value) = expect;
+    assert_eq!(toml.to_string(), output);
+    assert_eq!(return_key, expect_key);
+    assert_eq!(return_value.is_value(), expect_value.is_value());
+    Ok(())
+}
+
+#[rstest]
+#[case::table_not_found("bar = 'foo not here'", TomlError::TableNotFound { table: "foo".into() })]
+#[case::not_table("foo = 'not a table'", TomlError::NotTable { table: "foo".into() })]
+#[case::entry_not_found(
+    "[foo] # bar not here",
+    TomlError::EntryNotFound { table: "foo".into(), key: "bar".into() }
+)]
+fn toml_rename_catches_errors(#[case] input: &str, #[case] expect: TomlError) -> Result<()> {
+    let toml: Toml = input.parse()?;
+    let result = toml.get("foo", "bar");
+    assert_eq!(result.unwrap_err(), expect);
+    Ok(())
+}
+
+#[rstest]
+#[case(
+    toml_input(),
+    "test",
+    "foo",
     (Key::new("foo"), Item::Value(Value::from("world"))),
     toml_input().replace("foo = \"hello\"\n", ""),
 )]
