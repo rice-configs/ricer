@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 use std::fmt;
+use toml_edit::{Key, Item};
+use toml_edit::visit::{Visit, visit_table_like_kv};
 
 /// Repository configuration settings.
 ///
@@ -58,6 +60,44 @@ impl Repository {
     }
 }
 
+fn repo_toml<'toml>(entry: (&'toml Key, &'toml Item)) -> Repository {
+   let (key, value) = entry;
+   let mut bootstrap = Bootstrap::new();
+   let mut repo = Repository::new(key.get());
+   bootstrap.visit_item(value);
+   repo.visit_item(value);
+
+   if bootstrap.is_empty() {
+       repo = repo.bootstrap(bootstrap);
+   }
+   repo
+}
+
+impl<'toml> From<(&'toml Key, &'toml Item)> for Repository {
+    fn from(entry: (&'toml Key, &'toml Item)) -> Repository {
+        repo_toml(entry)
+    }
+}
+
+impl From<(Key, Item)> for Repository {
+    fn from(entry: (Key, Item)) -> Self {
+        let (key, value) = entry;
+        repo_toml((&key, &value))
+    }
+}
+
+impl<'toml> Visit<'toml> for Repository {
+    fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
+        match key {
+            "branch" => self.branch = node.as_str().unwrap_or_default().to_string(),
+            "remote" => self.remote = node.as_str().unwrap_or_default().to_string(),
+            "workdir_home" => self.workdir_home = node.as_bool().unwrap_or_default(),
+            &_ => visit_table_like_kv(self, key, node),
+        }
+        visit_table_like_kv(self, key, node);
+    }
+}
+
 /// Repository bootstrap configuration settings.
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct Bootstrap {
@@ -111,6 +151,51 @@ impl Bootstrap {
         vec.extend(hosts.into_iter().map(Into::into));
         self.hosts = Some(vec);
         self
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.clone.is_none() && self.os.is_none() && self.users.is_none() && self.hosts.is_none()
+    }
+}
+
+impl<'toml> Visit<'toml> for Bootstrap {
+    fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
+        match key {
+            "clone" => {
+                if let Some(clone) = node.as_str() {
+                    self.clone = Some(clone.to_string())
+                }
+            }
+            "os" => {
+                if let Some(os) = node.as_str() {
+                    self.os = Some(OsType::from(os))
+                }
+            }
+            "users" => {
+                if let Some(users) = node.as_array() {
+                    let data = users
+                        .into_iter()
+                        .map(|s| {
+                            s.as_str().unwrap().trim_matches(|c| c == '\"' || c == '\'').to_string()
+                        })
+                        .collect();
+                    self.users = Some(data)
+                }
+            }
+            "hosts" => {
+                if let Some(hosts) = node.as_array() {
+                    let data = hosts
+                        .into_iter()
+                        .map(|s| {
+                            s.as_str().unwrap().trim_matches(|c| c == '\"' || c == '\'').to_string()
+                        })
+                        .collect();
+                    self.hosts = Some(data)
+                }
+            }
+            &_ => visit_table_like_kv(self, key, node),
+        }
+        visit_table_like_kv(self, key, node);
     }
 }
 
