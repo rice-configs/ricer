@@ -1,6 +1,14 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+//! Configuration file parsing.
+//!
+//! This module is responsible for parsing Ricer's configuration file data.
+//! Ricer mainly splits configuration file data into two categories: repository,
+//! and hook definitions. Repository definitions define the various settings and
+//! options for tracked repositories in Ricer. Hook definitions tell Ricer how
+//! to handle custom hooks for its command set.
+
 mod error;
 
 #[doc(inline)]
@@ -11,6 +19,13 @@ use std::fmt;
 use std::str::FromStr;
 use toml_edit::{DocumentMut, Item, Key, Table};
 
+/// TOML parser.
+///
+/// Offers basic CRUD interface for TOML parsing. Expects TOML data in string
+/// form. Leaves file handling to caller. Mainly operates on whole tables for
+/// key-value pair manipulation.
+///
+/// > __NOTE:__ `document` is terminology used to refer to parsed TOML data.
 #[derive(Clone, Default, Debug)]
 pub struct Toml {
     doc: DocumentMut,

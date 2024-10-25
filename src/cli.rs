@@ -72,9 +72,9 @@ impl Cli {
     ///
     /// # Errors
     ///
-    /// Will return [`RicerError::General`] for invalid command-line arguments.
+    /// Will return [`CliError::BadParse`] for invalid command-line arguments.
     ///
-    /// [`RicerError::General`]: crate::error::RicerError::Unrecoverable
+    /// [`CliError::BadParse`]: crate::cli::CliError::BadParse
     pub fn parse_args<I, T>(args: I) -> Result<Self, CliError>
     where
         I: IntoIterator<Item = T>,
