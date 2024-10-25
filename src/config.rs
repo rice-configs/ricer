@@ -87,11 +87,33 @@ impl Toml {
         Ok(entry)
     }
 
+    /// Rename TOML entry from document.
+    ///
+    /// Rename entry from target `table`. Returns old unrenamed entry.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`TomlError::TableNotFound`] if target table is not found
+    ///   in document.
+    /// - Return [`TomlError::NotTable`] if target table was not defined as
+    ///   a table.
+    /// - Return [`TomlError::EntryNotFound`] if target key-value pair
+    ///   is not found in document.
+    ///
+    /// [`TomlError::TableNotFound`]: crate::config::TomlError::TableNotFound
+    /// [`TomlError::NotTable`]: crate::config::TomlError::NotTable
+    /// [`TomlError::EntryNotFound`]: crate::config::TomlError::EntryNotFound
     pub fn rename<S>(&mut self, table: S, from: S, to: S) -> Result<(Key, Item), TomlError>
     where
         S: AsRef<str>,
     {
-        todo!();
+        let entry = self.get_table_mut(table.as_ref())?;
+        let (old_key, old_item) = entry.remove_entry(from.as_ref()).ok_or_else(|| {
+            TomlError::EntryNotFound { table: table.as_ref().into(), key: from.as_ref().into() }
+        })?;
+        let new_key = Key::new(to.as_ref()).with_leaf_decor(old_key.leaf_decor().clone());
+        entry.insert_formatted(&new_key, old_item.clone());
+        Ok((old_key, old_item))
     }
 
     /// Remove TOML entry from document.
@@ -117,7 +139,7 @@ impl Toml {
         let entry = self.get_table_mut(table.as_ref())?;
         let entry = entry.remove_entry(key.as_ref()).ok_or_else(|| TomlError::EntryNotFound {
             table: table.as_ref().into(),
-            key: key.as_ref().into()
+            key: key.as_ref().into(),
         })?;
         Ok(entry)
     }

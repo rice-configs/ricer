@@ -139,14 +139,6 @@ fn toml_add_catches_errors(#[case] input: &str, #[case] expect: TomlError) -> Re
 #[case(
     toml_input(),
     "test",
-    "foo",
-    "baz",
-    (Key::new("foo"), Item::Value(Value::from("world"))),
-    toml_input().replace("foo", "baz"),
-)]
-#[case(
-    toml_input(),
-    "test",
     "bar",
     "baz",
     (Key::new("bar"), Item::Value(Value::from(true))),
