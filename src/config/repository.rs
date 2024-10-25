@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+use std::fmt;
+
 /// Repository configuration settings.
 ///
 /// Intermediary structure meant to help make it easier to deserialize and
@@ -59,4 +61,15 @@ pub enum OsType {
 
     /// Bootstrap to Windows system only.
     Windows,
+}
+
+impl fmt::Display for OsType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            OsType::Any => write!(f, "any"),
+            OsType::Unix => write!(f, "unix"),
+            OsType::MacOs => write!(f, "macos"),
+            OsType::Windows => write!(f, "windows"),
+        }
+    }
 }
