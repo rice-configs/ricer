@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use std::path::PathBuf;
-use toml_edit::{Key, Item, InlineTable};
+use toml_edit::{Array, Value, Key, Item, InlineTable};
 use toml_edit::visit::{Visit, visit_inline_table};
 
 /// Command hook settings.
@@ -25,6 +25,38 @@ impl CommandHook {
 
     pub fn add_hook(&mut self, hook: Hook) {
         self.hooks.push(hook);
+    }
+
+    pub fn to_toml(&self) -> (Key, Item) {
+        let mut tables = Array::new();
+        let mut iter = self.hooks.iter().enumerate().peekable();
+        while let Some((_, hook)) = iter.next() {
+            let mut inline = InlineTable::new();
+            let decor = inline.decor_mut();
+            decor.set_prefix("\n    ");
+
+            if iter.peek().is_none() {
+                decor.set_suffix("\n");
+            }
+
+            if let Some(pre) = &hook.pre {
+                inline.insert("pre", Value::from(pre));
+            }
+
+            if let Some(post) = &hook.post {
+                inline.insert("post", Value::from(post));
+            }
+
+            if let Some(workdir) = &hook.workdir {
+                inline.insert("workdir", Value::from(String::from(workdir.to_string_lossy())));
+            }
+
+            tables.push_formatted(Value::from(inline));
+        }
+
+        let key = Key::new(&self.cmd);
+        let value = Item::Value(Value::from(tables));
+        (key, value)
     }
 }
 
