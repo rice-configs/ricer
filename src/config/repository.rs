@@ -36,6 +36,26 @@ impl Repository {
             bootstrap: Default::default(),
         }
     }
+
+    pub fn branch(mut self, branch: impl Into<String>) -> Self {
+        self.branch = branch.into();
+        self
+    }
+
+    pub fn remote(mut self, remote: impl Into<String>) -> Self {
+        self.remote = remote.into();
+        self
+    }
+
+    pub fn workdir_home(mut self, choice: bool) -> Self {
+        self.workdir_home = choice;
+        self
+    }
+
+    pub fn bootstrap(mut self, bootstrap: Bootstrap) -> Self {
+        self.bootstrap = Some(bootstrap);
+        self
+    }
 }
 
 /// Repository bootstrap configuration settings.
