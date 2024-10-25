@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use std::path::PathBuf;
+use toml_edit::{Key, Item};
 
 /// Command hook settings.
 ///
@@ -14,6 +15,12 @@ pub struct CommandHook {
 
     /// Array of hook definitions to execute.
     pub hooks: Vec<Hook>,
+}
+
+impl CommandHook {
+    pub fn new(cmd: impl Into<String>) -> Self {
+        Self { cmd: cmd.into(), hooks: Default::default() }
+    }
 }
 
 /// Hook definition settings.
