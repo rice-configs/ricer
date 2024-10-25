@@ -31,3 +31,24 @@ pub struct Hook {
     /// Set working directory of hook script.
     pub workdir: Option<PathBuf>,
 }
+
+impl Hook {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn pre(mut self, script: impl Into<String>) -> Self {
+        self.pre = Some(script.into());
+        self
+    }
+
+    pub fn post(mut self, script: impl Into<String>) -> Self {
+        self.post = Some(script.into());
+        self
+    }
+
+    pub fn workdir(mut self, path: impl Into<PathBuf>) -> Self {
+        self.workdir = Some(path.into());
+        self
+    }
+}
