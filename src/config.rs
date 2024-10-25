@@ -94,11 +94,32 @@ impl Toml {
         todo!();
     }
 
+    /// Remove TOML entry from document.
+    ///
+    /// Remove `key` from target `table`. Returns removed entry.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`TomlError::TableNotFound`] if target table is not found
+    ///   in document.
+    /// - Return [`TomlError::NotTable`] if target table was not defined as
+    ///   a table.
+    /// - Return [`TomlError::EntryNotFound`] if target key-value pair
+    ///   is not found in document.
+    ///
+    /// [`TomlError::TableNotFound`]: crate::config::TomlError::TableNotFound
+    /// [`TomlError::NotTable`]: crate::config::TomlError::NotTable
+    /// [`TomlError::EntryNotFound`]: crate::config::TomlError::EntryNotFound
     pub fn remove<S>(&mut self, table: S, key: S) -> Result<(Key, Item), TomlError>
     where
         S: AsRef<str>,
     {
-        todo!();
+        let entry = self.get_table_mut(table.as_ref())?;
+        let entry = entry.remove_entry(key.as_ref()).ok_or_else(|| TomlError::EntryNotFound {
+            table: table.as_ref().into(),
+            key: key.as_ref().into()
+        })?;
+        Ok(entry)
     }
 
     /// Get target table in document.
