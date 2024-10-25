@@ -21,6 +21,10 @@ impl CommandHook {
     pub fn new(cmd: impl Into<String>) -> Self {
         Self { cmd: cmd.into(), hooks: Default::default() }
     }
+
+    pub fn add_hook(&mut self, hook: Hook) {
+        self.hooks.push(hook);
+    }
 }
 
 /// Hook definition settings.
