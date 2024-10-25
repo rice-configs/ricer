@@ -26,6 +26,18 @@ pub struct Repository {
     pub bootstrap: Option<Bootstrap>,
 }
 
+impl Repository {
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            branch: Default::default(),
+            remote: Default::default(),
+            workdir_home: Default::default(),
+            bootstrap: Default::default(),
+        }
+    }
+}
+
 /// Repository bootstrap configuration settings.
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct Bootstrap {
