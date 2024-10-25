@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 use std::fmt;
-use toml_edit::{Table, Key, Array, Value, Item};
-use toml_edit::visit::{Visit, visit_table_like_kv};
+use toml_edit::visit::{visit_table_like_kv, Visit};
+use toml_edit::{Array, Item, Key, Table, Value};
 
 /// Repository configuration settings.
 ///
@@ -89,16 +89,16 @@ impl Repository {
 }
 
 fn repo_toml<'toml>(entry: (&'toml Key, &'toml Item)) -> Repository {
-   let (key, value) = entry;
-   let mut bootstrap = Bootstrap::new();
-   let mut repo = Repository::new(key.get());
-   bootstrap.visit_item(value);
-   repo.visit_item(value);
+    let (key, value) = entry;
+    let mut bootstrap = Bootstrap::new();
+    let mut repo = Repository::new(key.get());
+    bootstrap.visit_item(value);
+    repo.visit_item(value);
 
-   if bootstrap.is_empty() {
-       repo = repo.bootstrap(bootstrap);
-   }
-   repo
+    if !bootstrap.is_empty() {
+        repo = repo.bootstrap(bootstrap);
+    }
+    repo
 }
 
 impl<'toml> From<(&'toml Key, &'toml Item)> for Repository {

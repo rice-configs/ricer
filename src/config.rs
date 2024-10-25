@@ -12,7 +12,6 @@
 mod error;
 mod repository;
 
-
 #[doc(inline)]
 pub use error::*;
 pub use repository::*;
