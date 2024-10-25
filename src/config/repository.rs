@@ -63,6 +63,18 @@ pub enum OsType {
     Windows,
 }
 
+impl From<&str> for OsType {
+    fn from(data: &str) -> Self {
+        match data {
+            "any" => Self::Any,
+            "unix" => Self::Unix,
+            "macos" => Self::MacOs,
+            "windows" => Self::Windows,
+            &_ => Self::Any,
+        }
+    }
+}
+
 impl fmt::Display for OsType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
