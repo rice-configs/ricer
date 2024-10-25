@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+use std::path::PathBuf;
+
 /// Command hook settings.
 ///
 /// An intermediary structure to help deserialize and serialize command hook
@@ -12,4 +14,20 @@ pub struct CommandHook {
 
     /// Array of hook definitions to execute.
     pub hooks: Vec<Hook>,
+}
+
+/// Hook definition settings.
+///
+/// An intermediary structure to help deserialize and serialize hook entries
+/// for command hook settings in command hook configuration file.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct Hook {
+    /// Execute hook script _before_ command itself.
+    pub pre: Option<String>,
+
+    /// Execute hook script _after_ command itself.
+    pub post: Option<String>,
+
+    /// Set working directory of hook script.
+    pub workdir: Option<PathBuf>,
 }
