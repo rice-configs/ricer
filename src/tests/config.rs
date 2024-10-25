@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+mod repository;
+
 use crate::config::{Toml, TomlError};
 
 use anyhow::Result;
