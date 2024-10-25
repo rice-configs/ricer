@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use std::fmt;
-use toml_edit::{Key, Item};
+use toml_edit::{Table, Key, Array, Value, Item};
 use toml_edit::visit::{Visit, visit_table_like_kv};
 
 /// Repository configuration settings.
@@ -57,6 +57,34 @@ impl Repository {
     pub fn bootstrap(mut self, bootstrap: Bootstrap) -> Self {
         self.bootstrap = Some(bootstrap);
         self
+    }
+
+    pub fn to_toml(&self) -> (Key, Item) {
+        let mut repo = Table::new();
+        let mut repo_bootstrap = Table::new();
+
+        repo.insert("branch", Item::Value(Value::from(&self.branch)));
+        repo.insert("remote", Item::Value(Value::from(&self.remote)));
+        repo.insert("workdir_home", Item::Value(Value::from(self.workdir_home)));
+        if let Some(bootstrap) = &self.bootstrap {
+            if let Some(clone) = &bootstrap.clone {
+                repo_bootstrap.insert("clone", Item::Value(Value::from(clone)));
+            }
+            if let Some(os) = &bootstrap.os {
+                repo_bootstrap.insert("os", Item::Value(Value::from(os.to_string())));
+            }
+            if let Some(users) = &bootstrap.users {
+                repo_bootstrap.insert("users", Item::Value(Value::Array(Array::from_iter(users))));
+            }
+            if let Some(hosts) = &bootstrap.hosts {
+                repo_bootstrap.insert("hosts", Item::Value(Value::Array(Array::from_iter(hosts))));
+            }
+            repo.insert("bootstrap", Item::Table(repo_bootstrap));
+        }
+
+        let key = Key::new(&self.name);
+        let value = Item::Table(repo);
+        (key, value)
     }
 }
 
