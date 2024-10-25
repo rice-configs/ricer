@@ -10,9 +10,12 @@
 //! to handle custom hooks for its command set.
 
 mod error;
+mod repository;
+
 
 #[doc(inline)]
 pub use error::*;
+pub use repository::*;
 
 use log::{debug, info, trace};
 use std::fmt;
