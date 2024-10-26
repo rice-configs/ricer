@@ -23,8 +23,9 @@ impl CommandHook {
         Self { cmd: cmd.into(), hooks: Default::default() }
     }
 
-    pub fn add_hook(&mut self, hook: Hook) {
+    pub fn add_hook(mut self, hook: Hook) -> Self {
         self.hooks.push(hook);
+        self
     }
 
     pub fn to_toml(&self) -> (Key, Item) {
@@ -90,7 +91,7 @@ impl<'toml> Visit<'toml> for CommandHook {
         let hook = if let Some(pre) = pre { hook.pre(pre) } else { hook };
         let hook = if let Some(post) = post { hook.post(post) } else { hook };
         let hook = if let Some(workdir) = workdir { hook.workdir(workdir) } else { hook };
-        self.add_hook(hook);
+        self.hooks.push(hook);
 
         visit_inline_table(self, node);
     }

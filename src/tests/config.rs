@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 mod repository;
+mod hook;
 
 use crate::config::{Toml, TomlError};
 
