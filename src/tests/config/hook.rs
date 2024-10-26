@@ -6,8 +6,8 @@ use crate::config::{CommandHook, Hook};
 use anyhow::Result;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use toml_edit::{DocumentMut, Item, Key};
 use rstest::rstest;
+use toml_edit::{DocumentMut, Item, Key};
 
 fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
     let mut doc: DocumentMut = "[hooks]".parse()?;
@@ -49,7 +49,13 @@ fn to_toml_serializes(#[case] cmd_hook: CommandHook, #[case] expect: &str) -> Re
 )]
 fn from_deserializes(#[case] expect: CommandHook) -> Result<()> {
     let doc = setup_toml_doc(expect.to_toml())?;
-    let result = CommandHook::from(doc["hooks"].as_table().unwrap().get_key_value("commit").unwrap());
+    let result = CommandHook::from(
+        doc["hooks"]
+            .as_table()
+            .unwrap()
+            .get_key_value("commit")
+            .unwrap(),
+    );
     assert_eq!(result, expect);
     Ok(())
 }

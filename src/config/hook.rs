@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 use std::path::PathBuf;
-use toml_edit::{Array, Value, Key, Item, InlineTable};
-use toml_edit::visit::{Visit, visit_inline_table};
+use toml_edit::visit::{visit_inline_table, Visit};
+use toml_edit::{Array, InlineTable, Item, Key, Value};
 
 /// Command hook settings.
 ///
@@ -20,7 +20,10 @@ pub struct CommandHook {
 
 impl CommandHook {
     pub fn new(cmd: impl Into<String>) -> Self {
-        Self { cmd: cmd.into(), hooks: Default::default() }
+        Self {
+            cmd: cmd.into(),
+            hooks: Default::default(),
+        }
     }
 
     pub fn add_hook(mut self, hook: Hook) -> Self {
@@ -49,7 +52,10 @@ impl CommandHook {
             }
 
             if let Some(workdir) = &hook.workdir {
-                inline.insert("workdir", Value::from(String::from(workdir.to_string_lossy())));
+                inline.insert(
+                    "workdir",
+                    Value::from(String::from(workdir.to_string_lossy())),
+                );
             }
 
             tables.push_formatted(Value::from(inline));
@@ -83,14 +89,38 @@ impl From<(Key, Item)> for CommandHook {
 
 impl<'toml> Visit<'toml> for CommandHook {
     fn visit_inline_table(&mut self, node: &'toml InlineTable) {
-        let pre = if let Some(pre) = node.get("pre") { pre.as_str() } else { None };
-        let post = if let Some(post) = node.get("post") { post.as_str() } else { None };
-        let workdir = if let Some(workdir) = node.get("workdir") { workdir.as_str() } else { None };
+        let pre = if let Some(pre) = node.get("pre") {
+            pre.as_str()
+        } else {
+            None
+        };
+        let post = if let Some(post) = node.get("post") {
+            post.as_str()
+        } else {
+            None
+        };
+        let workdir = if let Some(workdir) = node.get("workdir") {
+            workdir.as_str()
+        } else {
+            None
+        };
 
         let hook = Hook::new();
-        let hook = if let Some(pre) = pre { hook.pre(pre) } else { hook };
-        let hook = if let Some(post) = post { hook.post(post) } else { hook };
-        let hook = if let Some(workdir) = workdir { hook.workdir(workdir) } else { hook };
+        let hook = if let Some(pre) = pre {
+            hook.pre(pre)
+        } else {
+            hook
+        };
+        let hook = if let Some(post) = post {
+            hook.post(post)
+        } else {
+            hook
+        };
+        let hook = if let Some(workdir) = workdir {
+            hook.workdir(workdir)
+        } else {
+            hook
+        };
         self.hooks.push(hook);
 
         visit_inline_table(self, node);
