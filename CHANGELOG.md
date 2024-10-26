@@ -13,6 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### [0.3.0] - 2024-10-26
+
+### Added
+
+- Add `ricer::config::Toml` for TOML data parsing.
+- Add `ricer::config::Repository` as intermediary type for serialization and
+  deserialization of repository TOML data.
+- Add `ricer::config::Bootstrap` as intermediary type for serialization and
+  deserialization of repository bootstrapping TOML data.
+- Add `ricer::config::CommandHook` and `ricer::config::Hook` as intermediary
+  types for serialization and deserialization of command hook TOML data.
+
+### Changed
+
+- Rename `ricer::ui` module to `ricer::cli` module.
+
+### Removed
+
+- Remove `ricer::error` module in favor of modules defining their own custom error types.
+    - The hope is to have demodularized error types that will make designing Ricer's
+      internal API easier.
+
 ### [0.2.0] - 2024-10-20
 
 ### Added
@@ -58,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Provide feature request template.
 - Make @awkless main code owner of Ricer.
 
-[Unreleased]: https://github.com/rice-configs/ricer/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/rice-configs/ricer/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/rice-configs/ricer/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/rice-configs/ricer/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/rice-configs/ricer/releases/tag/v0.1.0
