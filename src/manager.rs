@@ -8,12 +8,12 @@ mod locator;
 pub use error::*;
 pub use locator::*;
 
-use crate::config::{Toml, CommandHook, Repository, TomlError};
+use crate::config::{CommandHook, Repository, Toml, TomlError};
 
 use log::trace;
-
-#[cfg(test)]
-use mockall::automock;
+use std::fs::OpenOptions;
+use std::io::{Read, Write};
+use std::path::PathBuf;
 
 /// Configuration file construct.
 ///
@@ -55,6 +55,31 @@ where
         }
     }
 
+    pub fn load(&mut self) -> Result<(), ConfigManagerError> {
+        let path = self.config.location(&self.locator);
+        let mut file = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .create(true)
+            .truncate(false)
+            .open(&path)
+            .map_err(|err| ConfigManagerError::FileOpen {
+                source: err,
+                path: path.clone(),
+            })?;
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)
+            .map_err(|err| ConfigManagerError::FileRead {
+                source: err,
+                path: path.clone(),
+            })?;
+        self.doc = buffer.parse().map_err(|err| ConfigManagerError::Toml {
+            source: err,
+            path: path.clone(),
+        })?;
+        Ok(())
+    }
+
     pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, TomlError> {
         self.config.get(&self.doc, key.as_ref())
     }
@@ -63,8 +88,13 @@ where
         self.config.add(&mut self.doc, entry)
     }
 
-    pub fn rename(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> Result<T::Entry, TomlError> {
-        self.config.rename(&mut self.doc, from.as_ref(), to.as_ref())
+    pub fn rename(
+        &mut self,
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+    ) -> Result<T::Entry, TomlError> {
+        self.config
+            .rename(&mut self.doc, from.as_ref(), to.as_ref())
     }
 
     pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::Entry, TomlError> {
@@ -79,7 +109,6 @@ where
 /// # See also
 ///
 /// - [`Toml`]
-#[cfg_attr(test, automock(type Entry = Repository;))]
 pub trait TomlManager {
     type Entry;
 
@@ -87,6 +116,9 @@ pub trait TomlManager {
     fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError>;
     fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry, TomlError>;
     fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError>;
+    fn location<D>(&self, locator: &D) -> PathBuf
+    where
+        D: DirLocator;
 }
 
 /// Repository data configuration management.
@@ -128,6 +160,13 @@ impl TomlManager for RepositoryData {
         let entry = doc.rename("repos", from.as_ref(), to.as_ref())?;
         Ok(Repository::from(entry))
     }
+
+    fn location<D>(&self, locator: &D) -> PathBuf
+    where
+        D: DirLocator,
+    {
+        locator.config_dir().join("repos.toml")
+    }
 }
 
 /// Command hook configuration management.
@@ -168,5 +207,12 @@ impl TomlManager for CommandHookData {
     fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.rename("hooks", from.as_ref(), to.as_ref())?;
         Ok(CommandHook::from(entry))
+    }
+
+    fn location<D>(&self, locator: &D) -> PathBuf
+    where
+        D: DirLocator,
+    {
+        locator.config_dir().join("hooks.toml")
     }
 }
