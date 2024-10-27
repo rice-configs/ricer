@@ -1,8 +1,14 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+use directories::ProjectDirs;
+use log::trace;
+use std::path::Path;
+
 #[cfg(test)]
 use mockall::automock;
+
+use crate::manager::LocatorError;
 
 /// Handle different configuration directory layouts.
 ///
@@ -18,4 +24,30 @@ pub trait DirLayout {
 
     /// Absolute path to directory where repository data will be stored.
     fn repo_dir(&self) -> &Path;
+}
+
+/// Configuration directory layout handler following [XDG Base Directory
+/// Specification][xdg].
+///
+/// [xdg]: https://specifications.freedesktop.org/basedir-spec/latest/
+pub struct XdgDirLayout {
+    layout: ProjectDirs,
+}
+
+impl XdgDirLayout {
+    pub fn layout() -> Result<Self, LocatorError> {
+        trace!("Construct XDG Base Directory Specification layout handler");
+        let layout = ProjectDirs::from("com", "awkless", "ricer").ok_or_else(|| LocatorError::NoWayHome)?;
+        Ok(Self { layout })
+    }
+}
+
+impl DirLayout for XdgDirLayout {
+    fn behavior_dir(&self) -> &Path {
+        self.layout.config_dir()
+    }
+
+    fn repo_dir(&self) -> &Path {
+        self.layout.data_dir()
+    }
 }
