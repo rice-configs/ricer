@@ -94,8 +94,7 @@ pub struct XdgDirLayout {
 impl XdgDirLayout {
     pub fn layout() -> Result<Self, LocatorError> {
         trace!("Construct XDG Base Directory Specification layout handler");
-        let layout =
-            ProjectDirs::from("com", "awkless", "ricer").ok_or_else(|| LocatorError::NoWayHome)?;
+        let layout = ProjectDirs::from("com", "awkless", "ricer").ok_or(LocatorError::NoWayHome)?;
         Ok(Self { layout })
     }
 }
