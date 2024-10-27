@@ -36,7 +36,7 @@ where
     T: TomlManager,
     D: DirLocator,
 {
-    toml: Toml,
+    doc: Toml,
     locator: D,
     config: T,
 }
@@ -49,10 +49,26 @@ where
     pub fn new(config: T, locator: D) -> Self {
         trace!("Construct new configuration manager");
         Self {
-            toml: Toml::new(),
+            doc: Toml::new(),
             locator,
             config,
         }
+    }
+
+    pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, TomlError> {
+        self.config.get(&self.doc, key.as_ref())
+    }
+
+    pub fn add(&mut self, entry: T::Entry) -> Result<Option<T::Entry>, TomlError> {
+        self.config.add(&mut self.doc, entry)
+    }
+
+    pub fn rename(&mut self, from: impl AsRef<str>, to: impl AsRef<str>) -> Result<T::Entry, TomlError> {
+        self.config.rename(&mut self.doc, from.as_ref(), to.as_ref())
+    }
+
+    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::Entry, TomlError> {
+        self.config.remove(&mut self.doc, key.as_ref())
     }
 }
 
