@@ -8,7 +8,7 @@ mod locator;
 pub use error::*;
 pub use locator::*;
 
-use crate::config::{Toml, Repository, TomlError};
+use crate::config::{Toml, CommandHook, Repository, TomlError};
 
 #[cfg(test)]
 use mockall::automock;
@@ -68,5 +68,46 @@ impl TomlManager for RepositoryData {
     fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.rename("repos", from.as_ref(), to.as_ref())?;
         Ok(Repository::from(entry))
+    }
+}
+
+/// Command hook configuration management.
+///
+/// Handles serialization and deserialization of command hook settings.
+/// Command hook settings are held within the "hooks" section of a
+/// configuration file.
+///
+/// # Invariants
+///
+/// Will preserve existing formatting of configuration file if any.
+///
+/// # See also
+///
+/// - [`Toml`]
+/// - [`CommandHook`]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CommandHookData;
+
+impl TomlManager for CommandHookData {
+    type Entry = CommandHook;
+
+    fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry, TomlError> {
+        let entry = doc.get("hooks", key.as_ref())?;
+        Ok(CommandHook::from(entry))
+    }
+
+    fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError> {
+        let entry = doc.add("hooks", entry.to_toml())?.map(CommandHook::from);
+        Ok(entry)
+    }
+
+    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry, TomlError> {
+        let entry = doc.remove("hooks", key.as_ref())?;
+        Ok(CommandHook::from(entry))
+    }
+
+    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError> {
+        let entry = doc.rename("hooks", from.as_ref(), to.as_ref())?;
+        Ok(CommandHook::from(entry))
     }
 }
