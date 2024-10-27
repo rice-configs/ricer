@@ -3,7 +3,7 @@
 
 use directories::ProjectDirs;
 use log::{debug, trace};
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 #[cfg(test)]
 use mockall::automock;
@@ -39,10 +39,17 @@ impl DefaultDirLocator {
         let hooks_dir = config_dir.join("hooks");
         let repos_dir = layout.repo_dir().join("ricer");
 
-        debug!("Configuration directory located at '{}'", config_dir.display());
+        debug!(
+            "Configuration directory located at '{}'",
+            config_dir.display()
+        );
         debug!("Hook script directory located at '{}'", hooks_dir.display());
         debug!("Repository directory located at '{}'", repos_dir.display());
-        Self { config_dir, hooks_dir, repos_dir }
+        Self {
+            config_dir,
+            hooks_dir,
+            repos_dir,
+        }
     }
 }
 
@@ -87,7 +94,8 @@ pub struct XdgDirLayout {
 impl XdgDirLayout {
     pub fn layout() -> Result<Self, LocatorError> {
         trace!("Construct XDG Base Directory Specification layout handler");
-        let layout = ProjectDirs::from("com", "awkless", "ricer").ok_or_else(|| LocatorError::NoWayHome)?;
+        let layout =
+            ProjectDirs::from("com", "awkless", "ricer").ok_or_else(|| LocatorError::NoWayHome)?;
         Ok(Self { layout })
     }
 }
