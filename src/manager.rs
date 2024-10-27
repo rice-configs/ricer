@@ -10,8 +10,51 @@ pub use locator::*;
 
 use crate::config::{Toml, CommandHook, Repository, TomlError};
 
+use log::trace;
+
 #[cfg(test)]
 use mockall::automock;
+
+/// Configuration file construct.
+///
+/// Manage configuration file data by selecting which configuration
+/// startegy to use, i.e., which configuration category to handle.
+/// Expected section to serialize and deserialize will depend on the
+/// configuration strategy selected by caller.
+///
+/// # Invariants
+///
+/// Will preserve existing formatting of configuration file if any.
+///
+/// # See also
+///
+/// - [`Config`]
+/// - [`Toml`]
+#[derive(Clone, Debug, Default)]
+pub struct ConfigManager<T, D>
+where
+    T: TomlManager,
+    D: DirLocator,
+{
+    toml: Toml,
+    locator: D,
+    config: T,
+}
+
+impl<T, D> ConfigManager<T, D>
+where
+    T: TomlManager,
+    D: DirLocator,
+{
+    pub fn new(config: T, locator: D) -> Self {
+        trace!("Construct new configuration manager");
+        Self {
+            toml: Toml::new(),
+            locator,
+            config,
+        }
+    }
+}
 
 /// TOML serialization and deserialization manager.
 ///
