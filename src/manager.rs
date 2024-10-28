@@ -14,6 +14,7 @@ use log::trace;
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::path::PathBuf;
+use std::fmt;
 
 /// Configuration file construct.
 ///
@@ -143,6 +144,16 @@ where
 
     pub fn location(&self) -> PathBuf {
         self.config.location(&self.locator)
+    }
+}
+
+impl<T, D> fmt::Display for ConfigManager<T, D>
+where
+    T: TomlManager,
+    D: DirLocator,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.doc)
     }
 }
 
