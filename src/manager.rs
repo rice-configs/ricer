@@ -80,6 +80,27 @@ where
         Ok(())
     }
 
+    pub fn save(&mut self) -> Result<(), ConfigManagerError> {
+        let path = self.location();
+        let mut file = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .create(true)
+            .truncate(false)
+            .open(&path)
+            .map_err(|err| ConfigManagerError::FileOpen {
+                source: err,
+                path: path.clone(),
+            })?;
+        let buffer = self.doc.to_string();
+        file.write_all(buffer.as_bytes())
+            .map_err(|err| ConfigManagerError::FileWrite {
+                source: err,
+                path: path.clone(),
+            })?;
+        Ok(())
+    }
+
     pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, ConfigManagerError> {
         self.config
             .get(&self.doc, key.as_ref())
