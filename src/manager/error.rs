@@ -19,6 +19,9 @@ pub enum ConfigManagerError {
     #[error("Failed to read '{path}' because '{source}'")]
     FileRead { source: io::Error, path: PathBuf },
 
+    #[error("Failed to write '{path}' because '{source}'")]
+    FileWrite { source: io::Error, path: PathBuf },
+
     #[error("Failed to parse '{path}' because '{source}'")]
     Toml {
         source: config::TomlError,
