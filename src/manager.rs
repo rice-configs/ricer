@@ -56,7 +56,7 @@ where
     }
 
     pub fn load(&mut self) -> Result<(), ConfigManagerError> {
-        let path = self.config.location(&self.locator);
+        let path = self.location();
         let mut file = OpenOptions::new()
             .write(true)
             .read(true)
@@ -80,25 +80,48 @@ where
         Ok(())
     }
 
-    pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, TomlError> {
-        self.config.get(&self.doc, key.as_ref())
+    pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, ConfigManagerError> {
+        self.config
+            .get(&self.doc, key.as_ref())
+            .map_err(|err| ConfigManagerError::Toml {
+                source: err,
+                path: self.location(),
+            })
     }
 
-    pub fn add(&mut self, entry: T::Entry) -> Result<Option<T::Entry>, TomlError> {
-        self.config.add(&mut self.doc, entry)
+    pub fn add(&mut self, entry: T::Entry) -> Result<Option<T::Entry>, ConfigManagerError> {
+        self.config
+            .add(&mut self.doc, entry)
+            .map_err(|err| ConfigManagerError::Toml {
+                source: err,
+                path: self.location(),
+            })
     }
 
     pub fn rename(
         &mut self,
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-    ) -> Result<T::Entry, TomlError> {
+    ) -> Result<T::Entry, ConfigManagerError> {
         self.config
             .rename(&mut self.doc, from.as_ref(), to.as_ref())
+            .map_err(|err| ConfigManagerError::Toml {
+                source: err,
+                path: self.location(),
+            })
     }
 
-    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::Entry, TomlError> {
-        self.config.remove(&mut self.doc, key.as_ref())
+    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::Entry, ConfigManagerError> {
+        self.config
+            .remove(&mut self.doc, key.as_ref())
+            .map_err(|err| ConfigManagerError::Toml {
+                source: err,
+                path: self.location(),
+            })
+    }
+
+    pub fn location(&self) -> PathBuf {
+        self.config.location(&self.locator)
     }
 }
 
