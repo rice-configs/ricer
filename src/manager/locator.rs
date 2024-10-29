@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+use crate::manager::LocatorError;
+
 use directories::ProjectDirs;
 use log::{debug, trace};
 use std::path::{Path, PathBuf};
 
 #[cfg(test)]
 use mockall::automock;
-
-use crate::manager::LocatorError;
 
 /// Configuration directory locator.
 ///
@@ -33,23 +33,16 @@ pub struct DefaultDirLocator {
 }
 
 impl DefaultDirLocator {
-    pub fn new_locate(layout: &impl DirLayout) -> Self {
+    pub fn locate(layout: impl DirLayout) -> Self {
         trace!("Construct configuration directory locator");
-        let config_dir = layout.behavior_dir().join("ricer");
+        let config_dir = layout.config_dir().join("ricer");
         let hooks_dir = config_dir.join("hooks");
         let repos_dir = layout.repo_dir().join("ricer");
 
-        debug!(
-            "Configuration directory located at '{}'",
-            config_dir.display()
-        );
+        debug!("Configuration directory located at '{}'", config_dir.display());
         debug!("Hook script directory located at '{}'", hooks_dir.display());
         debug!("Repository directory located at '{}'", repos_dir.display());
-        Self {
-            config_dir,
-            hooks_dir,
-            repos_dir,
-        }
+        Self { config_dir, hooks_dir, repos_dir }
     }
 }
 
@@ -77,7 +70,7 @@ impl DirLocator for DefaultDirLocator {
 #[cfg_attr(test, automock)]
 pub trait DirLayout {
     /// Absolute path to directory where configuration files will be stored.
-    fn behavior_dir(&self) -> &Path;
+    fn config_dir(&self) -> &Path;
 
     /// Absolute path to directory where repository data will be stored.
     fn repo_dir(&self) -> &Path;
@@ -100,7 +93,7 @@ impl XdgDirLayout {
 }
 
 impl DirLayout for XdgDirLayout {
-    fn behavior_dir(&self) -> &Path {
+    fn config_dir(&self) -> &Path {
         self.layout.config_dir()
     }
 

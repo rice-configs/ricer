@@ -65,11 +65,7 @@ pub struct BootstrapContext {
 
 impl From<Cli> for BootstrapContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Bootstrap(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'bootstrap'!"),
@@ -93,21 +89,13 @@ pub struct CloneContext {
 
 impl From<Cli> for CloneContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Clone(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'clone'!"),
         };
 
-        Self {
-            remote: cmd_set.remote,
-            repo: cmd_set.repo,
-            shared: shared_opts.into(),
-        }
+        Self { remote: cmd_set.remote, repo: cmd_set.repo, shared: shared_opts.into() }
     }
 }
 
@@ -120,21 +108,13 @@ pub struct CommitContext {
 
 impl From<Cli> for CommitContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Commit(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'commit'!"),
         };
 
-        Self {
-            fixup: cmd_set.fixup,
-            message: cmd_set.message,
-            shared: shared_opts.into(),
-        }
+        Self { fixup: cmd_set.fixup, message: cmd_set.message, shared: shared_opts.into() }
     }
 }
 
@@ -146,20 +126,13 @@ pub struct DeleteContext {
 
 impl From<Cli> for DeleteContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Delete(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'delete'!"),
         };
 
-        Self {
-            repo: cmd_set.repo,
-            shared: shared_opts.into(),
-        }
+        Self { repo: cmd_set.repo, shared: shared_opts.into() }
     }
 }
 
@@ -171,20 +144,13 @@ pub struct EnterContext {
 
 impl From<Cli> for EnterContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Enter(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'enter'!"),
         };
 
-        Self {
-            repo: cmd_set.repo,
-            shared: shared_opts.into(),
-        }
+        Self { repo: cmd_set.repo, shared: shared_opts.into() }
     }
 }
 
@@ -199,11 +165,7 @@ pub struct InitContext {
 
 impl From<Cli> for InitContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Init(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'init'!"),
@@ -228,21 +190,13 @@ pub struct ListContext {
 
 impl From<Cli> for ListContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::List(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'list'!"),
         };
 
-        Self {
-            tracked: cmd_set.tracked,
-            untracked: cmd_set.untracked,
-            shared: shared_opts.into(),
-        }
+        Self { tracked: cmd_set.tracked, untracked: cmd_set.untracked, shared: shared_opts.into() }
     }
 }
 
@@ -255,21 +209,13 @@ pub struct PushContext {
 
 impl From<Cli> for PushContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Push(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'push'!"),
         };
 
-        Self {
-            remote: cmd_set.remote,
-            branch: cmd_set.branch,
-            shared: shared_opts.into(),
-        }
+        Self { remote: cmd_set.remote, branch: cmd_set.branch, shared: shared_opts.into() }
     }
 }
 
@@ -282,21 +228,13 @@ pub struct PullContext {
 
 impl From<Cli> for PullContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Pull(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'pull'!"),
         };
 
-        Self {
-            remote: cmd_set.remote,
-            branch: cmd_set.branch,
-            shared: shared_opts.into(),
-        }
+        Self { remote: cmd_set.remote, branch: cmd_set.branch, shared: shared_opts.into() }
     }
 }
 
@@ -309,21 +247,13 @@ pub struct RenameContext {
 
 impl From<Cli> for RenameContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Rename(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'rename'!"),
         };
 
-        Self {
-            from: cmd_set.from,
-            to: cmd_set.to,
-            shared: shared_opts.into(),
-        }
+        Self { from: cmd_set.from, to: cmd_set.to, shared: shared_opts.into() }
     }
 }
 
@@ -335,20 +265,13 @@ pub struct StatusContext {
 
 impl From<Cli> for StatusContext {
     fn from(opts: Cli) -> Self {
-        let Cli {
-            shared_opts,
-            cmd_set,
-            ..
-        } = opts;
+        let Cli { shared_opts, cmd_set, .. } = opts;
         let cmd_set = match cmd_set {
             CommandSet::Status(opts) => opts,
             _ => unreachable!("This should never happen. The command is not 'status'!"),
         };
 
-        Self {
-            terse: cmd_set.terse,
-            shared: shared_opts.into(),
-        }
+        Self { terse: cmd_set.terse, shared: shared_opts.into() }
     }
 }
 
@@ -376,10 +299,7 @@ impl From<Cli> for GitContext {
             _ => unreachable!("This should not happen. The command is not git shortcut!"),
         };
 
-        Self {
-            repo: cmd_set[0].clone(),
-            git_args: cmd_set[1..].to_vec(),
-        }
+        Self { repo: cmd_set[0].clone(), git_args: cmd_set[1..].to_vec() }
     }
 }
 
@@ -395,9 +315,7 @@ pub struct SharedContext {
 
 impl From<SharedOptions> for SharedContext {
     fn from(opts: SharedOptions) -> Self {
-        Self {
-            run_hook: opts.run_hook,
-        }
+        Self { run_hook: opts.run_hook }
     }
 }
 

@@ -38,9 +38,7 @@ pub struct Toml {
 impl Toml {
     pub fn new() -> Self {
         trace!("Construct new TOML parser");
-        Self {
-            doc: DocumentMut::new(),
-        }
+        Self { doc: DocumentMut::new() }
     }
 
     /// Add TOML entry into document.
@@ -64,11 +62,7 @@ impl Toml {
         entry: (Key, Item),
     ) -> Result<Option<(Key, Item)>, TomlError> {
         let (key, value) = entry;
-        info!(
-            "Add TOML entry '{}' to '{}' table",
-            key.get(),
-            table.as_ref()
-        );
+        info!("Add TOML entry '{}' to '{}' table", key.get(), table.as_ref());
         let entry = match self.get_table_mut(table.as_ref()) {
             Ok(table) => table,
             Err(TomlError::TableNotFound { .. }) => {
@@ -103,18 +97,12 @@ impl Toml {
     where
         S: AsRef<str>,
     {
-        info!(
-            "Get TOML entry '{}' from '{}' table",
-            key.as_ref(),
-            table.as_ref()
-        );
+        info!("Get TOML entry '{}' from '{}' table", key.as_ref(), table.as_ref());
         let entry = self.get_table(table.as_ref())?;
-        let entry = entry
-            .get_key_value(key.as_ref())
-            .ok_or_else(|| TomlError::EntryNotFound {
-                table: table.as_ref().into(),
-                key: key.as_ref().into(),
-            })?;
+        let entry = entry.get_key_value(key.as_ref()).ok_or_else(|| TomlError::EntryNotFound {
+            table: table.as_ref().into(),
+            key: key.as_ref().into(),
+        })?;
         Ok(entry)
     }
 
@@ -139,13 +127,9 @@ impl Toml {
         S: AsRef<str>,
     {
         let entry = self.get_table_mut(table.as_ref())?;
-        let (old_key, old_item) =
-            entry
-                .remove_entry(from.as_ref())
-                .ok_or_else(|| TomlError::EntryNotFound {
-                    table: table.as_ref().into(),
-                    key: from.as_ref().into(),
-                })?;
+        let (old_key, old_item) = entry.remove_entry(from.as_ref()).ok_or_else(|| {
+            TomlError::EntryNotFound { table: table.as_ref().into(), key: from.as_ref().into() }
+        })?;
         let new_key = Key::new(to.as_ref()).with_leaf_decor(old_key.leaf_decor().clone());
         entry.insert_formatted(&new_key, old_item.clone());
         Ok((old_key, old_item))
@@ -172,12 +156,10 @@ impl Toml {
         S: AsRef<str>,
     {
         let entry = self.get_table_mut(table.as_ref())?;
-        let entry = entry
-            .remove_entry(key.as_ref())
-            .ok_or_else(|| TomlError::EntryNotFound {
-                table: table.as_ref().into(),
-                key: key.as_ref().into(),
-            })?;
+        let entry = entry.remove_entry(key.as_ref()).ok_or_else(|| TomlError::EntryNotFound {
+            table: table.as_ref().into(),
+            key: key.as_ref().into(),
+        })?;
         Ok(entry)
     }
 
@@ -196,13 +178,9 @@ impl Toml {
     /// [`TomlError::NotTable`]: crate::config::TomlError::NotTable
     pub(crate) fn get_table(&self, key: &str) -> Result<&Table, TomlError> {
         debug!("Get TOML table '{key}'");
-        let table = self
-            .doc
-            .get(key)
-            .ok_or_else(|| TomlError::TableNotFound { table: key.into() })?;
-        let table = table
-            .as_table()
-            .ok_or_else(|| TomlError::NotTable { table: key.into() })?;
+        let table =
+            self.doc.get(key).ok_or_else(|| TomlError::TableNotFound { table: key.into() })?;
+        let table = table.as_table().ok_or_else(|| TomlError::NotTable { table: key.into() })?;
         Ok(table)
     }
 
@@ -221,13 +199,10 @@ impl Toml {
     /// [`TomlError::NotTable`]: crate::config::TomlError::NotTable
     pub(crate) fn get_table_mut(&mut self, key: &str) -> Result<&mut Table, TomlError> {
         debug!("Get mutable TOML table '{key}'");
-        let table = self
-            .doc
-            .get_mut(key)
-            .ok_or_else(|| TomlError::TableNotFound { table: key.into() })?;
-        let table = table
-            .as_table_mut()
-            .ok_or_else(|| TomlError::NotTable { table: key.into() })?;
+        let table =
+            self.doc.get_mut(key).ok_or_else(|| TomlError::TableNotFound { table: key.into() })?;
+        let table =
+            table.as_table_mut().ok_or_else(|| TomlError::NotTable { table: key.into() })?;
         Ok(table)
     }
 }
@@ -242,9 +217,7 @@ impl FromStr for Toml {
     type Err = TomlError;
 
     fn from_str(data: &str) -> Result<Self, Self::Err> {
-        let doc: DocumentMut = data
-            .parse()
-            .map_err(|err| TomlError::BadParse { source: err })?;
+        let doc: DocumentMut = data.parse().map_err(|err| TomlError::BadParse { source: err })?;
         Ok(Self { doc })
     }
 }

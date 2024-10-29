@@ -23,8 +23,5 @@ pub enum ConfigManagerError {
     FileWrite { source: io::Error, path: PathBuf },
 
     #[error("Failed to parse '{path}' because '{source}'")]
-    Toml {
-        source: config::TomlError,
-        path: PathBuf,
-    },
+    Toml { source: config::TomlError, path: PathBuf },
 }

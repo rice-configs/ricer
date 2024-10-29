@@ -204,10 +204,7 @@ impl<'toml> Visit<'toml> for Bootstrap {
                     let data = users
                         .into_iter()
                         .map(|s| {
-                            s.as_str()
-                                .unwrap()
-                                .trim_matches(|c| c == '\"' || c == '\'')
-                                .to_string()
+                            s.as_str().unwrap().trim_matches(|c| c == '\"' || c == '\'').to_string()
                         })
                         .collect();
                     self.users = Some(data)
@@ -218,10 +215,7 @@ impl<'toml> Visit<'toml> for Bootstrap {
                     let data = hosts
                         .into_iter()
                         .map(|s| {
-                            s.as_str()
-                                .unwrap()
-                                .trim_matches(|c| c == '\"' || c == '\'')
-                                .to_string()
+                            s.as_str().unwrap().trim_matches(|c| c == '\"' || c == '\'').to_string()
                         })
                         .collect();
                     self.hosts = Some(data)
