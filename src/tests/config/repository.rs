@@ -85,13 +85,7 @@ fn to_toml_serializes(#[case] repo: Repository, #[case] expect: &str) -> Result<
 )]
 fn from_entry_deserializes(#[case] expect: Repository) -> Result<()> {
     let doc = setup_toml_doc(expect.to_toml())?;
-    let result = Repository::from(
-        doc["repos"]
-            .as_table()
-            .unwrap()
-            .get_key_value("vim")
-            .unwrap(),
-    );
+    let result = Repository::from(doc["repos"].as_table().unwrap().get_key_value("vim").unwrap());
     assert_eq!(result, expect);
     Ok(())
 }

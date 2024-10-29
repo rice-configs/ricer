@@ -11,10 +11,10 @@ pub use locator::*;
 use crate::config::{CommandHook, Repository, Toml, TomlError};
 
 use log::trace;
+use std::fmt;
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::fmt;
 
 /// Configuration file construct.
 ///
@@ -49,11 +49,7 @@ where
 {
     pub fn new(config: T, locator: D) -> Self {
         trace!("Construct new configuration manager");
-        Self {
-            doc: Toml::new(),
-            locator,
-            config,
-        }
+        Self { doc: Toml::new(), locator, config }
     }
 
     pub fn load(&mut self) -> Result<(), ConfigManagerError> {
@@ -64,20 +60,13 @@ where
             .create(true)
             .truncate(false)
             .open(&path)
-            .map_err(|err| ConfigManagerError::FileOpen {
-                source: err,
-                path: path.clone(),
-            })?;
+            .map_err(|err| ConfigManagerError::FileOpen { source: err, path: path.clone() })?;
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)
-            .map_err(|err| ConfigManagerError::FileRead {
-                source: err,
-                path: path.clone(),
-            })?;
-        self.doc = buffer.parse().map_err(|err| ConfigManagerError::Toml {
-            source: err,
-            path: path.clone(),
-        })?;
+            .map_err(|err| ConfigManagerError::FileRead { source: err, path: path.clone() })?;
+        self.doc = buffer
+            .parse()
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: path.clone() })?;
         Ok(())
     }
 
@@ -89,35 +78,23 @@ where
             .create(true)
             .truncate(false)
             .open(&path)
-            .map_err(|err| ConfigManagerError::FileOpen {
-                source: err,
-                path: path.clone(),
-            })?;
+            .map_err(|err| ConfigManagerError::FileOpen { source: err, path: path.clone() })?;
         let buffer = self.doc.to_string();
         file.write_all(buffer.as_bytes())
-            .map_err(|err| ConfigManagerError::FileWrite {
-                source: err,
-                path: path.clone(),
-            })?;
+            .map_err(|err| ConfigManagerError::FileWrite { source: err, path: path.clone() })?;
         Ok(())
     }
 
     pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, ConfigManagerError> {
         self.config
             .get(&self.doc, key.as_ref())
-            .map_err(|err| ConfigManagerError::Toml {
-                source: err,
-                path: self.location(),
-            })
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
     }
 
     pub fn add(&mut self, entry: T::Entry) -> Result<Option<T::Entry>, ConfigManagerError> {
         self.config
             .add(&mut self.doc, entry)
-            .map_err(|err| ConfigManagerError::Toml {
-                source: err,
-                path: self.location(),
-            })
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
     }
 
     pub fn rename(
@@ -127,19 +104,13 @@ where
     ) -> Result<T::Entry, ConfigManagerError> {
         self.config
             .rename(&mut self.doc, from.as_ref(), to.as_ref())
-            .map_err(|err| ConfigManagerError::Toml {
-                source: err,
-                path: self.location(),
-            })
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
     }
 
     pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::Entry, ConfigManagerError> {
         self.config
             .remove(&mut self.doc, key.as_ref())
-            .map_err(|err| ConfigManagerError::Toml {
-                source: err,
-                path: self.location(),
-            })
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
     }
 
     pub fn location(&self) -> PathBuf {

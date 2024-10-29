@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use std::fs::{metadata, read_dir, read_to_string, set_permissions, write};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
+use git2::Repository;
 
 /// Fake Ricer's expected configuration directory.
 ///
@@ -136,7 +137,7 @@ impl FakeConfigDir {
     pub fn config_dir(&self) -> &Path {
         self.config_dir.path()
     }
-    
+
     pub fn hook_dir(&self) -> &Path {
         self.hook_dir.as_ref()
     }
