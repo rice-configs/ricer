@@ -69,16 +69,17 @@ fn config_manager_load_creates_new_file(
 #[rstest]
 #[case::repo_data(
     RepositoryData,
-    FakeConfigDir::builder()?.config_file(
-        "repos.toml",
-        indoc! {r#"
-            # should still exist after save!
-            [repos.vim]
-            branch = "master"
-            remote = "origin"
-            workdir_home = true
-        "#},
-    )?.build(),
+    FakeConfigDir::builder()?
+        .config_file(
+            "repos.toml",
+            indoc! {r#"
+                # should still exist after save!
+                [repos.vim]
+                branch = "master"
+                remote = "origin"
+                workdir_home = true
+            "#},
+        )?.build(),
     Repository::new("dwm").branch("main").remote("upstream").workdir_home(false),
 )]
 #[case::hook_data(
@@ -235,8 +236,7 @@ where
     let mut locator = MockDirLocator::new();
     locator.expect_config_dir().return_const(config_data.config_dir().into());
     let mut config = ConfigManager::load(config_type, locator)?;
-    let result = config.add(entry)?;
-    assert!(result.is_none());
+    config.add(entry)?;
     assert_eq!(config.to_string(), expect);
     Ok(())
 }
@@ -269,6 +269,93 @@ where
     locator.expect_config_dir().return_const(config_data.config_dir().into());
     let mut config = ConfigManager::load(config_type, locator)?;
     let result = config.add(entry);
+    assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
+    Ok(())
+}
+
+#[rstest]
+#[case::repo_data(
+    RepositoryData,
+    FakeConfigDir::builder()?
+        .config_file(
+            "repos.toml",
+            indoc! {r#"
+                [repos.vim]
+                branch = "main"
+                remote = "origin"
+                workdir_home = true
+            "#}
+        )?
+        .build(),
+    "vim",
+    "neovim",
+    Repository::new("vim").branch("main").remote("origin").workdir_home(true),
+    indoc! {r#"
+        [repos.neovim]
+        branch = "main"
+        remote = "origin"
+        workdir_home = true
+    "#}
+)]
+#[case::hook_data(
+    CommandHookData,
+    FakeConfigDir::builder()?
+        .config_file(
+            "hooks.toml",
+            indoc! {r#"
+                [hooks]
+                commit = [
+                    { pre = "hook.sh" },
+                    { post = "hook.sh" }
+                ]
+            "#},
+        )?
+        .build(),
+    "commit",
+    "bootstrap",
+    CommandHook::new("commit")
+        .add_hook(Hook::new().pre("hook.sh"))
+        .add_hook(Hook::new().post("hook.sh")),
+    indoc! {r#"
+        [hooks]
+        bootstrap = [
+            { pre = "hook.sh" },
+            { post = "hook.sh" }
+        ]
+    "#}
+)]
+fn config_manager_rename_works<E, T>(
+    #[case] config_type: T,
+    #[case] config_data: FakeConfigDir,
+    #[case] from: &str,
+    #[case] to: &str,
+    #[case] expect: E,
+    #[case] doc: &str,
+) -> Result<()>
+where
+    E: Entry,
+    T: TomlManager<ConfigEntry = E>,
+{
+    let mut locator = MockDirLocator::new();
+    locator.expect_config_dir().return_const(config_data.config_dir().into());
+    let mut config = ConfigManager::load(config_type, locator)?;
+    let result = config.rename(from, to)?;
+    assert_eq!(result, expect);
+    assert_eq!(config.to_string(), doc);
+    Ok(())
+}
+
+#[rstest]
+#[case::repo_data(RepositoryData, FakeConfigDir::builder()?.build())]
+#[case::hook_data(CommandHookData, FakeConfigDir::builder()?.build())]
+fn config_manager_rename_catches_errors(
+    #[case] config_type: impl TomlManager,
+    #[case] config_data: FakeConfigDir,
+) -> Result<()> {
+    let mut locator = MockDirLocator::new();
+    locator.expect_config_dir().return_const(config_data.config_dir().into());
+    let mut config = ConfigManager::load(config_type, locator)?;
+    let result = config.rename("gonna", "fail");
     assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
     Ok(())
 }
