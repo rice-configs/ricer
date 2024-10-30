@@ -13,6 +13,9 @@ pub enum LocatorError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigManagerError {
+    #[error("Failed to make parent directory '{path}' because '{source}'")]
+    MakeDirP { source: io::Error, path: PathBuf },
+
     #[error("Failed to open '{path}' because '{source}'")]
     FileOpen { source: io::Error, path: PathBuf },
 

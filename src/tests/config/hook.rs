@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::config::{CommandHook, Hook};
+use crate::config::{CommandHook, Entry, Hook};
 
 use anyhow::Result;
 use indoc::indoc;
