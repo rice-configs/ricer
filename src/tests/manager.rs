@@ -27,8 +27,7 @@ fn config_manager_load_works(
 ) -> Result<()> {
     let mut locator = MockDirLocator::new();
     locator.expect_config_dir().return_const(config_data.config_dir().into());
-    let mut config = ConfigManager::new(config_type, locator);
-    config.load()?;
+    let config = ConfigManager::load(config_type, locator)?;
     assert_eq!(config.to_string(), config_data.fixture(config.location())?.as_str());
     Ok(())
 }
@@ -48,8 +47,7 @@ fn config_manager_load_catches_toml_error(
 ) -> Result<()> {
     let mut locator = MockDirLocator::new();
     locator.expect_config_dir().return_const(config_data.config_dir().into());
-    let mut config = ConfigManager::new(config_type, locator);
-    let result = config.load();
+    let result = ConfigManager::load(config_type, locator);
     assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
     Ok(())
 }
@@ -63,9 +61,7 @@ fn config_manager_load_creates_new_file(
 ) -> Result<()> {
     let mut locator = MockDirLocator::new();
     locator.expect_config_dir().return_const(config_data.config_dir().into());
-    let mut config = ConfigManager::new(config_type, locator);
-    let result = config.load();
-    assert!(result.is_ok());
+    let config = ConfigManager::load(config_type, locator)?;
     assert!(config.location().exists());
     Ok(())
 }
@@ -111,8 +107,7 @@ where
 {
     let mut locator = MockDirLocator::new();
     locator.expect_config_dir().return_const(config_data.config_dir().into());
-    let mut config = ConfigManager::new(config_type, locator);
-    config.load()?;
+    let mut config = ConfigManager::load(config_type, locator)?;
     config.add(entry)?;
     config.save()?;
     config_data.sync()?;
@@ -129,7 +124,7 @@ fn config_manager_save_creates_new_file(
 ) -> Result<()> {
     let mut locator = MockDirLocator::new();
     locator.expect_config_dir().return_const(config_data.config_dir().into());
-    let mut config = ConfigManager::new(config_type, locator);
+    let mut config = ConfigManager::load(config_type, locator)?;
     let result = config.save();
     assert!(result.is_ok());
     assert!(config.location().exists());
