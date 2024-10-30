@@ -1,37 +1,69 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::manager::{ConfigManager, DefaultDirLocator, RepositoryData, ConfigManagerError};
+use crate::manager::{
+    CommandHookData, ConfigManager, ConfigManagerError, MockDirLocator, RepositoryData, TomlManager,
+};
 use crate::tests::FakeConfigDir;
 
 use anyhow::Result;
-use rstest::{fixture, rstest};
-use indoc::indoc;
+use pretty_assertions::assert_eq;
+use rstest::rstest;
 
-
-#[fixture]
-fn config_data() -> Result<FakeConfigDir> {
-    let fake = FakeConfigDir::builder()?
-        .config_file(
-            "repos.toml",
-            indoc! {r#"
-                [repos.vim]
-                branch = "main"
-                remote = "origin"
-                workdir_home = true
-            "#},
-        )?
-        .build();
-    Ok(fake)
+#[rstest]
+#[case::repo_data(
+    RepositoryData,
+    FakeConfigDir::builder()?.config_file("repos.toml", "this = 'will parse'\n")?.build(),
+)]
+#[case::hook_data(
+    CommandHookData,
+    FakeConfigDir::builder()?.config_file("hooks.toml", "this = 'will parse'\n")?.build(),
+)]
+fn config_manager_load_works(
+    #[case] config_type: impl TomlManager,
+    #[case] config_data: FakeConfigDir,
+) -> Result<()> {
+    let mut locator = MockDirLocator::new();
+    locator.expect_config_dir().return_const(config_data.config_dir().into());
+    let mut config = ConfigManager::new(config_type, locator);
+    config.load()?;
+    assert_eq!(config.to_string(), config_data.fixture(config.location())?.as_str());
+    Ok(())
 }
 
 #[rstest]
-fn config_manager_load(config_data: Result<FakeConfigDir>) -> Result<()> {
-    let config_data = config_data?;
-    let layout = StubDirLayout::new(&config_data);
-    let locator = DefaultDirLocator::locate(layout);
-    let mut config = ConfigManager::new(RepositoryData, locator);
+#[case::repo_data(
+    RepositoryData,
+    FakeConfigDir::builder()?.config_file("repos.toml", "this 'will fail'")?.build(),
+)]
+#[case::hook_data(
+    CommandHookData,
+    FakeConfigDir::builder()?.config_file("hooks.toml", "this 'will fail'")?.build(),
+)]
+fn config_manager_load_catches_toml_error(
+    #[case] config_type: impl TomlManager,
+    #[case] config_data: FakeConfigDir,
+) -> Result<()> {
+    let mut locator = MockDirLocator::new();
+    locator.expect_config_dir().return_const(config_data.config_dir().into());
+    let mut config = ConfigManager::new(config_type, locator);
     let result = config.load();
-    assert!(matches!(result.unwrap_err(), ConfigManagerError::FileOpen { .. }));
+    assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
+    Ok(())
+}
+
+#[rstest]
+#[case::repo_data(RepositoryData, FakeConfigDir::builder()?.build())]
+#[case::hook_data(CommandHookData, FakeConfigDir::builder()?.build())]
+fn config_manager_load_creates_new_file(
+    #[case] config_type: impl TomlManager,
+    #[case] config_data: FakeConfigDir,
+) -> Result<()> {
+    let mut locator = MockDirLocator::new();
+    locator.expect_config_dir().return_const(config_data.config_dir().into());
+    let mut config = ConfigManager::new(config_type, locator);
+    let result = config.load();
+    assert!(result.is_ok());
+    assert!(config.location().exists());
     Ok(())
 }
