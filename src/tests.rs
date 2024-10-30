@@ -15,7 +15,6 @@ use std::collections::HashMap;
 use std::fs::{metadata, read_dir, read_to_string, set_permissions, write};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
-use git2::Repository;
 
 /// Fake Ricer's expected configuration directory.
 ///
@@ -83,6 +82,22 @@ impl FakeConfigDir {
         self.fixtures
             .get(&self.hook_dir.join(name.as_ref()))
             .ok_or(anyhow!("Hook script fixture '{}' not being tracked", name.as_ref()))
+    }
+
+    /// Get file fixture through absolute path.
+    ///
+    /// # Errors
+    ///
+    /// Will fail if file fixture is not being tracked, because caller is out
+    /// of sync or fixture itself does not exist.
+    ///
+    /// # See also
+    ///
+    /// - [`FileFixture`]
+    pub fn fixture(&self, path: impl AsRef<Path>) -> Result<&FileFixture> {
+        self.fixtures
+            .get(path.as_ref())
+            .ok_or(anyhow!("Fixture '{}' not being tracked", path.as_ref().display()))
     }
 
     /// Synchronize fixtures across entire fake configuration directory.
