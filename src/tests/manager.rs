@@ -195,3 +195,80 @@ fn config_manager_get_catches_errors(
     assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
     Ok(())
 }
+
+#[rstest]
+#[case::repo_data(
+    RepositoryData,
+    FakeConfigDir::builder()?.build(),
+    Repository::new("vim").branch("main").remote("origin").workdir_home(true),
+    indoc! {r#"
+        [repos.vim]
+        branch = "main"
+        remote = "origin"
+        workdir_home = true
+    "#},
+)]
+#[case::hook_data(
+    CommandHookData,
+    FakeConfigDir::builder()?.build(),
+    CommandHook::new("commit")
+        .add_hook(Hook::new().pre("hook.sh"))
+        .add_hook(Hook::new().post("hook.sh")),
+    indoc! {r#"
+        [hooks]
+        commit = [
+            { pre = "hook.sh" },
+            { post = "hook.sh" }
+        ]
+    "#},
+)]
+fn config_manager_new_data<E, T>(
+    #[case] config_type: T,
+    #[case] config_data: FakeConfigDir,
+    #[case] entry: E,
+    #[case] expect: &str,
+) -> Result<()>
+where
+    E: Entry,
+    T: TomlManager<ConfigEntry = E>,
+{
+    let mut locator = MockDirLocator::new();
+    locator.expect_config_dir().return_const(config_data.config_dir().into());
+    let mut config = ConfigManager::load(config_type, locator)?;
+    let result = config.add(entry)?;
+    assert!(result.is_none());
+    assert_eq!(config.to_string(), expect);
+    Ok(())
+}
+
+#[rstest]
+#[case::repo_data(
+    RepositoryData,
+    FakeConfigDir::builder()?
+        .config_file("repos.toml", "repos = 'not a table'")?
+        .build(),
+    Repository::default(),
+)]
+#[case::hook_data(
+    CommandHookData,
+    FakeConfigDir::builder()?
+        .config_file("hooks.toml", "hooks = 'not a table'")?
+        .build(),
+    CommandHook::default(),
+)]
+fn config_manager_add_catches_errors<E, T>(
+    #[case] config_type: T,
+    #[case] config_data: FakeConfigDir,
+    #[case] entry: E,
+) -> Result<()>
+where
+    E: Entry,
+    T: TomlManager<ConfigEntry = E>,
+{
+    let mut locator = MockDirLocator::new();
+    locator.expect_config_dir().return_const(config_data.config_dir().into());
+    let mut config = ConfigManager::load(config_type, locator)?;
+    let result = config.add(entry);
+    assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
+    Ok(())
+}
