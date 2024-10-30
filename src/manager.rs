@@ -8,9 +8,10 @@ mod locator;
 pub use error::*;
 pub use locator::*;
 
-use crate::config::{CommandHook, Repository, Entry, Toml, TomlError};
+use crate::config::{CommandHook, Entry, Repository, Toml, TomlError};
 
 use log::debug;
+use mkdirp::mkdirp;
 use std::fmt;
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
@@ -29,7 +30,6 @@ use std::path::PathBuf;
 ///
 /// # See also
 ///
-/// - [`Config`]
 /// - [`Toml`]
 #[derive(Clone, Debug)]
 pub struct ConfigManager<T, D>
@@ -47,9 +47,29 @@ where
     T: TomlManager,
     D: DirLocator,
 {
+    /// Load new configuration manager.
+    ///
+    /// If path to configuration file does not exist, then it will be created at
+    /// target location. Otherwise, configuration file will be read and parsed
+    /// like normal.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`ConfigManagerError::MakeDirP`] if parent directory to to
+    ///    expected configuration file path could not be created when needed.
+    /// 1. Return [`ConfigManagerError::FileOpen`] if target configuration file
+    ///    could not be created when needed.
+    /// 1. Return [`ConfigManagerError::FileRead`] if target configuration file
+    ///    could not be read.
+    /// 1. Return [`ConfigManagerError::Toml`] if target configuration file
+    ///    could not be parsed into TOML format.
     pub fn load(config: T, locator: D) -> Result<Self, ConfigManagerError> {
         let path = config.location(&locator);
         debug!("Load new configuration manager from '{}'", path.display());
+
+        let root = path.parent().unwrap();
+        mkdirp(root)
+            .map_err(|err| ConfigManagerError::MakeDirP { source: err, path: root.into() })?;
         let mut file = OpenOptions::new()
             .write(true)
             .read(true)
@@ -63,12 +83,30 @@ where
         let doc: Toml = buffer
             .parse()
             .map_err(|err| ConfigManagerError::Toml { source: err, path: path.clone() })?;
-        Ok(Self{ doc, locator, config })
+
+        Ok(Self { doc, locator, config })
     }
 
+    /// Save configuration data at expected location.
+    ///
+    /// If expected configuration file does not exist at location, then it will
+    /// be created and written into automatically.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`ConfigManagerError::MakeDirP`] if parent directory to to
+    ///    expected configuration file path could not be created when needed.
+    /// 1. Return [`ConfigManagerError::FileOpen`] if target configuration file
+    ///    could not be created when needed.
+    /// 1. Return [`ConfigManagerError::FileWrite`] if target configuration file
+    ///    cannot be written into.
     pub fn save(&mut self) -> Result<(), ConfigManagerError> {
         let path = self.location();
         debug!("Save configuration manager data to '{}'", path.display());
+
+        let root = path.parent().unwrap();
+        mkdirp(root)
+            .map_err(|err| ConfigManagerError::MakeDirP { source: err, path: root.into() })?;
         let mut file = OpenOptions::new()
             .write(true)
             .read(true)
@@ -79,6 +117,7 @@ where
         let buffer = self.doc.to_string();
         file.write_all(buffer.as_bytes())
             .map_err(|err| ConfigManagerError::FileWrite { source: err, path: path.clone() })?;
+
         Ok(())
     }
 
@@ -88,7 +127,10 @@ where
             .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
     }
 
-    pub fn add(&mut self, entry: T::ConfigEntry) -> Result<Option<T::ConfigEntry>, ConfigManagerError> {
+    pub fn add(
+        &mut self,
+        entry: T::ConfigEntry,
+    ) -> Result<Option<T::ConfigEntry>, ConfigManagerError> {
         self.config
             .add(&mut self.doc, entry)
             .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
@@ -136,7 +178,11 @@ pub trait TomlManager: fmt::Debug {
     type ConfigEntry: Entry;
 
     fn get(&self, doc: &Toml, key: &str) -> Result<Self::ConfigEntry, TomlError>;
-    fn add(&self, doc: &mut Toml, entry: Self::ConfigEntry) -> Result<Option<Self::ConfigEntry>, TomlError>;
+    fn add(
+        &self,
+        doc: &mut Toml,
+        entry: Self::ConfigEntry,
+    ) -> Result<Option<Self::ConfigEntry>, TomlError>;
     fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::ConfigEntry, TomlError>;
     fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::ConfigEntry, TomlError>;
     fn location<D>(&self, locator: &D) -> PathBuf
@@ -169,7 +215,11 @@ impl TomlManager for RepositoryData {
         Ok(Repository::from(entry))
     }
 
-    fn add(&self, doc: &mut Toml, entry: Self::ConfigEntry) -> Result<Option<Self::ConfigEntry>, TomlError> {
+    fn add(
+        &self,
+        doc: &mut Toml,
+        entry: Self::ConfigEntry,
+    ) -> Result<Option<Self::ConfigEntry>, TomlError> {
         let entry = doc.add("repos", entry.to_toml())?.map(Repository::from);
         Ok(entry)
     }
@@ -217,7 +267,11 @@ impl TomlManager for CommandHookData {
         Ok(CommandHook::from(entry))
     }
 
-    fn add(&self, doc: &mut Toml, entry: Self::ConfigEntry) -> Result<Option<Self::ConfigEntry>, TomlError> {
+    fn add(
+        &self,
+        doc: &mut Toml,
+        entry: Self::ConfigEntry,
+    ) -> Result<Option<Self::ConfigEntry>, TomlError> {
         let entry = doc.add("hooks", entry.to_toml())?.map(CommandHook::from);
         Ok(entry)
     }
