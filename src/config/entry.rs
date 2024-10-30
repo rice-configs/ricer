@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: MIT
 
 use std::fmt;
-use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
-use toml_edit::{Array, Item, Key, Table, Value, InlineTable};
+use std::cmp;
 use std::path::PathBuf;
+use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
+use toml_edit::{Array, InlineTable, Item, Key, Table, Value};
 
-pub trait Entry<'toml> {
+pub trait Entry: cmp::PartialEq + fmt::Debug + From<(Key, Item)> {
     fn to_toml(&self) -> (Key, Item);
 }
 
@@ -63,10 +64,9 @@ impl Repository {
         self.bootstrap = Some(bootstrap);
         self
     }
-
 }
 
-impl Entry<'_> for Repository {
+impl Entry for Repository {
     fn to_toml(&self) -> (Key, Item) {
         let mut repo = Table::new();
         let mut repo_bootstrap = Table::new();
@@ -301,7 +301,7 @@ impl CommandHook {
     }
 }
 
-impl Entry<'_> for CommandHook {
+impl Entry for CommandHook {
     fn to_toml(&self) -> (Key, Item) {
         let mut tables = Array::new();
         let mut iter = self.hooks.iter().enumerate().peekable();
