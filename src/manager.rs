@@ -8,7 +8,7 @@ mod locator;
 pub use error::*;
 pub use locator::*;
 
-use crate::config::{CommandHook, Repository, Toml, TomlError};
+use crate::config::{CommandHook, Repository, Entry, Toml, TomlError};
 
 use log::trace;
 use std::fmt;
@@ -31,7 +31,7 @@ use std::path::PathBuf;
 ///
 /// - [`Config`]
 /// - [`Toml`]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ConfigManager<T, D>
 where
     T: TomlManager,
