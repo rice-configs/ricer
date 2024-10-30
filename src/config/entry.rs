@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use std::fmt;
 use std::cmp;
+use std::fmt;
 use std::path::PathBuf;
 use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
 use toml_edit::{Array, InlineTable, Item, Key, Table, Value};

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::config::{Bootstrap, OsType, Repository};
+use crate::config::{Bootstrap, Entry, OsType, Repository};
 
 use anyhow::Result;
 use indoc::indoc;

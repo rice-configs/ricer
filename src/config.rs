@@ -9,12 +9,12 @@
 //! options for tracked repositories in Ricer. Hook definitions tell Ricer how
 //! to handle custom hooks for its command set.
 
-mod error;
 mod entry;
+mod error;
 
 #[doc(inline)]
-pub use error::*;
 pub use entry::*;
+pub use error::*;
 
 use log::{debug, info, trace};
 use std::fmt;
