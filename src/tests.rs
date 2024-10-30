@@ -137,12 +137,14 @@ impl FakeConfigDir {
     ///
     /// - [`FileFixture`]
     pub fn sync_dir(&mut self, path: impl AsRef<Path>) -> Result<()> {
-        for entry in read_dir(path.as_ref())? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_file() {
-                let fixture = FileFixture::try_from(path)?;
-                self.fixtures.insert(fixture.as_path().into(), fixture);
+        if path.as_ref().is_dir() {
+            for entry in read_dir(path.as_ref())? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.is_file() {
+                    let fixture = FileFixture::try_from(path)?;
+                    self.fixtures.insert(fixture.as_path().into(), fixture);
+                }
             }
         }
 
@@ -174,6 +176,7 @@ impl FakeConfigDirBuilder {
     pub fn open() -> Result<Self> {
         let config_dir = tempfile::Builder::new().tempdir()?;
         let hook_dir = config_dir.path().join("hooks");
+        mkdirp(&hook_dir)?;
         Ok(Self { config_dir, hook_dir, fixtures: HashMap::new() })
     }
 
