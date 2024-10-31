@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+//! Data manager implementations.
+//!
+//! This module is responsible for providing the logic needed for Ricer to
+//! manage configuration, hook, and repository data provided by the user.
+
 mod error;
 mod locator;
 
@@ -121,12 +126,22 @@ where
         Ok(())
     }
 
+    /// Get configuration entry in deserialized form.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be deserialized.
     pub fn get(&self, key: impl AsRef<str>) -> Result<T::ConfigEntry, ConfigManagerError> {
         self.config
             .get(&self.doc, key.as_ref())
             .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
     }
 
+    /// Add new configuration entry in serialized form.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be serialized.
     pub fn add(
         &mut self,
         entry: T::ConfigEntry,
@@ -136,6 +151,11 @@ where
             .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
     }
 
+    /// Rename configuration entry.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be renamed.
     pub fn rename(
         &mut self,
         from: impl AsRef<str>,
@@ -146,6 +166,11 @@ where
             .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
     }
 
+    /// Remove configuration entry.
+    ///
+    /// # Errors
+    ///
+    /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be removed.
     pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::ConfigEntry, ConfigManagerError> {
         self.config
             .remove(&mut self.doc, key.as_ref())
