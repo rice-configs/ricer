@@ -54,6 +54,7 @@ pub mod cli;
 pub mod config;
 pub mod context;
 pub mod manager;
+pub mod wizard;
 
 #[cfg(test)]
 mod tests;
