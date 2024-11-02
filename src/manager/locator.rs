@@ -15,38 +15,48 @@ use mockall::automock;
 /// Locates absolute paths to the three special directories that Ricer
 /// relies on.
 #[cfg_attr(test, automock)]
-pub trait DirLocator {
+pub trait Locator {
     /// Expected absolute path to configuration file directory.
     fn config_dir(&self) -> &Path;
 
     /// Expected absolute path to hook script directory.
     fn hooks_dir(&self) -> &Path;
 
+    /// Expected absolute path to command hook configuration file.
+    fn hooks_config(&self) -> &Path;
+
     /// Expected absolute path to repository directory.
     fn repos_dir(&self) -> &Path;
+
+    /// Expected absolute path to repository configuration file.
+    fn repos_config(&self) -> &Path;
 }
 
-pub struct DefaultDirLocator {
+pub struct DefaultLocator {
     config_dir: PathBuf,
     hooks_dir: PathBuf,
+    hooks_config: PathBuf,
     repos_dir: PathBuf,
+    repos_config: PathBuf,
 }
 
-impl DefaultDirLocator {
+impl DefaultLocator {
     pub fn locate(layout: impl DirLayout) -> Self {
         trace!("Construct configuration directory locator");
         let config_dir = layout.config_dir().join("ricer");
         let hooks_dir = config_dir.join("hooks");
+        let hooks_config = config_dir.join("hooks.toml");
         let repos_dir = layout.repo_dir().join("ricer");
+        let repos_config = config_dir.join("repos.toml");
 
         debug!("Configuration directory located at '{}'", config_dir.display());
         debug!("Hook script directory located at '{}'", hooks_dir.display());
         debug!("Repository directory located at '{}'", repos_dir.display());
-        Self { config_dir, hooks_dir, repos_dir }
+        Self { config_dir, hooks_dir, hooks_config, repos_dir, repos_config }
     }
 }
 
-impl DirLocator for DefaultDirLocator {
+impl Locator for DefaultLocator {
     fn config_dir(&self) -> &Path {
         self.config_dir.as_path()
     }
@@ -55,8 +65,16 @@ impl DirLocator for DefaultDirLocator {
         self.hooks_dir.as_path()
     }
 
+    fn hooks_config(&self) -> &Path {
+        self.hooks_config.as_path()
+    }
+
     fn repos_dir(&self) -> &Path {
         self.repos_dir.as_path()
+    }
+
+    fn repos_config(&self) -> &Path {
+        self.repos_config.as_path()
     }
 }
 
