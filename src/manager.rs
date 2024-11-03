@@ -215,4 +215,8 @@ where
         let config = ConfigManager::load(CommandHookData, locator)?;
         Ok(Self { context, locator, config, pager: Default::default() })
     }
+
+    pub fn set_pager(&mut self, pager: HookPager) {
+        self.pager = pager;
+    }
 }
