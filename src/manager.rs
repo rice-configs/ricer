@@ -117,10 +117,15 @@ where
             .create(true)
             .truncate(false)
             .open(self.as_path())
-            .map_err(|err| ConfigManagerError::FileOpen { source: err, path: self.as_path().into() })?;
+            .map_err(|err| ConfigManagerError::FileOpen {
+                source: err,
+                path: self.as_path().into(),
+            })?;
         let buffer = self.doc.to_string();
-        file.write_all(buffer.as_bytes())
-            .map_err(|err| ConfigManagerError::FileWrite { source: err, path: self.as_path().into() })?;
+        file.write_all(buffer.as_bytes()).map_err(|err| ConfigManagerError::FileWrite {
+            source: err,
+            path: self.as_path().into(),
+        })?;
 
         Ok(())
     }
@@ -141,10 +146,7 @@ where
     /// # Errors
     ///
     /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be serialized.
-    pub fn add(
-        &mut self,
-        entry: T::Entry,
-    ) -> Result<Option<T::Entry>, ConfigManagerError> {
+    pub fn add(&mut self, entry: T::Entry) -> Result<Option<T::Entry>, ConfigManagerError> {
         self.config
             .add(&mut self.doc, entry)
             .map_err(|err| ConfigManagerError::Toml { source: err, path: self.as_path().into() })
@@ -205,7 +207,7 @@ pub trait TomlManager: fmt::Debug {
     fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError>;
     fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry, TomlError>;
     fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError>;
-    fn location<'path>(&self, locator: &'path impl Locator) -> &'path Path;
+    fn location<'cfg>(&self, locator: &'cfg impl Locator) -> &'cfg Path;
 }
 
 /// Repository data configuration management.
@@ -233,11 +235,7 @@ impl TomlManager for RepositoryData {
         Ok(Repository::from(entry))
     }
 
-    fn add(
-        &self,
-        doc: &mut Toml,
-        entry: Self::Entry,
-    ) -> Result<Option<Self::Entry>, TomlError> {
+    fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError> {
         let entry = doc.add("repos", entry.to_toml())?.map(Repository::from);
         Ok(entry)
     }
@@ -252,7 +250,7 @@ impl TomlManager for RepositoryData {
         Ok(Repository::from(entry))
     }
 
-    fn location<'path>(&self, locator: &'path impl Locator) -> &'path Path {
+    fn location<'cfg>(&self, locator: &'cfg impl Locator) -> &'cfg Path {
         locator.repos_config()
     }
 }
@@ -282,11 +280,7 @@ impl TomlManager for CommandHookData {
         Ok(CommandHook::from(entry))
     }
 
-    fn add(
-        &self,
-        doc: &mut Toml,
-        entry: Self::Entry,
-    ) -> Result<Option<Self::Entry>, TomlError> {
+    fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError> {
         let entry = doc.add("hooks", entry.to_toml())?.map(CommandHook::from);
         Ok(entry)
     }
@@ -301,7 +295,7 @@ impl TomlManager for CommandHookData {
         Ok(CommandHook::from(entry))
     }
 
-    fn location<'path>(&self, locator: &'path impl Locator) -> &'path Path {
+    fn location<'cfg>(&self, locator: &'cfg impl Locator) -> &'cfg Path {
         locator.hooks_config()
     }
 }
