@@ -13,14 +13,14 @@ mod locator;
 pub use error::*;
 pub use locator::*;
 
-use crate::config::{CommandHook, Entry, Repository, Toml, TomlError};
+use crate::config::{CommandHook, ConfigEntry, Repository, Toml, TomlError};
 
 use log::debug;
 use mkdirp::mkdirp;
 use std::fmt;
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::path::Path;
 
 /// Configuration file construct.
 ///
@@ -37,20 +37,20 @@ use std::path::PathBuf;
 ///
 /// - [`Toml`]
 #[derive(Clone, Debug)]
-pub struct ConfigManager<T, D>
+pub struct ConfigManager<'cfg, L, T>
 where
+    L: Locator,
     T: TomlManager,
-    D: DirLocator,
 {
     doc: Toml,
-    locator: D,
     config: T,
+    locator: &'cfg L,
 }
 
-impl<T, D> ConfigManager<T, D>
+impl<'cfg, L, T> ConfigManager<'cfg, L, T>
 where
+    L: Locator,
     T: TomlManager,
-    D: DirLocator,
 {
     /// Load new configuration manager.
     ///
@@ -68,28 +68,28 @@ where
     ///    could not be read.
     /// 1. Return [`ConfigManagerError::Toml`] if target configuration file
     ///    could not be parsed into TOML format.
-    pub fn load(config: T, locator: D) -> Result<Self, ConfigManagerError> {
-        let path = config.location(&locator);
+    pub fn load(config: T, locator: &'cfg L) -> Result<Self, ConfigManagerError> {
+        let path = config.location(locator);
         debug!("Load new configuration manager from '{}'", path.display());
-
         let root = path.parent().unwrap();
         mkdirp(root)
             .map_err(|err| ConfigManagerError::MakeDirP { source: err, path: root.into() })?;
+
         let mut file = OpenOptions::new()
             .write(true)
             .read(true)
             .create(true)
             .truncate(false)
-            .open(&path)
-            .map_err(|err| ConfigManagerError::FileOpen { source: err, path: path.clone() })?;
+            .open(path)
+            .map_err(|err| ConfigManagerError::FileOpen { source: err, path: path.into() })?;
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)
-            .map_err(|err| ConfigManagerError::FileRead { source: err, path: path.clone() })?;
+            .map_err(|err| ConfigManagerError::FileRead { source: err, path: path.into() })?;
         let doc: Toml = buffer
             .parse()
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: path.clone() })?;
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: path.into() })?;
 
-        Ok(Self { doc, locator, config })
+        Ok(Self { doc, config, locator })
     }
 
     /// Save configuration data at expected location.
@@ -106,22 +106,21 @@ where
     /// 1. Return [`ConfigManagerError::FileWrite`] if target configuration file
     ///    cannot be written into.
     pub fn save(&mut self) -> Result<(), ConfigManagerError> {
-        let path = self.location();
-        debug!("Save configuration manager data to '{}'", path.display());
-
-        let root = path.parent().unwrap();
+        debug!("Save configuration manager data to '{}'", self.as_path().display());
+        let root = self.as_path().parent().unwrap();
         mkdirp(root)
             .map_err(|err| ConfigManagerError::MakeDirP { source: err, path: root.into() })?;
+
         let mut file = OpenOptions::new()
             .write(true)
             .read(true)
             .create(true)
             .truncate(false)
-            .open(&path)
-            .map_err(|err| ConfigManagerError::FileOpen { source: err, path: path.clone() })?;
+            .open(self.as_path())
+            .map_err(|err| ConfigManagerError::FileOpen { source: err, path: self.as_path().into() })?;
         let buffer = self.doc.to_string();
         file.write_all(buffer.as_bytes())
-            .map_err(|err| ConfigManagerError::FileWrite { source: err, path: path.clone() })?;
+            .map_err(|err| ConfigManagerError::FileWrite { source: err, path: self.as_path().into() })?;
 
         Ok(())
     }
@@ -131,10 +130,10 @@ where
     /// # Errors
     ///
     /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be deserialized.
-    pub fn get(&self, key: impl AsRef<str>) -> Result<T::ConfigEntry, ConfigManagerError> {
+    pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, ConfigManagerError> {
         self.config
             .get(&self.doc, key.as_ref())
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.as_path().into() })
     }
 
     /// Add new configuration entry in serialized form.
@@ -144,11 +143,11 @@ where
     /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be serialized.
     pub fn add(
         &mut self,
-        entry: T::ConfigEntry,
-    ) -> Result<Option<T::ConfigEntry>, ConfigManagerError> {
+        entry: T::Entry,
+    ) -> Result<Option<T::Entry>, ConfigManagerError> {
         self.config
             .add(&mut self.doc, entry)
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.as_path().into() })
     }
 
     /// Rename configuration entry.
@@ -160,10 +159,10 @@ where
         &mut self,
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-    ) -> Result<T::ConfigEntry, ConfigManagerError> {
+    ) -> Result<T::Entry, ConfigManagerError> {
         self.config
             .rename(&mut self.doc, from.as_ref(), to.as_ref())
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.as_path().into() })
     }
 
     /// Remove configuration entry.
@@ -171,21 +170,21 @@ where
     /// # Errors
     ///
     /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be removed.
-    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::ConfigEntry, ConfigManagerError> {
+    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::Entry, ConfigManagerError> {
         self.config
             .remove(&mut self.doc, key.as_ref())
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.location() })
+            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.as_path().into() })
     }
 
-    pub fn location(&self) -> PathBuf {
-        self.config.location(&self.locator)
+    pub fn as_path(&self) -> &Path {
+        self.config.location(self.locator)
     }
 }
 
-impl<T, D> fmt::Display for ConfigManager<T, D>
+impl<'cfg, L, T> fmt::Display for ConfigManager<'cfg, L, T>
 where
+    L: Locator,
     T: TomlManager,
-    D: DirLocator,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.doc)
@@ -200,19 +199,13 @@ where
 ///
 /// - [`Toml`]
 pub trait TomlManager: fmt::Debug {
-    type ConfigEntry: Entry;
+    type Entry: ConfigEntry;
 
-    fn get(&self, doc: &Toml, key: &str) -> Result<Self::ConfigEntry, TomlError>;
-    fn add(
-        &self,
-        doc: &mut Toml,
-        entry: Self::ConfigEntry,
-    ) -> Result<Option<Self::ConfigEntry>, TomlError>;
-    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::ConfigEntry, TomlError>;
-    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::ConfigEntry, TomlError>;
-    fn location<D>(&self, locator: &D) -> PathBuf
-    where
-        D: DirLocator;
+    fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry, TomlError>;
+    fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError>;
+    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry, TomlError>;
+    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError>;
+    fn location<'path>(&self, locator: &'path impl Locator) -> &'path Path;
 }
 
 /// Repository data configuration management.
@@ -233,9 +226,9 @@ pub trait TomlManager: fmt::Debug {
 pub struct RepositoryData;
 
 impl TomlManager for RepositoryData {
-    type ConfigEntry = Repository;
+    type Entry = Repository;
 
-    fn get(&self, doc: &Toml, key: &str) -> Result<Self::ConfigEntry, TomlError> {
+    fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.get("repos", key.as_ref())?;
         Ok(Repository::from(entry))
     }
@@ -243,27 +236,24 @@ impl TomlManager for RepositoryData {
     fn add(
         &self,
         doc: &mut Toml,
-        entry: Self::ConfigEntry,
-    ) -> Result<Option<Self::ConfigEntry>, TomlError> {
+        entry: Self::Entry,
+    ) -> Result<Option<Self::Entry>, TomlError> {
         let entry = doc.add("repos", entry.to_toml())?.map(Repository::from);
         Ok(entry)
     }
 
-    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::ConfigEntry, TomlError> {
+    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.remove("repos", key.as_ref())?;
         Ok(Repository::from(entry))
     }
 
-    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::ConfigEntry, TomlError> {
+    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.rename("repos", from.as_ref(), to.as_ref())?;
         Ok(Repository::from(entry))
     }
 
-    fn location<D>(&self, locator: &D) -> PathBuf
-    where
-        D: DirLocator,
-    {
-        locator.config_dir().join("repos.toml")
+    fn location<'path>(&self, locator: &'path impl Locator) -> &'path Path {
+        locator.repos_config()
     }
 }
 
@@ -285,9 +275,9 @@ impl TomlManager for RepositoryData {
 pub struct CommandHookData;
 
 impl TomlManager for CommandHookData {
-    type ConfigEntry = CommandHook;
+    type Entry = CommandHook;
 
-    fn get(&self, doc: &Toml, key: &str) -> Result<Self::ConfigEntry, TomlError> {
+    fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.get("hooks", key.as_ref())?;
         Ok(CommandHook::from(entry))
     }
@@ -295,26 +285,23 @@ impl TomlManager for CommandHookData {
     fn add(
         &self,
         doc: &mut Toml,
-        entry: Self::ConfigEntry,
-    ) -> Result<Option<Self::ConfigEntry>, TomlError> {
+        entry: Self::Entry,
+    ) -> Result<Option<Self::Entry>, TomlError> {
         let entry = doc.add("hooks", entry.to_toml())?.map(CommandHook::from);
         Ok(entry)
     }
 
-    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::ConfigEntry, TomlError> {
+    fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.remove("hooks", key.as_ref())?;
         Ok(CommandHook::from(entry))
     }
 
-    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::ConfigEntry, TomlError> {
+    fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.rename("hooks", from.as_ref(), to.as_ref())?;
         Ok(CommandHook::from(entry))
     }
 
-    fn location<D>(&self, locator: &D) -> PathBuf
-    where
-        D: DirLocator,
-    {
-        locator.config_dir().join("hooks.toml")
+    fn location<'path>(&self, locator: &'path impl Locator) -> &'path Path {
+        locator.hooks_config()
     }
 }
