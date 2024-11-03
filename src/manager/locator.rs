@@ -32,6 +32,7 @@ pub trait Locator {
     fn repos_config(&self) -> &Path;
 }
 
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct DefaultLocator {
     config_dir: PathBuf,
     hooks_dir: PathBuf,
@@ -43,7 +44,7 @@ pub struct DefaultLocator {
 impl DefaultLocator {
     pub fn locate(layout: impl DirLayout) -> Self {
         trace!("Construct configuration directory locator");
-        let config_dir = layout.config_dir().join("ricer");
+        let config_dir = layout.config_dir().to_path_buf();
         let hooks_dir = config_dir.join("hooks");
         let hooks_config = config_dir.join("hooks.toml");
         let repos_dir = layout.repo_dir().join("ricer");
@@ -52,6 +53,8 @@ impl DefaultLocator {
         debug!("Configuration directory located at '{}'", config_dir.display());
         debug!("Hook script directory located at '{}'", hooks_dir.display());
         debug!("Repository directory located at '{}'", repos_dir.display());
+        debug!("Repository configuration file located at '{}'", repos_config.display());
+        debug!("Hook configuration file located at '{}'", hooks_config.display());
         Self { config_dir, hooks_dir, hooks_config, repos_dir, repos_config }
     }
 }
