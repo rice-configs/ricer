@@ -17,6 +17,7 @@
 
 use clap::ValueEnum;
 use std::ffi::OsString;
+use std::fmt;
 
 use crate::cli::{Cli, CommandSet, SharedOptions};
 
@@ -51,6 +52,27 @@ impl From<Cli> for Context {
             CommandSet::Rename(_) => Self::Rename(RenameContext::from(opts)),
             CommandSet::Status(_) => Self::Status(StatusContext::from(opts)),
             CommandSet::Git(_) => Self::Git(GitContext::from(opts)),
+        }
+    }
+}
+
+impl fmt::Display for Context {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Context::Bootstrap(_) => write!(f, "bootstrap"),
+            Context::Clone(_) => write!(f, "clone"),
+            Context::Commit(_) => write!(f, "commit"),
+            Context::Delete(_) => write!(f, "delete"),
+            Context::Enter(_) => write!(f, "enter"),
+            Context::Init(_) => write!(f, "init"),
+            Context::List(_) => write!(f, "list"),
+            Context::Pull(_) => write!(f, "pull"),
+            Context::Push(_) => write!(f, "push"),
+            Context::Rename(_) => write!(f, "rename"),
+            Context::Status(_) => write!(f, "status"),
+            Context::Git(_) => {
+                unreachable!("This should not happen. Cannot convert Git context to string")
+            }
         }
     }
 }
