@@ -16,7 +16,7 @@ pub use locator::*;
 pub use toml::*;
 
 use crate::config::Toml;
-use crate::wizard::PagerPrompt;
+use crate::wizard::HookPager;
 use crate::context::Context;
 
 use log::debug;
@@ -40,11 +40,10 @@ use std::path::Path;
 /// # See also
 ///
 /// - [`Toml`]
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 pub struct ConfigManager<'cfg, L, T>
 where
     L: Locator,
-    &'cfg L: Default,
     T: TomlManager,
 {
     doc: Toml,
@@ -55,7 +54,6 @@ where
 impl<'cfg, L, T> ConfigManager<'cfg, L, T>
 where
     L: Locator,
-    &'cfg L: Default,
     T: TomlManager,
 {
     /// Load new configuration manager.
@@ -192,7 +190,6 @@ where
 impl<'cfg, L, T> fmt::Display for ConfigManager<'cfg, L, T>
 where
     L: Locator,
-    &'cfg L: Default,
     T: TomlManager,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -200,24 +197,22 @@ where
     }
 }
 
-#[derive(Debug)]
-pub struct CommandHookManager<'cfg, L, P>
+pub struct CommandHookManager<'cfg, L>
 where
     L: Locator,
-    &'cfg L: Default,
-    P: PagerPrompt,
 {
     context: &'cfg Context,
     locator: &'cfg L,
     config: ConfigManager<'cfg, L, CommandHookData>,
-    pager: P,
+    pager: HookPager,
 }
 
-impl<'cfg, L, P> CommandHookManager<'cfg, L, P>
+impl<'cfg, L> CommandHookManager<'cfg, L>
 where
     L: Locator,
-    &'cfg L: Default,
-    P: PagerPrompt,
 {
-    // TODO: implement stuffs...
+    pub fn load(context: &'cfg Context, locator: &'cfg L) -> Result<Self, CommandHookManagerError> {
+        let config = ConfigManager::load(CommandHookData, locator)?;
+        Ok(Self { context, locator, config, pager: Default::default() })
+    }
 }
