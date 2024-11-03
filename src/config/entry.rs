@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use toml_edit::visit::{visit_inline_table, visit_table_like_kv, Visit};
 use toml_edit::{Array, InlineTable, Item, Key, Table, Value};
 
-pub trait Entry: cmp::PartialEq + fmt::Debug + From<(Key, Item)> {
+pub trait ConfigEntry: cmp::PartialEq + fmt::Debug + From<(Key, Item)> {
     fn to_toml(&self) -> (Key, Item);
 }
 
@@ -66,7 +66,7 @@ impl Repository {
     }
 }
 
-impl Entry for Repository {
+impl ConfigEntry for Repository {
     fn to_toml(&self) -> (Key, Item) {
         let mut repo = Table::new();
         let mut repo_bootstrap = Table::new();
@@ -301,7 +301,7 @@ impl CommandHook {
     }
 }
 
-impl Entry for CommandHook {
+impl ConfigEntry for CommandHook {
     fn to_toml(&self) -> (Key, Item) {
         let mut tables = Array::new();
         let mut iter = self.hooks.iter().enumerate().peekable();
