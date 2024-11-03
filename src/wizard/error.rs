@@ -4,13 +4,13 @@
 use minus::error;
 
 #[derive(Debug, thiserror::Error)]
-pub enum HookWizardError {
+pub enum HookPagerError {
     #[error("Minus pager failed because '{source}'")]
     Minus { source: error::MinusError },
 }
 
-impl From<error::MinusError> for HookWizardError {
+impl From<error::MinusError> for HookPagerError {
     fn from(err: error::MinusError) -> Self {
-        HookWizardError::Minus { source: err }
+        HookPagerError::Minus { source: err }
     }
 }
