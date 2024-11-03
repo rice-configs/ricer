@@ -6,21 +6,25 @@
 //! This module implements helpful wizard functionality to make Ricer's CLI more
 //! user friendly.
 
-use anyhow::Result;
-use std::sync::atomic::{Ordering, AtomicBool};
+mod error;
+
+#[doc(inline)]
+pub use error::*;
+
+use minus::input::{HashedEventRegister, InputEvent};
+use minus::{page_all, ExitStrategy, LineNumbers, Pager};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use minus::input::{InputEvent, HashedEventRegister};
-use minus::{ExitStrategy, LineNumbers, Pager, page_all};
 
 pub trait PagerPrompt {
-    fn page_and_prompt(&self, file_name: &str, file_data: &str) -> Result<bool>;
+    fn page_and_prompt(&self, file_name: &str, file_data: &str) -> Result<bool, HookWizardError>;
 }
 
 #[derive(Debug, Default)]
-pub struct CommandHookPager;
+pub struct HookWizard;
 
-impl PagerPrompt for CommandHookPager {
-    fn page_and_prompt(&self, file_name: &str, file_data: &str) -> Result<bool> {
+impl PagerPrompt for HookWizard {
+    fn page_and_prompt(&self, file_name: &str, file_data: &str) -> Result<bool, HookWizardError> {
         let choice = Arc::new(AtomicBool::default());
         let mut input = HashedEventRegister::default();
         let response = choice.clone();
