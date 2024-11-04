@@ -13,9 +13,10 @@ pub use error::*;
 
 use minus::input::{HashedEventRegister, InputEvent};
 use minus::{page_all, ExitStrategy, LineNumbers, Pager};
+use std::hash::RandomState;
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::hash::RandomState;
 
 #[cfg(test)]
 use mockall::automock;
@@ -35,9 +36,18 @@ impl HookPager {
         self.choice.load(Ordering::Relaxed)
     }
 
-    pub fn page_and_prompt(&self, file_name: &str, file_data: &str) -> Result<(), HookPagerError> {
+    pub fn page_and_prompt(
+        &self,
+        file_name: &Path,
+        workdir: &Path,
+        file_data: &str,
+    ) -> Result<(), HookPagerError> {
         let pager = Pager::new();
-        pager.set_prompt(format!("Do you want to execute '{}'? [A]ccept/[D]eny", file_name))?;
+        pager.set_prompt(format!(
+            "Run '{}' at '{}'? [a]ccept/[d]eny",
+            file_name.display(),
+            workdir.display(),
+        ))?;
         pager.show_prompt(true)?;
         pager.set_run_no_overflow(true)?;
         pager.set_line_numbers(LineNumbers::Enabled)?;
