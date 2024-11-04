@@ -15,7 +15,7 @@ pub use error::*;
 pub use locator::*;
 pub use toml::*;
 
-use crate::config::{CommandHook, Toml};
+use crate::config::Toml;
 use crate::context::{Context, HookAction};
 use crate::wizard::HookPager;
 
@@ -277,7 +277,7 @@ where
             })?;
 
             if action == &HookAction::Prompt {
-                let workdir = hook.workdir.as_deref().unwrap_or(self.locator.hooks_dir().into());
+                let workdir = hook.workdir.as_deref().unwrap_or(self.locator.hooks_dir());
                 self.pager.page_and_prompt(hook_path.as_path(), workdir, &hook_data)?;
                 if !self.pager.choice() {
                     continue; // Skip this iteration if user denied hook script.
