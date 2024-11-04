@@ -3,8 +3,8 @@
 
 #![allow(dead_code)]
 
-mod config;
 mod context;
+mod data_xchg;
 mod manager;
 mod ui;
 

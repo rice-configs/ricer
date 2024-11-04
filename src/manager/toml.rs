@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::config::{CommandHook, ConfigEntry, Repository, Toml, TomlError};
-use crate::manager::Locator;
+use crate::data_xchg::{CommandHook, Repository, Toml, TomlEntry, TomlError};
+use crate::locate::Locator;
 
 use std::fmt;
 use std::path::Path;
@@ -15,7 +15,7 @@ use std::path::Path;
 ///
 /// - [`Toml`]
 pub trait TomlManager: fmt::Debug {
-    type Entry: ConfigEntry;
+    type Entry: TomlEntry;
 
     fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry, TomlError>;
     fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError>;

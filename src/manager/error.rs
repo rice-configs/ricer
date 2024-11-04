@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::config;
+use crate::data_xchg;
 use crate::wizard;
 
 use std::io;
@@ -22,7 +22,7 @@ pub enum ConfigManagerError {
     FileWrite { source: io::Error, path: PathBuf },
 
     #[error("Failed to parse '{path}'")]
-    Toml { source: config::TomlError, path: PathBuf },
+    Toml { source: data_xchg::TomlError, path: PathBuf },
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -31,7 +31,7 @@ pub enum CommandHookManagerError {
     LoadConfig { source: ConfigManagerError },
 
     #[error("Failed to get command hook data")]
-    GetCmdHook { source: config::TomlError },
+    GetCmdHook { source: data_xchg::TomlError },
 
     #[error("Failed to read hook '{path}'")]
     HookRead { source: io::Error, path: PathBuf },
@@ -49,8 +49,8 @@ impl From<ConfigManagerError> for CommandHookManagerError {
     }
 }
 
-impl From<config::TomlError> for CommandHookManagerError {
-    fn from(err: config::TomlError) -> Self {
+impl From<data_xchg::TomlError> for CommandHookManagerError {
+    fn from(err: data_xchg::TomlError) -> Self {
         CommandHookManagerError::GetCmdHook { source: err }
     }
 }

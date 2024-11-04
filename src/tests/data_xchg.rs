@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-mod hook;
-mod repository;
+mod cmd_hook;
+mod repo;
 
-use crate::config::{Toml, TomlError};
+use crate::data_xchg::{Toml, TomlError};
 
 use anyhow::Result;
 use indoc::{formatdoc, indoc};
