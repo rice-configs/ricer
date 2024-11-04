@@ -3,7 +3,8 @@
 
 use ricer::cli::Cli;
 use ricer::context::Context;
-use ricer::manager::{CommandHookManager, DefaultLocator, HookKind, XdgDirLayout};
+use ricer::locate::{DefaultLocator, XdgDirLayout};
+use ricer::manager::{CommandHookManager, HookKind};
 
 use anyhow::Result;
 use log::{error, LevelFilter};

@@ -7,16 +7,15 @@
 //! manage configuration, hook, and repository data provided by the user.
 
 mod error;
-mod locator;
 mod toml;
 
 #[doc(inline)]
 pub use error::*;
-pub use locator::*;
 pub use toml::*;
 
 use crate::config::Toml;
 use crate::context::{Context, HookAction};
+use crate::locate::Locator;
 use crate::wizard::HookPager;
 
 use log::{debug, info};

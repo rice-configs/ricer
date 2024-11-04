@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 use crate::config::{CommandHook, ConfigEntry, Hook, Repository};
+use crate::locate::MockLocator;
 use crate::manager::{
-    CommandHookData, ConfigManager, ConfigManagerError, MockLocator, RepositoryData, TomlManager,
+    CommandHookData, ConfigManager, ConfigManagerError, RepositoryData, TomlManager,
 };
 use crate::tests::FakeConfigDir;
 
