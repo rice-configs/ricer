@@ -53,6 +53,7 @@
 pub mod cli;
 pub mod config;
 pub mod context;
+pub mod locate;
 pub mod manager;
 pub mod wizard;
 

@@ -1,19 +1,42 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::manager::LocatorError;
+//! Locate expected paths to configuration data on user's system.
+//!
+//! Provide reliable way to determine absolute paths to expected locations for
+//! Ricer's configuration data on user's system. Location data is mainly
+//! determined through a _directory layout_. A directory layout is an
+//! abstraction that specifies an expected way Ricer's configuration directories
+//! _should_ be setup on the user's filesystem. Currently, Ricer uses the [XDG
+//! Base Directory Specification][xdg] to specify its standard directory layout
+//! through [`XdgDirLayout`]. This means that Ricer expects the following
+//! layout:
+//!
+//! - `$XDG_CONFIG_HOME/ricer` contains behavior data like configuration files
+//!   and hook scripts.
+//! - `$XDG_DATA_HOME/ricer` contains tracked Git
+//!   repositories to manipulate.
+//!
+//! The [`DefaultLocator`] uses this directory layout information to properly
+//! locate expected paths for various standard configuration files, Git
+//! repositories, and hook scripts.
+//!
+//! [xdg]: https://specifications.freedesktop.org/basedir-spec/latest/
 
-use directories::ProjectDirs;
+mod error;
+mod layout;
+
+#[doc(inline)]
+pub use error::*;
+pub use layout::*;
+
 use log::{debug, trace};
 use std::path::{Path, PathBuf};
 
 #[cfg(test)]
 use mockall::automock;
 
-/// Configuration directory locator.
-///
-/// Locates absolute paths to the three special directories that Ricer
-/// relies on.
+/// Configuration data locator.
 #[cfg_attr(test, automock)]
 pub trait Locator {
     /// Expected absolute path to configuration file directory.
@@ -32,6 +55,11 @@ pub trait Locator {
     fn repos_config(&self) -> &Path;
 }
 
+/// Default configuration data locator.
+///
+/// # Invariants
+///
+/// 1. Caller must validate paths themselves.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct DefaultLocator {
     config_dir: PathBuf,
@@ -78,47 +106,5 @@ impl Locator for DefaultLocator {
 
     fn repos_config(&self) -> &Path {
         self.repos_config.as_path()
-    }
-}
-
-/// Handle different configuration directory layouts.
-///
-/// At a high level of abstraction, Ricer mainly splits its configuration
-/// directories into two categories: behavior data, and repository data.
-/// The behavior data category houses all files that configure Ricer's
-/// behavior, while the repository data category contains repositories that
-/// Ricer needs to keep track of and manipulate.
-#[cfg_attr(test, automock)]
-pub trait DirLayout {
-    /// Absolute path to directory where configuration files will be stored.
-    fn config_dir(&self) -> &Path;
-
-    /// Absolute path to directory where repository data will be stored.
-    fn repo_dir(&self) -> &Path;
-}
-
-/// Configuration directory layout handler following [XDG Base Directory
-/// Specification][xdg].
-///
-/// [xdg]: https://specifications.freedesktop.org/basedir-spec/latest/
-pub struct XdgDirLayout {
-    layout: ProjectDirs,
-}
-
-impl XdgDirLayout {
-    pub fn layout() -> Result<Self, LocatorError> {
-        trace!("Construct XDG Base Directory Specification layout handler");
-        let layout = ProjectDirs::from("com", "awkless", "ricer").ok_or(LocatorError::NoWayHome)?;
-        Ok(Self { layout })
-    }
-}
-
-impl DirLayout for XdgDirLayout {
-    fn config_dir(&self) -> &Path {
-        self.layout.config_dir()
-    }
-
-    fn repo_dir(&self) -> &Path {
-        self.layout.data_dir()
     }
 }

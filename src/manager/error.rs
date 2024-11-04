@@ -7,12 +7,6 @@ use crate::wizard;
 use std::io;
 use std::path::PathBuf;
 
-#[derive(Debug, PartialEq, Eq, thiserror::Error)]
-pub enum LocatorError {
-    #[error("Cannot determine path to home directory")]
-    NoWayHome,
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigManagerError {
     #[error("Failed to make parent directory '{path}'")]
