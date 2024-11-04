@@ -51,8 +51,8 @@
 //! [contrib-guide]: https://github.com/rice-configs/ricer/blob/main/CONTRIBUTING.md
 
 pub mod cli;
-pub mod config;
 pub mod context;
+pub mod data_xchg;
 pub mod locate;
 pub mod manager;
 pub mod wizard;

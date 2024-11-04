@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::config::{CommandHook, ConfigEntry, Hook, Repository};
+use crate::data_xchg::{CommandHook, Hook, Repository, TomlEntry};
 use crate::locate::MockLocator;
 use crate::manager::{
     CommandHookData, ConfigManager, ConfigManagerError, RepositoryData, TomlManager,
@@ -113,7 +113,7 @@ fn config_manager_save_works<E, T>(
     #[case] entry: E,
 ) -> Result<()>
 where
-    E: ConfigEntry,
+    E: TomlEntry,
     T: TomlManager<Entry = E>,
 {
     let mut locator = MockLocator::new();
@@ -186,7 +186,7 @@ fn config_manager_get_works<E, T>(
     #[case] expect: E,
 ) -> Result<()>
 where
-    E: ConfigEntry,
+    E: TomlEntry,
     T: TomlManager<Entry = E>,
 {
     let mut locator = MockLocator::new();
@@ -251,7 +251,7 @@ fn config_manager_new_data<E, T>(
     #[case] expect: &str,
 ) -> Result<()>
 where
-    E: ConfigEntry,
+    E: TomlEntry,
     T: TomlManager<Entry = E>,
 {
     let mut locator = MockLocator::new();
@@ -286,7 +286,7 @@ fn config_manager_add_catches_errors<E, T>(
     #[case] entry: E,
 ) -> Result<()>
 where
-    E: ConfigEntry,
+    E: TomlEntry,
     T: TomlManager<Entry = E>,
 {
     let mut locator = MockLocator::new();
@@ -360,7 +360,7 @@ fn config_manager_rename_works<E, T>(
     #[case] doc: &str,
 ) -> Result<()>
 where
-    E: ConfigEntry,
+    E: TomlEntry,
     T: TomlManager<Entry = E>,
 {
     let mut locator = MockLocator::new();
@@ -458,7 +458,7 @@ fn config_manager_remove_works<E, T>(
     #[case] doc: &str,
 ) -> Result<()>
 where
-    E: ConfigEntry,
+    E: TomlEntry,
     T: TomlManager<Entry = E>,
 {
     let mut locator = MockLocator::new();

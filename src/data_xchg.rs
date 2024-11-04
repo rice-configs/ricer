@@ -1,33 +1,50 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-//! Configuration file parsing.
+//! Data exchange handling.
 //!
-//! This module is responsible for parsing Ricer's configuration file data.
-//! Ricer mainly splits configuration file data into two categories: repository,
-//! and hook definitions. Repository definitions define the various settings and
-//! options for tracked repositories in Ricer. Hook definitions tell Ricer how
-//! to handle custom hooks for its command set.
+//! Offer ways to serialize, and deserialize parsed data exchange information.
+//! Data exchange handling is format preserving, i.e., any comments and
+//! whitespace originally parsed will be preserved regardless of modifications
+//! to the data itself. Ricer uses the [TOML file format][toml-spec] as the main
+//! data exchange format for configuration file data.
+//!
+//! Caller can deserialize and serialize parsed TOML data into repository
+//! definitions via [`Repository`] or command hook definitions via
+//! [`CommandHook`].
+//!
+//! [toml-spec]: https://toml.io/en/v1.0.0
 
-mod entry;
+mod cmd_hook;
 mod error;
+mod repo;
 
 #[doc(inline)]
-pub use entry::*;
+pub use cmd_hook::*;
 pub use error::*;
+pub use repo::*;
 
 use log::{debug, info, trace};
+use std::cmp;
 use std::fmt;
 use std::str::FromStr;
 use toml_edit::{DocumentMut, Item, Key, Table};
+
+/// Serialize and deserialize TOML entry.
+pub trait TomlEntry: cmp::PartialEq + fmt::Debug + From<(Key, Item)> {
+    fn to_toml(&self) -> (Key, Item);
+}
 
 /// TOML parser.
 ///
 /// Offers basic CRUD interface for TOML parsing. Expects TOML data in string
 /// form. Leaves file handling to caller. Mainly operates on whole tables for
-/// key-value pair manipulation.
+/// key-value pair manipulation. Note, that `document` is terminology used to
+/// refer to parsed TOML data.
 ///
-/// > __NOTE:__ `document` is terminology used to refer to parsed TOML data.
+/// # Invariants
+///
+/// 1. Preserve original formatting of document.
 #[derive(Clone, Default, Debug)]
 pub struct Toml {
     doc: DocumentMut,

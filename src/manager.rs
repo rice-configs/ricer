@@ -13,8 +13,8 @@ mod toml;
 pub use error::*;
 pub use toml::*;
 
-use crate::config::Toml;
 use crate::context::{Context, HookAction};
+use crate::data_xchg::Toml;
 use crate::locate::Locator;
 use crate::wizard::HookPager;
 
