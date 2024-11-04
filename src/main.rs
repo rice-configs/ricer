@@ -3,9 +3,10 @@
 
 use ricer::cli::Cli;
 use ricer::context::Context;
+use ricer::manager::{CommandHookManager, DefaultLocator, HookKind, XdgDirLayout};
 
 use anyhow::Result;
-use log::{error, info, LevelFilter};
+use log::{error, LevelFilter};
 use std::ffi::OsString;
 
 fn main() {
@@ -37,7 +38,11 @@ where
     log::set_max_level(opts.log_opts.log_level_filter());
 
     let ctx = Context::from(opts);
-    info!("{:#?}", ctx);
+    let layout = XdgDirLayout::layout()?;
+    let locator = DefaultLocator::locate(layout);
+    let hook_mgr = CommandHookManager::load(&ctx, &locator)?;
+    hook_mgr.run_hooks(HookKind::Pre)?;
+    hook_mgr.run_hooks(HookKind::Post)?;
 
     Ok(ExitCode::Success)
 }
