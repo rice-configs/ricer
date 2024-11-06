@@ -67,12 +67,18 @@ pub enum TomlError {
     EntryNotFound { table: String, key: String },
 }
 
-/// Configuration file construct.
+/// Format preserving configuration file handler.
 ///
-/// Manage configuration file data by selecting which configuration
-/// startegy to use, i.e., which configuration category to handle.
-/// Expected section to serialize and deserialize will depend on the
-/// configuration strategy selected by caller.
+/// Manage configuration file data by selecting which configuration startegy to
+/// use, i.e., which configuration file type to handle. Currently, there exists
+/// two configuration file types: repository, and command hook. Once caller has
+/// selected configuration file type to use, the [`Locator`] they pass in will
+/// determine the expected path of the configuration file.
+///
+/// The configuration file will be opened if it exists at the expected path
+/// assigned by the [`Locator`]. However, if the configuration file does not
+/// exist, then it will be created at the expected path instead. This includes
+/// the parent directory if needed.
 ///
 /// # Invariants
 ///
@@ -81,21 +87,23 @@ pub enum TomlError {
 /// # See also
 ///
 /// - [`Toml`]
+/// - [`RepoConfig`]
+/// - [`CmdHookConfig`]
 #[derive(Clone, Debug)]
-pub struct ConfigFile<'cfg, L, T>
+pub struct ConfigFile<'cfg, C, L>
 where
+    C: Config,
     L: Locator,
-    T: Config,
 {
     doc: Toml,
-    config: T,
+    config: C,
     locator: &'cfg L,
 }
 
-impl<'cfg, L, T> ConfigFile<'cfg, L, T>
+impl<'cfg, C, L> ConfigFile<'cfg, C, L>
 where
+    C: Config,
     L: Locator,
-    T: Config,
 {
     /// Load new configuration manager.
     ///
@@ -113,7 +121,7 @@ where
     ///    could not be read.
     /// 1. Return [`ConfigFileError::Toml`] if target configuration file
     ///    could not be parsed into TOML format.
-    pub fn load(config: T, locator: &'cfg L) -> Result<Self, ConfigFileError> {
+    pub fn load(config: C, locator: &'cfg L) -> Result<Self, ConfigFileError> {
         let path = config.location(locator);
         debug!("Load new configuration manager from '{}'", path.display());
         let root = path.parent().unwrap();
@@ -180,7 +188,7 @@ where
     /// # Errors
     ///
     /// 1. Return [`ConfigFileError::Toml`] if entry cannot be deserialized.
-    pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, ConfigFileError> {
+    pub fn get(&self, key: impl AsRef<str>) -> Result<C::Entry, ConfigFileError> {
         self.config
             .get(&self.doc, key.as_ref())
             .map_err(|err| ConfigFileError::Toml { source: err, path: self.as_path().into() })
@@ -191,7 +199,7 @@ where
     /// # Errors
     ///
     /// 1. Return [`ConfigFileError::Toml`] if entry cannot be serialized.
-    pub fn add(&mut self, entry: T::Entry) -> Result<Option<T::Entry>, ConfigFileError> {
+    pub fn add(&mut self, entry: C::Entry) -> Result<Option<C::Entry>, ConfigFileError> {
         self.config
             .add(&mut self.doc, entry)
             .map_err(|err| ConfigFileError::Toml { source: err, path: self.as_path().into() })
@@ -206,7 +214,7 @@ where
         &mut self,
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-    ) -> Result<T::Entry, ConfigFileError> {
+    ) -> Result<C::Entry, ConfigFileError> {
         self.config
             .rename(&mut self.doc, from.as_ref(), to.as_ref())
             .map_err(|err| ConfigFileError::Toml { source: err, path: self.as_path().into() })
@@ -217,7 +225,7 @@ where
     /// # Errors
     ///
     /// 1. Return [`ConfigFileError::Toml`] if entry cannot be removed.
-    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::Entry, ConfigFileError> {
+    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<C::Entry, ConfigFileError> {
         self.config
             .remove(&mut self.doc, key.as_ref())
             .map_err(|err| ConfigFileError::Toml { source: err, path: self.as_path().into() })
@@ -228,10 +236,10 @@ where
     }
 }
 
-impl<'cfg, L, T> fmt::Display for ConfigFile<'cfg, L, T>
+impl<'cfg, C, L> fmt::Display for ConfigFile<'cfg, C, L>
 where
+    C: Config,
     L: Locator,
-    T: Config,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.doc)
