@@ -1,37 +1,19 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::data_xchg;
+use crate::config;
 use crate::wizard;
 
 use std::io;
 use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
-pub enum ConfigManagerError {
-    #[error("Failed to make parent directory '{path}'")]
-    MakeDirP { source: io::Error, path: PathBuf },
-
-    #[error("Failed to open '{path}'")]
-    FileOpen { source: io::Error, path: PathBuf },
-
-    #[error("Failed to read '{path}'")]
-    FileRead { source: io::Error, path: PathBuf },
-
-    #[error("Failed to write '{path}'")]
-    FileWrite { source: io::Error, path: PathBuf },
-
-    #[error("Failed to parse '{path}'")]
-    Toml { source: data_xchg::TomlError, path: PathBuf },
-}
-
-#[derive(Debug, thiserror::Error)]
 pub enum CommandHookManagerError {
     #[error("Failed to load command hook configuration file")]
-    LoadConfig { source: ConfigManagerError },
+    LoadConfig { source: config::ConfigManagerError },
 
     #[error("Failed to get command hook data")]
-    GetCmdHook { source: data_xchg::TomlError },
+    GetCmdHook { source: config::TomlError },
 
     #[error("Failed to read hook '{path}'")]
     HookRead { source: io::Error, path: PathBuf },
@@ -43,14 +25,14 @@ pub enum CommandHookManagerError {
     HookPager { source: wizard::HookPagerError },
 }
 
-impl From<ConfigManagerError> for CommandHookManagerError {
-    fn from(err: ConfigManagerError) -> Self {
+impl From<config::ConfigManagerError> for CommandHookManagerError {
+    fn from(err: config::ConfigManagerError) -> Self {
         CommandHookManagerError::LoadConfig { source: err }
     }
 }
 
-impl From<data_xchg::TomlError> for CommandHookManagerError {
-    fn from(err: data_xchg::TomlError) -> Self {
+impl From<config::TomlError> for CommandHookManagerError {
+    fn from(err: config::TomlError) -> Self {
         CommandHookManagerError::GetCmdHook { source: err }
     }
 }
