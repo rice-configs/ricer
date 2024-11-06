@@ -2,28 +2,27 @@
 // SPDX-License-Identifier: MIT
 
 use crate::config::{
-    CommandHook, CommandHookData, ConfigFile, ConfigFileError, Hook, Repository,
-    RepositoryData, TomlEntry, TomlManager,
+    CmdHookSettings, CmdHookConfig, ConfigFile, ConfigFileError, HookSettings, RepoSettings,
+    RepoConfig, Settings, Config,
 };
 use crate::locate::MockLocator;
 use crate::tests::FakeConfigDir;
 
 use anyhow::Result;
-use indoc::indoc;
-use pretty_assertions::assert_eq;
+use indoc::indoc; use pretty_assertions::assert_eq;
 use rstest::rstest;
 
 #[rstest]
 #[case::repo_data(
-    RepositoryData,
+    RepoConfig,
     FakeConfigDir::builder()?.config_file("repos.toml", "this = 'will parse'\n")?.build(),
 )]
 #[case::hook_data(
-    CommandHookData,
+    CmdHookConfig,
     FakeConfigDir::builder()?.config_file("hooks.toml", "this = 'will parse'\n")?.build(),
 )]
 fn config_manager_load_works(
-    #[case] config_type: impl TomlManager,
+    #[case] config_type: impl Config,
     #[case] config_data: FakeConfigDir,
 ) -> Result<()> {
     let mut locator = MockLocator::new();
@@ -38,15 +37,15 @@ fn config_manager_load_works(
 
 #[rstest]
 #[case::repo_data(
-    RepositoryData,
+    RepoConfig,
     FakeConfigDir::builder()?.config_file("repos.toml", "this 'will fail'")?.build(),
 )]
 #[case::hook_data(
-    CommandHookData,
+    CmdHookConfig,
     FakeConfigDir::builder()?.config_file("hooks.toml", "this 'will fail'")?.build(),
 )]
 fn config_manager_load_catches_toml_error(
-    #[case] config_type: impl TomlManager,
+    #[case] config_type: impl Config,
     #[case] config_data: FakeConfigDir,
 ) -> Result<()> {
     let mut locator = MockLocator::new();
@@ -60,10 +59,10 @@ fn config_manager_load_catches_toml_error(
 }
 
 #[rstest]
-#[case::repo_data(RepositoryData, FakeConfigDir::builder()?.build())]
-#[case::hook_data(CommandHookData, FakeConfigDir::builder()?.build())]
+#[case::repo_data(RepoConfig, FakeConfigDir::builder()?.build())]
+#[case::hook_data(CmdHookConfig, FakeConfigDir::builder()?.build())]
 fn config_manager_load_creates_new_file(
-    #[case] config_type: impl TomlManager,
+    #[case] config_type: impl Config,
     #[case] config_data: FakeConfigDir,
 ) -> Result<()> {
     let mut locator = MockLocator::new();
@@ -78,7 +77,7 @@ fn config_manager_load_creates_new_file(
 
 #[rstest]
 #[case::repo_data(
-    RepositoryData,
+    RepoConfig,
     FakeConfigDir::builder()?
         .config_file(
             "repos.toml",
@@ -90,10 +89,10 @@ fn config_manager_load_creates_new_file(
                 workdir_home = true
             "#},
         )?.build(),
-    Repository::new("dwm").branch("main").remote("upstream").workdir_home(false),
+    RepoSettings::new("dwm").branch("main").remote("upstream").workdir_home(false),
 )]
 #[case::hook_data(
-    CommandHookData,
+    CmdHookConfig,
     FakeConfigDir::builder()?.config_file(
         "hooks.toml",
         indoc! {r#"
@@ -105,7 +104,7 @@ fn config_manager_load_creates_new_file(
             ]
         "#},
     )?.build(),
-    CommandHook::new("commit").add_hook(Hook::new().post("hook.sh")),
+    CmdHookSettings::new("commit").add_hook(HookSettings::new().post("hook.sh")),
 )]
 fn config_manager_save_works<E, T>(
     #[case] config_type: T,
@@ -113,8 +112,8 @@ fn config_manager_save_works<E, T>(
     #[case] entry: E,
 ) -> Result<()>
 where
-    E: TomlEntry,
-    T: TomlManager<Entry = E>,
+    E: Settings,
+    T: Config<Entry = E>,
 {
     let mut locator = MockLocator::new();
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
@@ -130,10 +129,10 @@ where
 }
 
 #[rstest]
-#[case::repo_data(RepositoryData, FakeConfigDir::builder()?.build())]
-#[case::hook_data(CommandHookData, FakeConfigDir::builder()?.build())]
+#[case::repo_data(RepoConfig, FakeConfigDir::builder()?.build())]
+#[case::hook_data(CmdHookConfig, FakeConfigDir::builder()?.build())]
 fn config_manager_save_creates_new_file(
-    #[case] config_type: impl TomlManager,
+    #[case] config_type: impl Config,
     #[case] config_data: FakeConfigDir,
 ) -> Result<()> {
     let mut locator = MockLocator::new();
@@ -149,7 +148,7 @@ fn config_manager_save_creates_new_file(
 
 #[rstest]
 #[case::repo_data(
-    RepositoryData,
+    RepoConfig,
     FakeConfigDir::builder()?.config_file(
         "repos.toml",
         indoc! {r#"
@@ -160,10 +159,10 @@ fn config_manager_save_creates_new_file(
         "#},
     )?.build(),
     "vim",
-    Repository::new("vim").branch("master").remote("origin").workdir_home(true),
+    RepoSettings::new("vim").branch("master").remote("origin").workdir_home(true),
 )]
 #[case::hook_data(
-    CommandHookData,
+    CmdHookConfig,
     FakeConfigDir::builder()?.config_file(
         "hooks.toml",
         indoc! {r#"
@@ -175,9 +174,9 @@ fn config_manager_save_creates_new_file(
         "#},
     )?.build(),
     "commit",
-    CommandHook::new("commit")
-        .add_hook(Hook::new().pre("hook.sh").post("hook.sh").workdir("/some/dir"))
-        .add_hook(Hook::new().pre("hook.sh")),
+    CmdHookSettings::new("commit")
+        .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/dir"))
+        .add_hook(HookSettings::new().pre("hook.sh")),
 )]
 fn config_manager_get_works<E, T>(
     #[case] config_type: T,
@@ -186,8 +185,8 @@ fn config_manager_get_works<E, T>(
     #[case] expect: E,
 ) -> Result<()>
 where
-    E: TomlEntry,
-    T: TomlManager<Entry = E>,
+    E: Settings,
+    T: Config<Entry = E>,
 {
     let mut locator = MockLocator::new();
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
@@ -201,10 +200,10 @@ where
 }
 
 #[rstest]
-#[case(RepositoryData, FakeConfigDir::builder()?.build())]
-#[case(CommandHookData, FakeConfigDir::builder()?.build())]
+#[case(RepoConfig, FakeConfigDir::builder()?.build())]
+#[case(CmdHookConfig, FakeConfigDir::builder()?.build())]
 fn config_manager_get_catches_errors(
-    #[case] config_type: impl TomlManager,
+    #[case] config_type: impl Config,
     #[case] config_data: FakeConfigDir,
 ) -> Result<()> {
     let mut locator = MockLocator::new();
@@ -220,9 +219,9 @@ fn config_manager_get_catches_errors(
 
 #[rstest]
 #[case::repo_data(
-    RepositoryData,
+    RepoConfig,
     FakeConfigDir::builder()?.build(),
-    Repository::new("vim").branch("main").remote("origin").workdir_home(true),
+    RepoSettings::new("vim").branch("main").remote("origin").workdir_home(true),
     indoc! {r#"
         [repos.vim]
         branch = "main"
@@ -231,11 +230,11 @@ fn config_manager_get_catches_errors(
     "#},
 )]
 #[case::hook_data(
-    CommandHookData,
+    CmdHookConfig,
     FakeConfigDir::builder()?.build(),
-    CommandHook::new("commit")
-        .add_hook(Hook::new().pre("hook.sh"))
-        .add_hook(Hook::new().post("hook.sh")),
+    CmdHookSettings::new("commit")
+        .add_hook(HookSettings::new().pre("hook.sh"))
+        .add_hook(HookSettings::new().post("hook.sh")),
     indoc! {r#"
         [hooks]
         commit = [
@@ -251,8 +250,8 @@ fn config_manager_new_data<E, T>(
     #[case] expect: &str,
 ) -> Result<()>
 where
-    E: TomlEntry,
-    T: TomlManager<Entry = E>,
+    E: Settings,
+    T: Config<Entry = E>,
 {
     let mut locator = MockLocator::new();
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
@@ -267,18 +266,18 @@ where
 
 #[rstest]
 #[case::repo_data(
-    RepositoryData,
+    RepoConfig,
     FakeConfigDir::builder()?
         .config_file("repos.toml", "repos = 'not a table'")?
         .build(),
-    Repository::default(),
+    RepoSettings::default(),
 )]
 #[case::hook_data(
-    CommandHookData,
+    CmdHookConfig,
     FakeConfigDir::builder()?
         .config_file("hooks.toml", "hooks = 'not a table'")?
         .build(),
-    CommandHook::default(),
+    CmdHookSettings::default(),
 )]
 fn config_manager_add_catches_errors<E, T>(
     #[case] config_type: T,
@@ -286,8 +285,8 @@ fn config_manager_add_catches_errors<E, T>(
     #[case] entry: E,
 ) -> Result<()>
 where
-    E: TomlEntry,
-    T: TomlManager<Entry = E>,
+    E: Settings,
+    T: Config<Entry = E>,
 {
     let mut locator = MockLocator::new();
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
@@ -302,7 +301,7 @@ where
 
 #[rstest]
 #[case::repo_data(
-    RepositoryData,
+    RepoConfig,
     FakeConfigDir::builder()?
         .config_file(
             "repos.toml",
@@ -316,7 +315,7 @@ where
         .build(),
     "vim",
     "neovim",
-    Repository::new("vim").branch("main").remote("origin").workdir_home(true),
+    RepoSettings::new("vim").branch("main").remote("origin").workdir_home(true),
     indoc! {r#"
         [repos.neovim]
         branch = "main"
@@ -325,7 +324,7 @@ where
     "#}
 )]
 #[case::hook_data(
-    CommandHookData,
+    CmdHookConfig,
     FakeConfigDir::builder()?
         .config_file(
             "hooks.toml",
@@ -340,9 +339,9 @@ where
         .build(),
     "commit",
     "bootstrap",
-    CommandHook::new("commit")
-        .add_hook(Hook::new().pre("hook.sh"))
-        .add_hook(Hook::new().post("hook.sh")),
+    CmdHookSettings::new("commit")
+        .add_hook(HookSettings::new().pre("hook.sh"))
+        .add_hook(HookSettings::new().post("hook.sh")),
     indoc! {r#"
         [hooks]
         bootstrap = [
@@ -360,8 +359,8 @@ fn config_manager_rename_works<E, T>(
     #[case] doc: &str,
 ) -> Result<()>
 where
-    E: TomlEntry,
-    T: TomlManager<Entry = E>,
+    E: Settings,
+    T: Config<Entry = E>,
 {
     let mut locator = MockLocator::new();
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
@@ -376,10 +375,10 @@ where
 }
 
 #[rstest]
-#[case::repo_data(RepositoryData, FakeConfigDir::builder()?.build())]
-#[case::hook_data(CommandHookData, FakeConfigDir::builder()?.build())]
+#[case::repo_data(RepoConfig, FakeConfigDir::builder()?.build())]
+#[case::hook_data(CmdHookConfig, FakeConfigDir::builder()?.build())]
 fn config_manager_rename_catches_errors(
-    #[case] config_type: impl TomlManager,
+    #[case] config_type: impl Config,
     #[case] config_data: FakeConfigDir,
 ) -> Result<()> {
     let mut locator = MockLocator::new();
@@ -395,7 +394,7 @@ fn config_manager_rename_catches_errors(
 
 #[rstest]
 #[case::repo_data(
-    RepositoryData,
+    RepoConfig,
     FakeConfigDir::builder()?.config_file(
         "repos.toml",
         indoc! {r#"
@@ -411,7 +410,7 @@ fn config_manager_rename_catches_errors(
         "#},
     )?.build(),
     "vim",
-    Repository::new("vim").branch("master").remote("origin").workdir_home(true),
+    RepoSettings::new("vim").branch("master").remote("origin").workdir_home(true),
     indoc! {r#"
 
         [repos.st]
@@ -421,7 +420,7 @@ fn config_manager_rename_catches_errors(
     "#},
 )]
 #[case::hook_data(
-    CommandHookData,
+    CmdHookConfig,
     FakeConfigDir::builder()?.config_file(
         "hooks.toml",
         indoc! {r#"
@@ -438,9 +437,9 @@ fn config_manager_rename_catches_errors(
         "#},
     )?.build(),
     "commit",
-    CommandHook::new("commit")
-        .add_hook(Hook::new().pre("hook.sh").post("hook.sh").workdir("/some/dir"))
-        .add_hook(Hook::new().pre("hook.sh")),
+    CmdHookSettings::new("commit")
+        .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/dir"))
+        .add_hook(HookSettings::new().pre("hook.sh")),
     indoc! {r#"
             [hooks]
 
@@ -458,8 +457,8 @@ fn config_manager_remove_works<E, T>(
     #[case] doc: &str,
 ) -> Result<()>
 where
-    E: TomlEntry,
-    T: TomlManager<Entry = E>,
+    E: Settings,
+    T: Config<Entry = E>,
 {
     let mut locator = MockLocator::new();
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
@@ -474,10 +473,10 @@ where
 }
 
 #[rstest]
-#[case::repo_data(RepositoryData, FakeConfigDir::builder()?.build())]
-#[case::hook_data(CommandHookData, FakeConfigDir::builder()?.build())]
+#[case::repo_data(RepoConfig, FakeConfigDir::builder()?.build())]
+#[case::hook_data(CmdHookConfig, FakeConfigDir::builder()?.build())]
 fn config_manager_remove_catches_errors(
-    #[case] config_type: impl TomlManager,
+    #[case] config_type: impl Config,
     #[case] config_data: FakeConfigDir,
 ) -> Result<()> {
     let mut locator = MockLocator::new();

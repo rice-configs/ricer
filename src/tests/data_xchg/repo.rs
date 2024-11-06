@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::config::{Bootstrap, OsType, Repository, TomlEntry};
+use crate::config::{BootstrapSettings, OsType, RepoSettings, Settings};
 
 use anyhow::Result;
 use indoc::indoc;
@@ -21,7 +21,7 @@ fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
 
 #[rstest]
 #[case::no_bootstrap(
-    Repository::new("vim")
+    RepoSettings::new("vim")
         .branch("master")
         .remote("origin")
         .workdir_home(true),
@@ -33,12 +33,12 @@ fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
     "#}
 )]
 #[case::with_bootstrap(
-    Repository::new("vim")
+    RepoSettings::new("vim")
         .branch("master")
         .remote("origin")
         .workdir_home(true)
         .bootstrap(
-            Bootstrap::new()
+            BootstrapSettings::new()
                 .clone("https://github.com/awkless/vim.git")
                 .os(OsType::Unix)
                 .users(["awkless", "sedgwick"])
@@ -57,7 +57,7 @@ fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
         hosts = ["lovelace", "turing"]
     "#}
 )]
-fn to_toml_serializes(#[case] repo: Repository, #[case] expect: &str) -> Result<()> {
+fn to_toml_serializes(#[case] repo: RepoSettings, #[case] expect: &str) -> Result<()> {
     let doc = setup_toml_doc(repo.to_toml())?;
     assert_eq!(doc.to_string(), expect);
     Ok(())
@@ -65,27 +65,27 @@ fn to_toml_serializes(#[case] repo: Repository, #[case] expect: &str) -> Result<
 
 #[rstest]
 #[case::no_bootstrap(
-    Repository::new("vim")
+    RepoSettings::new("vim")
         .branch("master")
         .remote("origin")
         .workdir_home(true),
 )]
 #[case::with_bootstrap(
-    Repository::new("vim")
+    RepoSettings::new("vim")
         .branch("master")
         .remote("origin")
         .workdir_home(true)
         .bootstrap(
-            Bootstrap::new()
+            BootstrapSettings::new()
                 .clone("https://github.com/awkless/vim.git")
                 .os(OsType::Unix)
                 .users(["awkless", "sedgwick"])
                 .hosts(["lovelace", "turing"])
         ),
 )]
-fn from_entry_deserializes(#[case] expect: Repository) -> Result<()> {
+fn from_entry_deserializes(#[case] expect: RepoSettings) -> Result<()> {
     let doc = setup_toml_doc(expect.to_toml())?;
-    let result = Repository::from(doc["repos"].as_table().unwrap().get_key_value("vim").unwrap());
+    let result = RepoSettings::from(doc["repos"].as_table().unwrap().get_key_value("vim").unwrap());
     assert_eq!(result, expect);
     Ok(())
 }

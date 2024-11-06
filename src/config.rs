@@ -10,8 +10,8 @@
 //! data exchange format for configuration file data.
 //!
 //! Caller can deserialize and serialize parsed TOML data into repository
-//! definitions via [`Repository`] or command hook definitions via
-//! [`CommandHook`].
+//! definitions via [`RepoSettings`] or command hook definitions via
+//! [`CmdHookSettings`].
 //!
 //! [toml-spec]: https://toml.io/en/v1.0.0
 
@@ -32,21 +32,7 @@ use toml_edit::{
     Array, DocumentMut, InlineTable, Item, Key, Table, Value,
 };
 
-#[derive(Debug, PartialEq, Eq, thiserror::Error)]
-pub enum TomlError {
-    #[error("Failed to parse TOML data")]
-    BadParse { source: toml_edit::TomlError },
-
-    #[error("TOML table '{table}' not found")]
-    TableNotFound { table: String },
-
-    #[error("TOML table '{table}' not defined as a table")]
-    NotTable { table: String },
-
-    #[error("TOML entry '{key}' not found in table '{table}'")]
-    EntryNotFound { table: String, key: String },
-}
-
+/// Error types for [`ConfigFile`].
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigFileError {
     #[error("Failed to make parent directory '{path}'")]
@@ -63,6 +49,22 @@ pub enum ConfigFileError {
 
     #[error("Failed to parse '{path}'")]
     Toml { source: TomlError, path: PathBuf },
+}
+
+/// Error types for [`Toml`].
+#[derive(Debug, PartialEq, Eq, thiserror::Error)]
+pub enum TomlError {
+    #[error("Failed to parse TOML data")]
+    BadParse { source: toml_edit::TomlError },
+
+    #[error("TOML table '{table}' not found")]
+    TableNotFound { table: String },
+
+    #[error("TOML table '{table}' not defined as a table")]
+    NotTable { table: String },
+
+    #[error("TOML entry '{key}' not found in table '{table}'")]
+    EntryNotFound { table: String, key: String },
 }
 
 /// Configuration file construct.
@@ -83,7 +85,7 @@ pub enum ConfigFileError {
 pub struct ConfigFile<'cfg, L, T>
 where
     L: Locator,
-    T: TomlManager,
+    T: Config,
 {
     doc: Toml,
     config: T,
@@ -93,7 +95,7 @@ where
 impl<'cfg, L, T> ConfigFile<'cfg, L, T>
 where
     L: Locator,
-    T: TomlManager,
+    T: Config,
 {
     /// Load new configuration manager.
     ///
@@ -229,7 +231,7 @@ where
 impl<'cfg, L, T> fmt::Display for ConfigFile<'cfg, L, T>
 where
     L: Locator,
-    T: TomlManager,
+    T: Config,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.doc)
@@ -445,8 +447,8 @@ impl FromStr for Toml {
 /// # See also
 ///
 /// - [`Toml`]
-pub trait TomlManager: fmt::Debug {
-    type Entry: TomlEntry;
+pub trait Config: fmt::Debug {
+    type Entry: Settings;
 
     fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry, TomlError>;
     fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError>;
@@ -455,10 +457,10 @@ pub trait TomlManager: fmt::Debug {
     fn location<'cfg>(&self, locator: &'cfg impl Locator) -> &'cfg Path;
 }
 
-/// Repository data configuration management.
+/// RepoSettings data configuration management.
 ///
 /// Handles serialization and deserialization of repository settings.
-/// Repository settings are held within the "repos" section of a
+/// RepoSettings settings are held within the "repos" section of a
 /// configuration file.
 ///
 /// # Invariants
@@ -468,31 +470,31 @@ pub trait TomlManager: fmt::Debug {
 /// # See also
 ///
 /// - [`Toml`]
-/// - [`Repository`]
+/// - [`RepoSettings`]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RepositoryData;
+pub struct RepoConfig;
 
-impl TomlManager for RepositoryData {
-    type Entry = Repository;
+impl Config for RepoConfig {
+    type Entry = RepoSettings;
 
     fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.get("repos", key.as_ref())?;
-        Ok(Repository::from(entry))
+        Ok(RepoSettings::from(entry))
     }
 
     fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError> {
-        let entry = doc.add("repos", entry.to_toml())?.map(Repository::from);
+        let entry = doc.add("repos", entry.to_toml())?.map(RepoSettings::from);
         Ok(entry)
     }
 
     fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.remove("repos", key.as_ref())?;
-        Ok(Repository::from(entry))
+        Ok(RepoSettings::from(entry))
     }
 
     fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.rename("repos", from.as_ref(), to.as_ref())?;
-        Ok(Repository::from(entry))
+        Ok(RepoSettings::from(entry))
     }
 
     fn location<'cfg>(&self, locator: &'cfg impl Locator) -> &'cfg Path {
@@ -513,31 +515,31 @@ impl TomlManager for RepositoryData {
 /// # See also
 ///
 /// - [`Toml`]
-/// - [`CommandHook`]
+/// - [`CmdHookSettings`]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct CommandHookData;
+pub struct CmdHookConfig;
 
-impl TomlManager for CommandHookData {
-    type Entry = CommandHook;
+impl Config for CmdHookConfig {
+    type Entry = CmdHookSettings;
 
     fn get(&self, doc: &Toml, key: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.get("hooks", key.as_ref())?;
-        Ok(CommandHook::from(entry))
+        Ok(CmdHookSettings::from(entry))
     }
 
     fn add(&self, doc: &mut Toml, entry: Self::Entry) -> Result<Option<Self::Entry>, TomlError> {
-        let entry = doc.add("hooks", entry.to_toml())?.map(CommandHook::from);
+        let entry = doc.add("hooks", entry.to_toml())?.map(CmdHookSettings::from);
         Ok(entry)
     }
 
     fn remove(&self, doc: &mut Toml, key: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.remove("hooks", key.as_ref())?;
-        Ok(CommandHook::from(entry))
+        Ok(CmdHookSettings::from(entry))
     }
 
     fn rename(&self, doc: &mut Toml, from: &str, to: &str) -> Result<Self::Entry, TomlError> {
         let entry = doc.rename("hooks", from.as_ref(), to.as_ref())?;
-        Ok(CommandHook::from(entry))
+        Ok(CmdHookSettings::from(entry))
     }
 
     fn location<'cfg>(&self, locator: &'cfg impl Locator) -> &'cfg Path {
@@ -545,12 +547,17 @@ impl TomlManager for CommandHookData {
     }
 }
 
-/// Repository configuration settings.
+/// Serialize and deserialize TOML entry.
+pub trait Settings: cmp::PartialEq + fmt::Debug + From<(Key, Item)> {
+    fn to_toml(&self) -> (Key, Item);
+}
+
+/// RepoSettingssitory configuration settings.
 ///
 /// Intermediary structure meant to help make it easier to deserialize and
 /// serialize repository configuration file data.
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
-pub struct Repository {
+pub struct RepoSettings {
     /// Name of repository.
     pub name: String,
 
@@ -565,15 +572,10 @@ pub struct Repository {
     pub workdir_home: bool,
 
     /// Bootstrap configuration for repository.
-    pub bootstrap: Option<Bootstrap>,
+    pub bootstrap: Option<BootstrapSettings>,
 }
 
-/// Serialize and deserialize TOML entry.
-pub trait TomlEntry: cmp::PartialEq + fmt::Debug + From<(Key, Item)> {
-    fn to_toml(&self) -> (Key, Item);
-}
-
-impl Repository {
+impl RepoSettings {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
@@ -599,13 +601,13 @@ impl Repository {
         self
     }
 
-    pub fn bootstrap(mut self, bootstrap: Bootstrap) -> Self {
+    pub fn bootstrap(mut self, bootstrap: BootstrapSettings) -> Self {
         self.bootstrap = Some(bootstrap);
         self
     }
 }
 
-impl TomlEntry for Repository {
+impl Settings for RepoSettings {
     fn to_toml(&self) -> (Key, Item) {
         let mut repo = Table::new();
         let mut repo_bootstrap = Table::new();
@@ -635,10 +637,10 @@ impl TomlEntry for Repository {
     }
 }
 
-fn repo_toml<'toml>(entry: (&'toml Key, &'toml Item)) -> Repository {
+fn repo_toml<'toml>(entry: (&'toml Key, &'toml Item)) -> RepoSettings {
     let (key, value) = entry;
-    let mut bootstrap = Bootstrap::new();
-    let mut repo = Repository::new(key.get());
+    let mut bootstrap = BootstrapSettings::new();
+    let mut repo = RepoSettings::new(key.get());
     bootstrap.visit_item(value);
     repo.visit_item(value);
 
@@ -648,20 +650,20 @@ fn repo_toml<'toml>(entry: (&'toml Key, &'toml Item)) -> Repository {
     repo
 }
 
-impl<'toml> From<(&'toml Key, &'toml Item)> for Repository {
-    fn from(entry: (&'toml Key, &'toml Item)) -> Repository {
+impl<'toml> From<(&'toml Key, &'toml Item)> for RepoSettings {
+    fn from(entry: (&'toml Key, &'toml Item)) -> RepoSettings {
         repo_toml(entry)
     }
 }
 
-impl From<(Key, Item)> for Repository {
+impl From<(Key, Item)> for RepoSettings {
     fn from(entry: (Key, Item)) -> Self {
         let (key, value) = entry;
         repo_toml((&key, &value))
     }
 }
 
-impl<'toml> Visit<'toml> for Repository {
+impl<'toml> Visit<'toml> for RepoSettings {
     fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
         match key {
             "branch" => self.branch = node.as_str().unwrap_or_default().to_string(),
@@ -675,7 +677,7 @@ impl<'toml> Visit<'toml> for Repository {
 
 /// Repository bootstrap configuration settings.
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
-pub struct Bootstrap {
+pub struct BootstrapSettings {
     /// URL to clone repository from.
     pub clone: Option<String>,
 
@@ -691,7 +693,7 @@ pub struct Bootstrap {
     pub hosts: Option<Vec<String>>,
 }
 
-impl Bootstrap {
+impl BootstrapSettings {
     pub fn new() -> Self {
         Default::default()
     }
@@ -733,7 +735,7 @@ impl Bootstrap {
     }
 }
 
-impl<'toml> Visit<'toml> for Bootstrap {
+impl<'toml> Visit<'toml> for BootstrapSettings {
     fn visit_table_like_kv(&mut self, key: &'toml str, node: &'toml Item) {
         match key {
             "clone" => {
@@ -821,26 +823,26 @@ impl fmt::Display for OsType {
 /// An intermediary structure to help deserialize and serialize command hook
 /// from Ricer's command hook configuration file.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct CommandHook {
+pub struct CmdHookSettings {
     /// Name of command to bind hook definitions too.
     pub cmd: String,
 
     /// Array of hook definitions to execute.
-    pub hooks: Vec<Hook>,
+    pub hooks: Vec<HookSettings>,
 }
 
-impl CommandHook {
+impl CmdHookSettings {
     pub fn new(cmd: impl Into<String>) -> Self {
         Self { cmd: cmd.into(), hooks: Default::default() }
     }
 
-    pub fn add_hook(mut self, hook: Hook) -> Self {
+    pub fn add_hook(mut self, hook: HookSettings) -> Self {
         self.hooks.push(hook);
         self
     }
 }
 
-impl TomlEntry for CommandHook {
+impl Settings for CmdHookSettings {
     fn to_toml(&self) -> (Key, Item) {
         let mut tables = Array::new();
         let mut iter = self.hooks.iter().enumerate().peekable();
@@ -874,33 +876,33 @@ impl TomlEntry for CommandHook {
     }
 }
 
-fn from_toml<'toml>(entry: (&'toml Key, &'toml Item)) -> CommandHook {
+fn from_toml<'toml>(entry: (&'toml Key, &'toml Item)) -> CmdHookSettings {
     let (key, value) = entry;
-    let mut cmd_hook = CommandHook::new(key.get());
+    let mut cmd_hook = CmdHookSettings::new(key.get());
     cmd_hook.visit_item(value);
     cmd_hook
 }
 
-impl<'toml> From<(&'toml Key, &'toml Item)> for CommandHook {
+impl<'toml> From<(&'toml Key, &'toml Item)> for CmdHookSettings {
     fn from(entry: (&'toml Key, &'toml Item)) -> Self {
         from_toml(entry)
     }
 }
 
-impl From<(Key, Item)> for CommandHook {
+impl From<(Key, Item)> for CmdHookSettings {
     fn from(entry: (Key, Item)) -> Self {
         let (key, value) = entry;
         from_toml((&key, &value))
     }
 }
 
-impl<'toml> Visit<'toml> for CommandHook {
+impl<'toml> Visit<'toml> for CmdHookSettings {
     fn visit_inline_table(&mut self, node: &'toml InlineTable) {
         let pre = if let Some(pre) = node.get("pre") { pre.as_str() } else { None };
         let post = if let Some(post) = node.get("post") { post.as_str() } else { None };
         let workdir = if let Some(workdir) = node.get("workdir") { workdir.as_str() } else { None };
 
-        let hook = Hook::new();
+        let hook = HookSettings::default();
         let hook = if let Some(pre) = pre { hook.pre(pre) } else { hook };
         let hook = if let Some(post) = post { hook.post(post) } else { hook };
         let hook = if let Some(workdir) = workdir { hook.workdir(workdir) } else { hook };
@@ -915,7 +917,7 @@ impl<'toml> Visit<'toml> for CommandHook {
 /// An intermediary structure to help deserialize and serialize hook entries
 /// for command hook settings in command hook configuration file.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct Hook {
+pub struct HookSettings {
     /// Execute hook script _before_ command itself.
     pub pre: Option<String>,
 
@@ -926,7 +928,7 @@ pub struct Hook {
     pub workdir: Option<PathBuf>,
 }
 
-impl Hook {
+impl HookSettings {
     pub fn new() -> Self {
         Default::default()
     }
