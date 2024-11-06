@@ -926,10 +926,11 @@ impl From<(Key, Item)> for CmdHookSettings {
 
 impl<'toml> Visit<'toml> for CmdHookSettings {
     fn visit_inline_table(&mut self, node: &'toml InlineTable) {
-        let mut hook = HookSettings::default();
-        hook.pre = node.get("pre").map(|s| s.as_str().map(|s| s.into())).flatten();
-        hook.post = node.get("post").map(|s| s.as_str().map(|s| s.into())).flatten();
-        hook.workdir = node.get("workdir").map(|s| s.as_str().map(|s| s.into())).flatten();
+        let hook = HookSettings {
+            pre: node.get("pre").and_then(|s| s.as_str().map(|s| s.into())),
+            post: node.get("post").and_then(|s| s.as_str().map(|s| s.into())),
+            workdir: node.get("workdir").and_then(|s| s.as_str().map(|s| s.into())),
+        };
         self.hooks.push(hook);
         visit_inline_table(self, node);
     }
