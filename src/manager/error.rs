@@ -10,7 +10,7 @@ use std::path::PathBuf;
 #[derive(Debug, thiserror::Error)]
 pub enum CommandHookManagerError {
     #[error("Failed to load command hook configuration file")]
-    LoadConfig { source: config::ConfigManagerError },
+    LoadConfig { source: config::ConfigFileError },
 
     #[error("Failed to get command hook data")]
     GetCmdHook { source: config::TomlError },
@@ -25,8 +25,8 @@ pub enum CommandHookManagerError {
     HookPager { source: wizard::HookPagerError },
 }
 
-impl From<config::ConfigManagerError> for CommandHookManagerError {
-    fn from(err: config::ConfigManagerError) -> Self {
+impl From<config::ConfigFileError> for CommandHookManagerError {
+    fn from(err: config::ConfigFileError) -> Self {
         CommandHookManagerError::LoadConfig { source: err }
     }
 }
