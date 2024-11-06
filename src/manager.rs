@@ -39,7 +39,7 @@ where
 {
     context: &'cfg Context,
     locator: &'cfg L,
-    config: ConfigFile<'cfg, L, CmdHookConfig>,
+    config: ConfigFile<'cfg, CmdHookConfig, L>,
     pager: HookPager,
 }
 
