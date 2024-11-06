@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::config::{CommandHook, Hook, TomlEntry};
+use crate::config::{CmdHookSettings, HookSettings, Settings};
 
 use anyhow::Result;
 use indoc::indoc;
@@ -21,10 +21,10 @@ fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
 
 #[rstest]
 #[case(
-    CommandHook::new("commit")
-        .add_hook(Hook::new().pre("hook.sh").post("hook.sh").workdir("/some/path"))
-        .add_hook(Hook::new().pre("hook.sh"))
-        .add_hook(Hook::new().post("hook.sh")),
+    CmdHookSettings::new("commit")
+        .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/path"))
+        .add_hook(HookSettings::new().pre("hook.sh"))
+        .add_hook(HookSettings::new().post("hook.sh")),
     indoc! {r#"
         [hooks]
         commit = [
@@ -34,7 +34,7 @@ fn setup_toml_doc(entry: (Key, Item)) -> Result<DocumentMut> {
         ]
     "#}
 )]
-fn to_toml_serializes(#[case] cmd_hook: CommandHook, #[case] expect: &str) -> Result<()> {
+fn to_toml_serializes(#[case] cmd_hook: CmdHookSettings, #[case] expect: &str) -> Result<()> {
     let doc = setup_toml_doc(cmd_hook.to_toml())?;
     assert_eq!(doc.to_string(), expect);
     Ok(())
@@ -42,15 +42,15 @@ fn to_toml_serializes(#[case] cmd_hook: CommandHook, #[case] expect: &str) -> Re
 
 #[rstest]
 #[case(
-    CommandHook::new("commit")
-        .add_hook(Hook::new().pre("hook.sh").post("hook.sh").workdir("/some/path"))
-        .add_hook(Hook::new().pre("hook.sh"))
-        .add_hook(Hook::new().post("hook.sh"))
+    CmdHookSettings::new("commit")
+        .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/path"))
+        .add_hook(HookSettings::new().pre("hook.sh"))
+        .add_hook(HookSettings::new().post("hook.sh"))
 )]
-fn from_deserializes(#[case] expect: CommandHook) -> Result<()> {
+fn from_deserializes(#[case] expect: CmdHookSettings) -> Result<()> {
     let doc = setup_toml_doc(expect.to_toml())?;
     let result =
-        CommandHook::from(doc["hooks"].as_table().unwrap().get_key_value("commit").unwrap());
+        CmdHookSettings::from(doc["hooks"].as_table().unwrap().get_key_value("commit").unwrap());
     assert_eq!(result, expect);
     Ok(())
 }
