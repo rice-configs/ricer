@@ -48,7 +48,7 @@ pub enum TomlError {
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum ConfigManagerError {
+pub enum ConfigFileError {
     #[error("Failed to make parent directory '{path}'")]
     MakeDirP { source: io::Error, path: PathBuf },
 
@@ -80,7 +80,7 @@ pub enum ConfigManagerError {
 ///
 /// - [`Toml`]
 #[derive(Clone, Debug)]
-pub struct ConfigManager<'cfg, L, T>
+pub struct ConfigFile<'cfg, L, T>
 where
     L: Locator,
     T: TomlManager,
@@ -90,7 +90,7 @@ where
     locator: &'cfg L,
 }
 
-impl<'cfg, L, T> ConfigManager<'cfg, L, T>
+impl<'cfg, L, T> ConfigFile<'cfg, L, T>
 where
     L: Locator,
     T: TomlManager,
@@ -103,20 +103,20 @@ where
     ///
     /// # Errors
     ///
-    /// 1. Return [`ConfigManagerError::MakeDirP`] if parent directory to to
+    /// 1. Return [`ConfigFileError::MakeDirP`] if parent directory to to
     ///    expected configuration file path could not be created when needed.
-    /// 1. Return [`ConfigManagerError::FileOpen`] if target configuration file
+    /// 1. Return [`ConfigFileError::FileOpen`] if target configuration file
     ///    could not be created when needed.
-    /// 1. Return [`ConfigManagerError::FileRead`] if target configuration file
+    /// 1. Return [`ConfigFileError::FileRead`] if target configuration file
     ///    could not be read.
-    /// 1. Return [`ConfigManagerError::Toml`] if target configuration file
+    /// 1. Return [`ConfigFileError::Toml`] if target configuration file
     ///    could not be parsed into TOML format.
-    pub fn load(config: T, locator: &'cfg L) -> Result<Self, ConfigManagerError> {
+    pub fn load(config: T, locator: &'cfg L) -> Result<Self, ConfigFileError> {
         let path = config.location(locator);
         debug!("Load new configuration manager from '{}'", path.display());
         let root = path.parent().unwrap();
         mkdirp(root)
-            .map_err(|err| ConfigManagerError::MakeDirP { source: err, path: root.into() })?;
+            .map_err(|err| ConfigFileError::MakeDirP { source: err, path: root.into() })?;
 
         let mut file = OpenOptions::new()
             .write(true)
@@ -124,13 +124,13 @@ where
             .create(true)
             .truncate(false)
             .open(path)
-            .map_err(|err| ConfigManagerError::FileOpen { source: err, path: path.into() })?;
+            .map_err(|err| ConfigFileError::FileOpen { source: err, path: path.into() })?;
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)
-            .map_err(|err| ConfigManagerError::FileRead { source: err, path: path.into() })?;
+            .map_err(|err| ConfigFileError::FileRead { source: err, path: path.into() })?;
         let doc: Toml = buffer
             .parse()
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: path.into() })?;
+            .map_err(|err| ConfigFileError::Toml { source: err, path: path.into() })?;
 
         Ok(Self { doc, config, locator })
     }
@@ -142,17 +142,17 @@ where
     ///
     /// # Errors
     ///
-    /// 1. Return [`ConfigManagerError::MakeDirP`] if parent directory to to
+    /// 1. Return [`ConfigFileError::MakeDirP`] if parent directory to to
     ///    expected configuration file path could not be created when needed.
-    /// 1. Return [`ConfigManagerError::FileOpen`] if target configuration file
+    /// 1. Return [`ConfigFileError::FileOpen`] if target configuration file
     ///    could not be created when needed.
-    /// 1. Return [`ConfigManagerError::FileWrite`] if target configuration file
+    /// 1. Return [`ConfigFileError::FileWrite`] if target configuration file
     ///    cannot be written into.
-    pub fn save(&mut self) -> Result<(), ConfigManagerError> {
+    pub fn save(&mut self) -> Result<(), ConfigFileError> {
         debug!("Save configuration manager data to '{}'", self.as_path().display());
         let root = self.as_path().parent().unwrap();
         mkdirp(root)
-            .map_err(|err| ConfigManagerError::MakeDirP { source: err, path: root.into() })?;
+            .map_err(|err| ConfigFileError::MakeDirP { source: err, path: root.into() })?;
 
         let mut file = OpenOptions::new()
             .write(true)
@@ -160,12 +160,12 @@ where
             .create(true)
             .truncate(false)
             .open(self.as_path())
-            .map_err(|err| ConfigManagerError::FileOpen {
+            .map_err(|err| ConfigFileError::FileOpen {
                 source: err,
                 path: self.as_path().into(),
             })?;
         let buffer = self.doc.to_string();
-        file.write_all(buffer.as_bytes()).map_err(|err| ConfigManagerError::FileWrite {
+        file.write_all(buffer.as_bytes()).map_err(|err| ConfigFileError::FileWrite {
             source: err,
             path: self.as_path().into(),
         })?;
@@ -177,48 +177,48 @@ where
     ///
     /// # Errors
     ///
-    /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be deserialized.
-    pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, ConfigManagerError> {
+    /// 1. Return [`ConfigFileError::Toml`] if entry cannot be deserialized.
+    pub fn get(&self, key: impl AsRef<str>) -> Result<T::Entry, ConfigFileError> {
         self.config
             .get(&self.doc, key.as_ref())
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.as_path().into() })
+            .map_err(|err| ConfigFileError::Toml { source: err, path: self.as_path().into() })
     }
 
     /// Add new configuration entry in serialized form.
     ///
     /// # Errors
     ///
-    /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be serialized.
-    pub fn add(&mut self, entry: T::Entry) -> Result<Option<T::Entry>, ConfigManagerError> {
+    /// 1. Return [`ConfigFileError::Toml`] if entry cannot be serialized.
+    pub fn add(&mut self, entry: T::Entry) -> Result<Option<T::Entry>, ConfigFileError> {
         self.config
             .add(&mut self.doc, entry)
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.as_path().into() })
+            .map_err(|err| ConfigFileError::Toml { source: err, path: self.as_path().into() })
     }
 
     /// Rename configuration entry.
     ///
     /// # Errors
     ///
-    /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be renamed.
+    /// 1. Return [`ConfigFileError::Toml`] if entry cannot be renamed.
     pub fn rename(
         &mut self,
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-    ) -> Result<T::Entry, ConfigManagerError> {
+    ) -> Result<T::Entry, ConfigFileError> {
         self.config
             .rename(&mut self.doc, from.as_ref(), to.as_ref())
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.as_path().into() })
+            .map_err(|err| ConfigFileError::Toml { source: err, path: self.as_path().into() })
     }
 
     /// Remove configuration entry.
     ///
     /// # Errors
     ///
-    /// 1. Return [`ConfigManagerError::Toml`] if entry cannot be removed.
-    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::Entry, ConfigManagerError> {
+    /// 1. Return [`ConfigFileError::Toml`] if entry cannot be removed.
+    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<T::Entry, ConfigFileError> {
         self.config
             .remove(&mut self.doc, key.as_ref())
-            .map_err(|err| ConfigManagerError::Toml { source: err, path: self.as_path().into() })
+            .map_err(|err| ConfigFileError::Toml { source: err, path: self.as_path().into() })
     }
 
     pub fn as_path(&self) -> &Path {
@@ -226,7 +226,7 @@ where
     }
 }
 
-impl<'cfg, L, T> fmt::Display for ConfigManager<'cfg, L, T>
+impl<'cfg, L, T> fmt::Display for ConfigFile<'cfg, L, T>
 where
     L: Locator,
     T: TomlManager,

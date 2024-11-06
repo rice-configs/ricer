@@ -11,7 +11,7 @@ mod error;
 #[doc(inline)]
 pub use error::*;
 
-use crate::config::{CommandHookData, ConfigManager};
+use crate::config::{CommandHookData, ConfigFile};
 use crate::context::{Context, HookAction};
 use crate::locate::Locator;
 use crate::wizard::HookPager;
@@ -39,7 +39,7 @@ where
 {
     context: &'cfg Context,
     locator: &'cfg L,
-    config: ConfigManager<'cfg, L, CommandHookData>,
+    config: ConfigFile<'cfg, L, CommandHookData>,
     pager: HookPager,
 }
 
@@ -48,7 +48,7 @@ where
     L: Locator,
 {
     pub fn load(context: &'cfg Context, locator: &'cfg L) -> Result<Self, CommandHookManagerError> {
-        let config = ConfigManager::load(CommandHookData, locator)?;
+        let config = ConfigFile::load(CommandHookData, locator)?;
         Ok(Self { context, locator, config, pager: Default::default() })
     }
 

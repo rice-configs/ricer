@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use crate::config::{
-    CommandHook, CommandHookData, ConfigManager, ConfigManagerError, Hook, Repository,
+    CommandHook, CommandHookData, ConfigFile, ConfigFileError, Hook, Repository,
     RepositoryData, TomlEntry, TomlManager,
 };
 use crate::locate::MockLocator;
@@ -30,7 +30,7 @@ fn config_manager_load_works(
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let config = ConfigManager::load(config_type, &locator)?;
+    let config = ConfigFile::load(config_type, &locator)?;
     assert_eq!(config.to_string(), config_data.fixture(config.as_path())?.as_str());
 
     Ok(())
@@ -53,8 +53,8 @@ fn config_manager_load_catches_toml_error(
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let result = ConfigManager::load(config_type, &locator);
-    assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
+    let result = ConfigFile::load(config_type, &locator);
+    assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
 
     Ok(())
 }
@@ -70,7 +70,7 @@ fn config_manager_load_creates_new_file(
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let config = ConfigManager::load(config_type, &locator)?;
+    let config = ConfigFile::load(config_type, &locator)?;
     assert!(config.as_path().exists());
 
     Ok(())
@@ -120,7 +120,7 @@ where
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let mut config = ConfigManager::load(config_type, &locator)?;
+    let mut config = ConfigFile::load(config_type, &locator)?;
     config.add(entry)?;
     config.save()?;
     config_data.sync()?;
@@ -140,7 +140,7 @@ fn config_manager_save_creates_new_file(
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let mut config = ConfigManager::load(config_type, &locator)?;
+    let mut config = ConfigFile::load(config_type, &locator)?;
     config.save()?;
     assert!(config.as_path().exists());
 
@@ -193,7 +193,7 @@ where
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let config = ConfigManager::load(config_type, &locator)?;
+    let config = ConfigFile::load(config_type, &locator)?;
     let result = config.get(key)?;
     assert_eq!(result, expect);
 
@@ -211,9 +211,9 @@ fn config_manager_get_catches_errors(
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let config = ConfigManager::load(config_type, &locator)?;
+    let config = ConfigFile::load(config_type, &locator)?;
     let result = config.get("non-existent");
-    assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
+    assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
 
     Ok(())
 }
@@ -258,7 +258,7 @@ where
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let mut config = ConfigManager::load(config_type, &locator)?;
+    let mut config = ConfigFile::load(config_type, &locator)?;
     config.add(entry)?;
     assert_eq!(config.to_string(), expect);
 
@@ -293,9 +293,9 @@ where
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let mut config = ConfigManager::load(config_type, &locator)?;
+    let mut config = ConfigFile::load(config_type, &locator)?;
     let result = config.add(entry);
-    assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
+    assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
 
     Ok(())
 }
@@ -367,7 +367,7 @@ where
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let mut config = ConfigManager::load(config_type, &locator)?;
+    let mut config = ConfigFile::load(config_type, &locator)?;
     let result = config.rename(from, to)?;
     assert_eq!(result, expect);
     assert_eq!(config.to_string(), doc);
@@ -386,9 +386,9 @@ fn config_manager_rename_catches_errors(
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let mut config = ConfigManager::load(config_type, &locator)?;
+    let mut config = ConfigFile::load(config_type, &locator)?;
     let result = config.rename("gonna", "fail");
-    assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
+    assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
 
     Ok(())
 }
@@ -465,7 +465,7 @@ where
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let mut config = ConfigManager::load(config_type, &locator)?;
+    let mut config = ConfigFile::load(config_type, &locator)?;
     let result = config.remove(key)?;
     assert_eq!(result, expect);
     assert_eq!(config.to_string(), doc);
@@ -484,9 +484,9 @@ fn config_manager_remove_catches_errors(
     locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
     locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
 
-    let mut config = ConfigManager::load(config_type, &locator)?;
+    let mut config = ConfigFile::load(config_type, &locator)?;
     let result = config.remove("non-existent");
-    assert!(matches!(result.unwrap_err(), ConfigManagerError::Toml { .. }));
+    assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
 
     Ok(())
 }
