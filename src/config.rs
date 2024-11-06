@@ -1,19 +1,26 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-//! Data exchange handling.
+//! Configuration file management.
 //!
-//! Offer ways to serialize, and deserialize parsed data exchange information.
-//! Data exchange handling is format preserving, i.e., any comments and
-//! whitespace originally parsed will be preserved regardless of modifications
-//! to the data itself. Ricer uses the [TOML file format][toml-spec] as the main
-//! data exchange format for configuration file data.
+//! Manage Ricer's special configuration files by providing ways to perform
+//! parsing, serialization, and deserialization, while preserving the original
+//! formatting of said configuration files. Ricer uses the [TOML file
+//! format][toml-spec] as the main data exchange format for configuration file
+//! data. Thus, all logic in this module is centered around TOML.
 //!
-//! Caller can deserialize and serialize parsed TOML data into repository
-//! definitions via [`RepoSettings`] or command hook definitions via
-//! [`CmdHookSettings`].
+//! Ricer currently is expected to manage two types of configuration file:
+//! repository, and hook configurations. These configuration files are mainly
+//! located at whatever path is expected from any [`Locator`] implementation.
+//! Currently, expected location for these configuration files is in the
+//! `$XDG_CONFIG_HOME/ricer` directory.
 //!
 //! [toml-spec]: https://toml.io/en/v1.0.0
+//!
+//! # See also
+//!
+//! - [`XdgDirLayout`]
+//! - [`DefaultLocator`]
 
 use crate::locate::Locator;
 
@@ -89,6 +96,7 @@ pub enum TomlError {
 /// - [`Toml`]
 /// - [`RepoConfig`]
 /// - [`CmdHookConfig`]
+/// - [`DefaultLocator`]
 #[derive(Clone, Debug)]
 pub struct ConfigFile<'cfg, C, L>
 where
@@ -256,6 +264,10 @@ where
 /// # Invariants
 ///
 /// 1. Preserve original formatting of document.
+///
+/// # See also
+///
+/// - [`ConfigFile`]
 #[derive(Clone, Default, Debug)]
 pub struct Toml {
     doc: DocumentMut,
@@ -356,8 +368,11 @@ impl Toml {
         let (old_key, old_item) = entry.remove_entry(from.as_ref()).ok_or_else(|| {
             TomlError::EntryNotFound { table: table.as_ref().into(), key: from.as_ref().into() }
         })?;
+
+        // INVARIANT: preserve original formatting that existed beforehand.
         let new_key = Key::new(to.as_ref()).with_leaf_decor(old_key.leaf_decor().clone());
         entry.insert_formatted(&new_key, old_item.clone());
+
         Ok((old_key, old_item))
     }
 
@@ -448,7 +463,7 @@ impl FromStr for Toml {
     }
 }
 
-/// TOML serialization and deserialization manager.
+/// TOML serialization and deserialization configuration.
 ///
 /// Interface to simplify serialization and deserialization of parsed TOML data.
 ///
@@ -465,10 +480,10 @@ pub trait Config: fmt::Debug {
     fn location<'cfg>(&self, locator: &'cfg impl Locator) -> &'cfg Path;
 }
 
-/// RepoSettings data configuration management.
+/// Repository data configuration management.
 ///
 /// Handles serialization and deserialization of repository settings.
-/// RepoSettings settings are held within the "repos" section of a
+/// Repository settings are held within the "repos" section of a
 /// configuration file.
 ///
 /// # Invariants
@@ -555,12 +570,12 @@ impl Config for CmdHookConfig {
     }
 }
 
-/// Serialize and deserialize TOML entry.
+/// Serialize and deserialize configuration settings.
 pub trait Settings: cmp::PartialEq + fmt::Debug + From<(Key, Item)> {
     fn to_toml(&self) -> (Key, Item);
 }
 
-/// RepoSettingssitory configuration settings.
+/// Repository configuration settings.
 ///
 /// Intermediary structure meant to help make it easier to deserialize and
 /// serialize repository configuration file data.
@@ -576,7 +591,7 @@ pub struct RepoSettings {
     pub remote: String,
 
     /// Flag to determine if repository's working directory is the user's home
-    /// directory through _fake bare_ technique.
+    /// directory through _bare_ technique.
     pub workdir_home: bool,
 
     /// Bootstrap configuration for repository.
@@ -652,9 +667,11 @@ fn repo_toml<'toml>(entry: (&'toml Key, &'toml Item)) -> RepoSettings {
     bootstrap.visit_item(value);
     repo.visit_item(value);
 
+    // INVARIANT: if all bootstrap fields are None, then make the boostrap field itself None.
     if !bootstrap.is_empty() {
         repo = repo.bootstrap(bootstrap);
     }
+
     repo
 }
 
@@ -857,8 +874,11 @@ impl Settings for CmdHookSettings {
         while let Some((_, hook)) = iter.next() {
             let mut inline = InlineTable::new();
             let decor = inline.decor_mut();
+
+            // INVARIANT: inline tables in array must be indented by 4 spaces.
             decor.set_prefix("\n    ");
 
+            // INVARIANT: array ending delimiter ']' must be on its own line.
             if iter.peek().is_none() {
                 decor.set_suffix("\n");
             }
