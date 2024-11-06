@@ -4,7 +4,7 @@
 mod cmd_hook;
 mod repo;
 
-use crate::data_xchg::{Toml, TomlError};
+use crate::config::{Toml, TomlError};
 
 use anyhow::Result;
 use indoc::{formatdoc, indoc};

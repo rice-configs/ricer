@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use crate::data_xchg::{CommandHook, Hook, Repository, TomlEntry};
-use crate::locate::MockLocator;
-use crate::manager::{
-    CommandHookData, ConfigManager, ConfigManagerError, RepositoryData, TomlManager,
+use crate::config::{
+    CommandHook, CommandHookData, ConfigManager, ConfigManagerError, Hook, Repository,
+    RepositoryData, TomlEntry, TomlManager,
 };
+use crate::locate::MockLocator;
 use crate::tests::FakeConfigDir;
 
 use anyhow::Result;
