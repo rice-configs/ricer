@@ -898,16 +898,11 @@ impl From<(Key, Item)> for CmdHookSettings {
 
 impl<'toml> Visit<'toml> for CmdHookSettings {
     fn visit_inline_table(&mut self, node: &'toml InlineTable) {
-        let pre = if let Some(pre) = node.get("pre") { pre.as_str() } else { None };
-        let post = if let Some(post) = node.get("post") { post.as_str() } else { None };
-        let workdir = if let Some(workdir) = node.get("workdir") { workdir.as_str() } else { None };
-
-        let hook = HookSettings::default();
-        let hook = if let Some(pre) = pre { hook.pre(pre) } else { hook };
-        let hook = if let Some(post) = post { hook.post(post) } else { hook };
-        let hook = if let Some(workdir) = workdir { hook.workdir(workdir) } else { hook };
+        let mut hook = HookSettings::default();
+        hook.pre = node.get("pre").map(|s| s.as_str().map(|s| s.into())).flatten();
+        hook.post = node.get("post").map(|s| s.as_str().map(|s| s.into())).flatten();
+        hook.workdir = node.get("workdir").map(|s| s.as_str().map(|s| s.into())).flatten();
         self.hooks.push(hook);
-
         visit_inline_table(self, node);
     }
 }
