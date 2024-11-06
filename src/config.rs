@@ -133,8 +133,7 @@ where
         let path = config.location(locator);
         debug!("Load new configuration manager from '{}'", path.display());
         let root = path.parent().unwrap();
-        mkdirp(root)
-            .map_err(|err| ConfigFileError::MakeDirP { source: err, path: root.into() })?;
+        mkdirp(root).map_err(|err| ConfigFileError::MakeDirP { source: err, path: root.into() })?;
 
         let mut file = OpenOptions::new()
             .write(true)
@@ -169,8 +168,7 @@ where
     pub fn save(&mut self) -> Result<(), ConfigFileError> {
         debug!("Save configuration manager data to '{}'", self.as_path().display());
         let root = self.as_path().parent().unwrap();
-        mkdirp(root)
-            .map_err(|err| ConfigFileError::MakeDirP { source: err, path: root.into() })?;
+        mkdirp(root).map_err(|err| ConfigFileError::MakeDirP { source: err, path: root.into() })?;
 
         let mut file = OpenOptions::new()
             .write(true)

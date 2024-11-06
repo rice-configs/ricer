@@ -3,10 +3,9 @@
 
 #![allow(dead_code)]
 
+mod cli;
+mod config;
 mod context;
-mod data_xchg;
-mod manager;
-mod ui;
 
 use anyhow::{anyhow, Result};
 use is_executable::IsExecutable;
