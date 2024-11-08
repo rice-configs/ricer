@@ -21,6 +21,9 @@
 //!
 //! - [`XdgDirLayout`]
 //! - [`DefaultLocator`]
+//!
+//! [`XdgDirLayout`]: crate::locate::XdgDirLayout
+//! [`DefaultLocator`]: crate::locate::DefaultLocator
 
 use crate::locate::Locator;
 
@@ -97,6 +100,8 @@ pub enum TomlError {
 /// - [`RepoConfig`]
 /// - [`CmdHookConfig`]
 /// - [`DefaultLocator`]
+///
+/// [`DefaultLocator`]: crate::locate::DefaultLocator
 #[derive(Clone, Debug)]
 pub struct ConfigFile<'cfg, C, L>
 where
