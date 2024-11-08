@@ -3,8 +3,8 @@
 
 use ricer::cli::Cli;
 use ricer::context::Context;
+use ricer::hook::{CmdHook, HookKind};
 use ricer::locate::{DefaultLocator, XdgDirLayout};
-use ricer::manager::{CommandHookManager, HookKind};
 
 use anyhow::Result;
 use log::{error, LevelFilter};
@@ -41,7 +41,7 @@ where
     let ctx = Context::from(opts);
     let layout = XdgDirLayout::layout()?;
     let locator = DefaultLocator::locate(layout);
-    let hook_mgr = CommandHookManager::load(&ctx, &locator)?;
+    let hook_mgr = CmdHook::load(&ctx, &locator)?;
     hook_mgr.run_hooks(HookKind::Pre)?;
     hook_mgr.run_hooks(HookKind::Post)?;
 

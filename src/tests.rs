@@ -6,6 +6,7 @@
 mod cli;
 mod config;
 mod context;
+mod hook;
 
 use anyhow::{anyhow, Result};
 use is_executable::IsExecutable;

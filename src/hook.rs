@@ -44,9 +44,6 @@ use std::{
     sync::Arc,
 };
 
-#[cfg(test)]
-use mockall::automock;
-
 /// Error types for [`CmdHook`].
 #[derive(Debug, thiserror::Error)]
 pub enum CmdHookError {
@@ -258,7 +255,6 @@ pub struct HookPager {
     choice: Arc<AtomicBool>,
 }
 
-#[cfg_attr(test, automock)]
 impl HookPager {
     pub fn new() -> Self {
         Self { choice: Arc::new(AtomicBool::default()) }
