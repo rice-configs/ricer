@@ -152,10 +152,6 @@ where
         Ok(Self { context, locator, config, pager: Default::default() })
     }
 
-    pub fn set_pager(&mut self, pager: HookPager) {
-        self.pager = pager;
-    }
-
     /// Run user-defined hooks.
     ///
     /// Run specific hook kind for given command that was selected through
