@@ -35,7 +35,9 @@ use minus::{
     page_all, ExitStrategy, LineNumbers, Pager,
 };
 use run_script::{run_script, ScriptError, ScriptOptions};
+use shellexpand::{full as expand_var, LookupError};
 use std::{
+    env::VarError,
     fs::read_to_string,
     hash::RandomState,
     io::Error as IoError,
@@ -61,6 +63,9 @@ pub enum CmdHookError {
 
     #[error("Failed to run pager")]
     HookPager { source: HookPagerError },
+
+    #[error("Failed to expand hook work directory path")]
+    ExpandPath { source: LookupError<VarError> },
 }
 
 impl From<ConfigFileError> for CmdHookError {
@@ -191,22 +196,47 @@ where
             let hook_path = self.locator.hooks_dir().join(hook_name);
             let hook_data = read_to_string(&hook_path)
                 .map_err(|err| CmdHookError::HookRead { source: err, path: hook_path.clone() })?;
+            // INVARIANT: all working directory paths must be shell expanded.
+            let hook_dir = self.expand_workdir(hook.workdir)?;
 
             if action == &HookAction::Prompt {
-                let workdir = hook.workdir.as_deref().unwrap_or(self.locator.hooks_dir());
-                self.pager.page_and_prompt(hook_path.as_path(), workdir, &hook_data)?;
+                self.pager.page_and_prompt(hook_path.as_path(), &hook_dir, &hook_data)?;
                 if !self.pager.choice() {
                     continue; // Skip this iteration if user denied hook script.
                 }
             }
 
             let mut hook_opts = ScriptOptions::new();
-            hook_opts.working_directory = hook.workdir;
+            hook_opts.working_directory = hook_dir;
             let (code, out, err) = run_script!(hook_data, hook_opts)?;
             info!("({code}) {}\nstdout: {out}\nstderr: {err}", hook_path.display());
         }
 
         Ok(())
+    }
+
+    /// Perform shell expansion on working directory path.
+    ///
+    /// Provides the following forms of expansion:
+    ///
+    /// - Tilde expansion, e.g., `~/some/path`.
+    /// - Environment expansion like `$A` or `${B}` or `${C:32}`, e.g.,
+    ///   `$HOME/some/path`.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`CmdHookError::ExpandPath`] if path expansion failed for some reason.
+    fn expand_workdir(&self, workdir: Option<PathBuf>) -> Result<Option<PathBuf>, CmdHookError> {
+        match workdir {
+            Some(workdir) => {
+                let workdir = workdir.to_string_lossy().into_owned();
+                let workdir = expand_var(&workdir)
+                    .map_err(|err| CmdHookError::ExpandPath { source: err })?
+                    .into_owned();
+                Ok(Some(PathBuf::from(workdir)))
+            }
+            None => Ok(None),
+        }
     }
 
     fn get_hook_action(&self) -> &HookAction {
@@ -273,10 +303,15 @@ impl HookPager {
     pub fn page_and_prompt(
         &self,
         file_name: &Path,
-        workdir: &Path,
+        workdir: &Option<PathBuf>,
         file_data: &str,
     ) -> Result<(), HookPagerError> {
         let pager = Pager::new();
+        let workdir = match workdir {
+            Some(path) => path.clone(),
+            None => PathBuf::from("./"),
+        };
+
         pager.set_prompt(format!(
             "Run '{}' at '{}'? [a]ccept/[d]eny",
             file_name.display(),
@@ -289,6 +324,7 @@ impl HookPager {
         pager.set_input_classifier(self.generate_key_bindings())?;
         pager.set_exit_strategy(ExitStrategy::PagerQuit)?;
         page_all(pager)?;
+
         Ok(())
     }
 
