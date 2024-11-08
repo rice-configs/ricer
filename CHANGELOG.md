@@ -13,6 +13,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### [0.4.0] - 2024-11-08
+
+### Added
+
+- Add `ricer::config::ConfigFile` to handle configuration file manipulation.
+    - Add `ricer::config::Config` to implement different configuration types.
+    - Add `ricer::config::RepoConfig` to handle repository configuration file.
+    - Add `ricer::config::CmdHookConfig` to handle command hook configuration
+      file.
+- Add `ricer::hook::CmdHook` to handle command hook execution.
+- Add `ricer::hook::HookPager` to handle paging and prompting user about
+  executing hook scripts.
+- Add `ricer::locate::DirLayout` to determine expected configuration directory
+  layout.
+    - Add `ricer::locate::XdgDirLayout` to make configuration directory follow
+      XDG Base Directory Specification.
+- Add `ricer::locate::Locator` to determine expected paths for various pieces
+  of configuration and repository information.
+    - Add `ricer::locate::DefaultLocator` to determine default expected paths
+      for configuration directories, configuration files, and repositories.
+
+### Changed
+
+- Simplify internal module structure to make it more linear and place related
+  logic in the same module to make their intent and purpose more clear.
+     - Improve current documentation in each module to more accurately match
+       the logic contained in them now.
+- Rename `ricer::config::TomlEntry` to `ricer::config::Settings`.
+- Rename `ricer::config::Repository` to `ricer::config::RepoSettings`.
+- Rename `ricer::config::CommandHook` to `ricer::config::CmdHookSettings`.
+- Rename `ricer::config::Bootstrap` to `ricer::config::BootstrapSettings`.
+- Implement `ricer::config::Settings` trait for
+  `ricer::config::{CmdHookSettings, RepoSettings}`.
+- Simplify logic for deserializing command hook data from TOML document into
+  `ricer::config::CmdHookSettings`.
+
 ### [0.3.0] - 2024-10-26
 
 ### Added
@@ -24,6 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deserialization of repository bootstrapping TOML data.
 - Add `ricer::config::CommandHook` and `ricer::config::Hook` as intermediary
   types for serialization and deserialization of command hook TOML data.
+- Add `ricer::config::TomlEntry` to unify serialization and deserialization
+  under one interface.
+- Add `shellexpand` crate for shell expansion of string data.
+- Add `mkdirp` crate to replicate `mkdir -p` command for creating new
+  directories.
 
 ### Changed
 
@@ -80,7 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Provide feature request template.
 - Make @awkless main code owner of Ricer.
 
-[Unreleased]: https://github.com/rice-configs/ricer/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/rice-configs/ricer/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/rice-configs/ricer/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/rice-configs/ricer/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/rice-configs/ricer/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/rice-configs/ricer/releases/tag/v0.1.0
