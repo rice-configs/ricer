@@ -57,4 +57,7 @@ pub mod hook;
 pub mod locate;
 
 #[cfg(test)]
+pub(crate) mod test_tools;
+
+#[cfg(test)]
 mod tests;
