@@ -1,13 +1,119 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+use is_executable::IsExecutable;
 use mkdirp::mkdirp;
 use std::{
+    collections::HashMap,
+    fs::{metadata, read_to_string, set_permissions, write},
     path::{Path, PathBuf},
-    fs::{metadata, set_permissions, write, read_to_string},
 };
+use tempfile::{Builder as TempFileBuilder, TempDir};
+use walkdir::WalkDir;
 
+/// Directory of file fixtures.
+///
+/// Used to bundle collections of file fixtures under one temporary directory.
+/// Useful for creating a set of file fixtures that need to be stored in a
+/// singular temporary location for testing.
+pub struct DirFixture {
+    dir: TempDir,
+    fixtures: HashMap<PathBuf, FileFixture>,
+}
+
+impl DirFixture {
+    /// Open new directory fixture.
+    ///
+    /// # Errors
+    ///
+    /// - May fail if temporary directory cannot be created.
+    pub fn open() -> Result<Self> {
+        let dir = TempFileBuilder::new().tempdir()?;
+        Ok(Self { dir, fixtures: HashMap::new() })
+    }
+
+    pub fn with_file(
+        mut self,
+        path: impl AsRef<Path>,
+        data: impl AsRef<str>,
+        kind: FileFixtureKind,
+    ) -> Self {
+        let fixture = FileFixture::new(self.dir.path().join(path.as_ref()))
+            .with_data(data.as_ref())
+            .with_kind(kind);
+        self.fixtures.insert(fixture.as_path().into(), fixture);
+        self
+    }
+
+    /// Get tracked file fixture.
+    ///
+    /// # Errors
+    ///
+    /// - May fail if file fixture is not being tracked.
+    pub fn get_fixture(&self, path: impl AsRef<Path>) -> Result<&FileFixture> {
+        self.fixtures.get(&self.dir.path().join(path.as_ref())).ok_or(anyhow!(
+            "Fixture '{}' not being tracked in '{}'",
+            path.as_ref().display(),
+            self.dir.path().display()
+        ))
+    }
+
+    /// Write all file fixtures into directory fixture.
+    ///
+    /// # Errors
+    ///
+    /// - May fail if tracked fixture cannot be written for whatever reason.
+    ///
+    /// # See also
+    ///
+    /// - [`FileFixture::write`]
+    pub fn write(&self) -> Result<()> {
+        for (_, fixture) in self.fixtures.iter() {
+            fixture.write()?;
+        }
+
+        Ok(())
+    }
+
+    /// Synchronize all file fixtures in directory fixture.
+    ///
+    /// Will track any files that were newly added into the temporary directory.
+    ///
+    /// # Errors
+    ///
+    /// - May file if tracked file fixture cannot be syncronized for whatever
+    ///   reason.
+    ///
+    /// # See also
+    ///
+    /// - [`FileFixture::sync`]
+    pub fn sync(&mut self) -> Result<()> {
+        for (_, fixture) in self.fixtures.iter_mut() {
+            fixture.sync()?;
+        }
+
+        // Track any new files that were added by some external process(es)...
+        for entry in WalkDir::new(self.dir.path()) {
+            let path = entry?.path().to_path_buf();
+            let data = read_to_string(&path)?;
+            let kind = match path.is_executable() {
+                true => FileFixtureKind::Script,
+                false => FileFixtureKind::Normal,
+            };
+            let fixture = FileFixture::new(path)
+                .with_data(data)
+                .with_kind(kind);
+            self.fixtures.insert(fixture.as_path().into(), fixture);
+        }
+
+        Ok(())
+    }
+
+    pub fn as_path(&self) -> &Path {
+        self.dir.path()
+    }
+}
 
 /// Test file fixture.
 ///
@@ -23,16 +129,12 @@ use std::{
 pub struct FileFixture {
     path: PathBuf,
     data: String,
-    executable: bool,
+    kind: FileFixtureKind,
 }
 
 impl FileFixture {
     pub fn new(path: impl Into<PathBuf>) -> Self {
-        Self {
-            path: path.into(),
-            data: Default::default(),
-            executable: Default::default(),
-        }
+        Self { path: path.into(), data: Default::default(), kind: Default::default() }
     }
 
     pub fn with_data(mut self, data: impl Into<String>) -> Self {
@@ -40,8 +142,8 @@ impl FileFixture {
         self
     }
 
-    pub fn with_executable(mut self, flag: bool) -> Self {
-        self.executable = flag;
+    pub fn with_kind(mut self, kind: FileFixtureKind) -> Self {
+        self.kind = kind;
         self
     }
 
@@ -60,7 +162,7 @@ impl FileFixture {
         write(&self.path, &self.data)?;
 
         #[cfg(unix)]
-        if self.executable {
+        if self.kind == FileFixtureKind::Script {
             use std::os::unix::fs::PermissionsExt;
 
             let metadata = metadata(&self.path)?;
@@ -82,7 +184,7 @@ impl FileFixture {
     }
 
     pub fn is_executable(&self) -> bool {
-        self.executable
+        self.kind == FileFixtureKind::Script
     }
 
     /// Synchronize file fixture at tracked path.
@@ -94,4 +196,15 @@ impl FileFixture {
         self.data = read_to_string(&self.path)?;
         Ok(())
     }
+}
+
+/// Determine file fixture to write.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum FileFixtureKind {
+    /// Normal file with read and write permissions.
+    #[default]
+    Normal,
+
+    /// Executable file with read and write permissions.
+    Script,
 }
