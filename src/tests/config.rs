@@ -1,8 +1,11 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
+mod repo_settings;
+
 use crate::config::*;
 use crate::locate::MockLocator;
+use crate::test_tools::{err_check, DirFixture, FileFixtureKind};
 use crate::tests::FakeConfigDir;
 
 use anyhow::Result;
@@ -242,27 +245,48 @@ fn toml_remove_catches_errors(#[case] input: &str, #[case] expect: TomlError) ->
     Ok(())
 }
 
+#[fixture]
+fn good_configs() -> DirFixture {
+    DirFixture::open()
+        .with_file(
+            "repos.toml",
+            indoc! {r#"
+                # should still exist!
+                [repos.vim]
+                branch = "master"
+                remote = "origin"
+                workdir_home = true
+            "#},
+            FileFixtureKind::Normal,
+        )
+        .with_file(
+            "hooks.toml",
+            indoc! {r#"
+                # should still exist!
+                [hooks]
+                bootstrap = [
+                    { pre = "hook.sh", post = "hook.sh", workdir = "/some/dir" },
+                    { pre = "hook.sh" }
+                ]
+            "#},
+            FileFixtureKind::Normal,
+        )
+        .write()
+}
+
 #[rstest]
-#[case::repo_data(
-    RepoConfig,
-    FakeConfigDir::builder()?.config_file("repos.toml", "this = 'will parse'\n")?.build(),
-)]
-#[case::hook_data(
-    CmdHookConfig,
-    FakeConfigDir::builder()?.config_file("hooks.toml", "this = 'will parse'\n")?.build(),
-)]
-fn config_file_load_works(
-    #[case] config_type: impl Config,
-    #[case] config_data: FakeConfigDir,
-) -> Result<()> {
+fn config_file_load_works(good_configs: DirFixture) {
+    let repos_fixture = good_configs.get_fixture("repos.toml");
+    let hooks_fixture = good_configs.get_fixture("hooks.toml");
+
     let mut locator = MockLocator::new();
-    locator.expect_repos_config().return_const(config_data.config_dir().join("repos.toml"));
-    locator.expect_hooks_config().return_const(config_data.config_dir().join("hooks.toml"));
+    locator.expect_repos_config().return_const(repos_fixture.as_path().into());
+    locator.expect_hooks_config().return_const(hooks_fixture.as_path().into());
 
-    let config = ConfigFile::load(config_type, &locator)?;
-    assert_eq!(config.to_string(), config_data.fixture(config.as_path())?.as_str());
-
-    Ok(())
+    let repo_cfg = err_check!(ConfigFile::load(RepoConfig, &locator));
+    let hook_cfg = err_check!(ConfigFile::load(CmdHookConfig, &locator));
+    assert_eq!(repo_cfg.to_string(), repos_fixture.as_str());
+    assert_eq!(hook_cfg.to_string(), hooks_fixture.as_str());
 }
 
 #[rstest]
@@ -717,115 +741,5 @@ fn config_file_remove_catches_errors(
     let result = config.remove("non-existent");
     assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
 
-    Ok(())
-}
-
-#[rstest]
-#[case::no_bootstrap(
-    RepoSettings::new("vim")
-        .branch("master")
-        .remote("origin")
-        .workdir_home(true),
-    indoc! {r#"
-        [repos.vim]
-        branch = "master"
-        remote = "origin"
-        workdir_home = true
-    "#}
-)]
-#[case::with_bootstrap(
-    RepoSettings::new("vim")
-        .branch("master")
-        .remote("origin")
-        .workdir_home(true)
-        .bootstrap(
-            BootstrapSettings::new()
-                .clone("https://github.com/awkless/vim.git")
-                .os(OsType::Unix)
-                .users(["awkless", "sedgwick"])
-                .hosts(["lovelace", "turing"])
-        ),
-    indoc! {r#"
-        [repos.vim]
-        branch = "master"
-        remote = "origin"
-        workdir_home = true
-
-        [repos.vim.bootstrap]
-        clone = "https://github.com/awkless/vim.git"
-        os = "unix"
-        users = ["awkless", "sedgwick"]
-        hosts = ["lovelace", "turing"]
-    "#}
-)]
-fn repo_settings_to_toml_serialize(#[case] repo: RepoSettings, #[case] expect: &str) -> Result<()> {
-    let doc = setup_repo_doc(repo.to_toml())?;
-    assert_eq!(doc.to_string(), expect);
-    Ok(())
-}
-
-#[rstest]
-#[case::no_bootstrap(
-    RepoSettings::new("vim")
-        .branch("master")
-        .remote("origin")
-        .workdir_home(true),
-)]
-#[case::with_bootstrap(
-    RepoSettings::new("vim")
-        .branch("master")
-        .remote("origin")
-        .workdir_home(true)
-        .bootstrap(
-            BootstrapSettings::new()
-                .clone("https://github.com/awkless/vim.git")
-                .os(OsType::Unix)
-                .users(["awkless", "sedgwick"])
-                .hosts(["lovelace", "turing"])
-        ),
-)]
-fn repo_settings_from_entry_deserialize(#[case] expect: RepoSettings) -> Result<()> {
-    let doc = setup_repo_doc(expect.to_toml())?;
-    let result = RepoSettings::from(doc["repos"].as_table().unwrap().get_key_value("vim").unwrap());
-    assert_eq!(result, expect);
-    Ok(())
-}
-
-#[rstest]
-#[case(
-    CmdHookSettings::new("commit")
-        .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/path"))
-        .add_hook(HookSettings::new().pre("hook.sh"))
-        .add_hook(HookSettings::new().post("hook.sh")),
-    indoc! {r#"
-        [hooks]
-        commit = [
-            { pre = "hook.sh", post = "hook.sh", workdir = "/some/path" },
-            { pre = "hook.sh" },
-            { post = "hook.sh" }
-        ]
-    "#}
-)]
-fn cmd_hook_settings_to_toml_serialize(
-    #[case] cmd_hook: CmdHookSettings,
-    #[case] expect: &str,
-) -> Result<()> {
-    let doc = setup_cmd_hook_doc(cmd_hook.to_toml())?;
-    assert_eq!(doc.to_string(), expect);
-    Ok(())
-}
-
-#[rstest]
-#[case(
-    CmdHookSettings::new("commit")
-        .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/path"))
-        .add_hook(HookSettings::new().pre("hook.sh"))
-        .add_hook(HookSettings::new().post("hook.sh"))
-)]
-fn cmd_hook_settings_from_deserialize(#[case] expect: CmdHookSettings) -> Result<()> {
-    let doc = setup_cmd_hook_doc(expect.to_toml())?;
-    let result =
-        CmdHookSettings::from(doc["hooks"].as_table().unwrap().get_key_value("commit").unwrap());
-    assert_eq!(result, expect);
     Ok(())
 }
