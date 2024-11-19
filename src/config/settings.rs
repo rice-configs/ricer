@@ -8,7 +8,7 @@ use toml_edit::{
 };
 
 /// Serialize and deserialize configuration settings.
-pub trait Settings: cmp::PartialEq + fmt::Debug + From<(Key, Item)> {
+pub trait Settings: cmp::PartialEq + fmt::Debug + From<(Key, Item)> + Default {
     fn to_toml(&self) -> (Key, Item);
 }
 

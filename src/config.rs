@@ -128,9 +128,9 @@ where
 
         let mut file = OpenOptions::new()
             .write(true)
+            .truncate(false)
             .read(true)
             .create(true)
-            .truncate(false)
             .open(path)
             .map_err(|err| ConfigFileError::FileOpen { source: err, path: path.into() })?;
         let mut buffer = String::new();
@@ -163,9 +163,9 @@ where
 
         let mut file = OpenOptions::new()
             .write(true)
+            .truncate(true)
             .read(true)
             .create(true)
-            .truncate(false)
             .open(self.as_path())
             .map_err(|err| ConfigFileError::FileOpen {
                 source: err,
@@ -347,5 +347,434 @@ impl Config for CmdHookConfig {
 
     fn location<'cfg>(&self, locator: &'cfg impl Locator) -> &'cfg Path {
         locator.hooks_config()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::locate::MockLocator;
+    use crate::testenv::{FakeDir, FixtureKind};
+
+    use anyhow::Result;
+    use indoc::indoc;
+    use pretty_assertions::assert_eq;
+    use rstest::{fixture, rstest};
+
+    #[fixture]
+    fn config_dir() -> Result<FakeDir> {
+        let dir = FakeDir::open()?
+            .with_file(
+                "config.toml",
+                indoc! {r#"
+                    # Formatting should remain the same!
+
+                    [repos.vim]
+                    branch = "master"
+                    remote = "origin"
+                    workdir_home = true
+
+                    [hooks]
+                    bootstrap = [
+                        { pre = "hook.sh", post = "hook.sh", workdir = "/some/dir" },
+
+
+
+
+                        { pre = "hook.sh" }
+                    ]
+                "#},
+                FixtureKind::NormalFile,
+            )
+            .with_file(
+                "not_table.toml",
+                indoc! {r#"
+                    repos = 'not a table'
+                    hooks = 'not a table'
+                "#},
+                FixtureKind::NormalFile,
+            )
+            .with_file("bad_format.toml", "this 'will fail!", FixtureKind::NormalFile)
+            .write()?;
+        Ok(dir)
+    }
+
+    #[rstest]
+    #[case::repo_config(RepoConfig)]
+    #[case::cmd_hook_config(CmdHookConfig)]
+    fn config_file_load_parse_file(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: impl Config,
+    ) -> Result<()> {
+        let config_dir = config_dir?;
+        let fixture = config_dir.get_fixture("config.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let config = ConfigFile::load(config_kind, &locator)?;
+        assert_eq!(config.to_string(), fixture.as_str());
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(RepoConfig)]
+    #[case::hook_cmd_config(CmdHookConfig)]
+    fn config_file_load_create_new_file(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: impl Config,
+    ) -> Result<()> {
+        let config_dir = config_dir?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(config_dir.as_path().join("repos.toml"));
+        locator.expect_hooks_config().return_const(config_dir.as_path().join("hooks.toml"));
+
+        let config = ConfigFile::load(config_kind, &locator)?;
+        assert!(config.as_path().exists());
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(RepoConfig)]
+    #[case::cmd_hook_config(CmdHookConfig)]
+    fn config_file_load_return_err_toml(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: impl Config,
+    ) -> Result<()> {
+        let config_dir = config_dir?;
+        let fixture = config_dir.get_fixture("bad_format.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let result = ConfigFile::load(config_kind, &locator);
+        assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(
+        RepoConfig,
+        RepoSettings::new("dwm").branch("main").remote("upstream").workdir_home(true),
+    )]
+    #[case::cmd_hook_config(
+        CmdHookConfig,
+        CmdHookSettings::new("commit").add_hook(HookSettings::new().post("hook.sh")),
+    )]
+    fn config_file_save_preserves_formatting<E, T>(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: T,
+        #[case] expect: E,
+    ) -> Result<()>
+    where
+        E: Settings,
+        T: Config<Entry = E>,
+    {
+        let mut config_dir = config_dir?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let mut config = ConfigFile::load(config_kind, &locator)?;
+        config.add(expect)?;
+        config.save()?;
+        fixture.sync()?;
+        assert_eq!(config.to_string(), fixture.as_str());
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(RepoConfig)]
+    #[case::cmd_hook_config(CmdHookConfig)]
+    fn config_file_save_create_new_file(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: impl Config,
+    ) -> Result<()> {
+        let config_dir = config_dir?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(config_dir.as_path().join("repos.toml"));
+        locator.expect_hooks_config().return_const(config_dir.as_path().join("hooks.toml"));
+
+        let mut config = ConfigFile::load(config_kind, &locator)?;
+        config.save()?;
+        assert!(config.as_path().exists());
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(
+        RepoConfig,
+        "vim",
+        RepoSettings::new("vim").branch("master").remote("origin").workdir_home(true),
+    )]
+    #[case::repo_config(
+        CmdHookConfig,
+        "bootstrap",
+        CmdHookSettings::new("bootstrap")
+            .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/dir"))
+            .add_hook(HookSettings::new().pre("hook.sh")),
+    )]
+    fn config_file_get_return_setting<E, T>(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: T,
+        #[case] key: &str,
+        #[case] expect: E,
+    ) -> Result<()>
+    where
+        E: Settings,
+        T: Config<Entry = E>,
+    {
+        let config_dir = config_dir?;
+        let fixture = config_dir.get_fixture("config.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let config = ConfigFile::load(config_kind, &locator)?;
+        let result = config.get(key)?;
+        assert_eq!(result, expect);
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(RepoConfig)]
+    #[case::cmd_hook_config(CmdHookConfig)]
+    fn config_file_get_return_err_toml(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: impl Config,
+    ) -> Result<()> {
+        let config_dir = config_dir?;
+        let fixture = config_dir.get_fixture("config.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let config = ConfigFile::load(config_kind, &locator)?;
+        let result = config.get("non-existent");
+        assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(
+        RepoConfig,
+        RepoSettings::new("dwm").branch("main").remote("upstream").workdir_home(true),
+    )]
+    #[case::cmd_hook_config(
+        CmdHookConfig,
+        CmdHookSettings::new("commit").add_hook(HookSettings::new().post("hook.sh")),
+    )]
+    fn config_file_new_return_none<E, T>(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: T,
+        #[case] entry: E,
+    ) -> Result<()>
+    where
+        E: Settings,
+        T: Config<Entry = E>,
+    {
+        let mut config_dir = config_dir?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let mut config = ConfigFile::load(config_kind, &locator)?;
+        let result = config.add(entry)?;
+        config.save()?;
+        fixture.sync()?;
+        assert_eq!(result, None);
+        assert_eq!(config.to_string(), fixture.as_str());
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(
+        RepoConfig,
+        RepoSettings::new("vim").branch("main").remote("upstream").workdir_home(false),
+        Some(RepoSettings::new("vim").branch("master").remote("origin").workdir_home(true)),
+    )]
+    #[case::cmd_hook_config(
+        CmdHookConfig,
+        CmdHookSettings::new("bootstrap")
+            .add_hook(HookSettings::new().pre("new_hook.sh").post("new_hook.sh"))
+            .add_hook(HookSettings::new().pre("new_hook.sh").workdir("/new/dir")),
+        Some(CmdHookSettings::new("bootstrap")
+            .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/dir"))
+            .add_hook(HookSettings::new().pre("hook.sh"))),
+    )]
+    fn config_file_new_return_some<E, T>(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: T,
+        #[case] entry: E,
+        #[case] expect: Option<E>,
+    ) -> Result<()>
+    where
+        E: Settings,
+        T: Config<Entry = E>,
+    {
+        let mut config_dir = config_dir?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let mut config = ConfigFile::load(config_kind, &locator)?;
+        let result = config.add(entry)?;
+        config.save()?;
+        fixture.sync()?;
+        assert_eq!(result, expect);
+        assert_eq!(config.to_string(), fixture.as_str());
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(RepoConfig)]
+    #[case::cmd_hook_config(CmdHookConfig)]
+    fn config_file_add_return_err_toml(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: impl Config,
+    ) -> Result<()> {
+        let mut config_dir = config_dir?;
+        let fixture = config_dir.get_fixture_mut("not_table.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let mut config = ConfigFile::load(config_kind, &locator)?;
+        let result = config.add(Default::default());
+        assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(
+        RepoConfig,
+        "vim",
+        "neovim",
+        RepoSettings::new("vim").branch("master").remote("origin").workdir_home(true),
+    )]
+    #[case::cmd_hook_config(
+        CmdHookConfig,
+        "bootstrap",
+        "commit",
+        CmdHookSettings::new("bootstrap")
+            .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/dir"))
+            .add_hook(HookSettings::new().pre("hook.sh")),
+    )]
+    fn config_file_rename_return_old_setting<E, T>(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: T,
+        #[case] from: &str,
+        #[case] to: &str,
+        #[case] expect: E,
+    ) -> Result<()>
+    where
+        E: Settings,
+        T: Config<Entry = E>,
+    {
+        let mut config_dir = config_dir?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let mut config = ConfigFile::load(config_kind, &locator)?;
+        let result = config.rename(from, to)?;
+        config.save()?;
+        fixture.sync()?;
+        assert_eq!(result, expect);
+        assert_eq!(config.to_string(), fixture.as_str());
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(RepoConfig)]
+    #[case::cmd_hook_config(CmdHookConfig)]
+    fn config_file_rename_return_err_toml(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: impl Config,
+    ) -> Result<()> {
+        let config_dir = config_dir?;
+        let fixture = config_dir.get_fixture("not_table.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let mut config = ConfigFile::load(config_kind, &locator)?;
+        let result = config.rename("gonna", "fail");
+        assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(
+        RepoConfig,
+        "vim",
+        RepoSettings::new("vim").branch("master").remote("origin").workdir_home(true),
+    )]
+    #[case::cmd_hook_config(
+        CmdHookConfig,
+        "bootstrap",
+        CmdHookSettings::new("bootstrap")
+            .add_hook(HookSettings::new().pre("hook.sh").post("hook.sh").workdir("/some/dir"))
+            .add_hook(HookSettings::new().pre("hook.sh")),
+    )]
+    fn config_file_remove_return_deleted_setting<E, T>(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: T,
+        #[case] key: &str,
+        #[case] expect: E,
+    ) -> Result<()>
+    where
+        E: Settings,
+        T: Config<Entry = E>,
+    {
+        let mut config_dir = config_dir?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let mut config = ConfigFile::load(config_kind, &locator)?;
+        let result = config.remove(key)?;
+        config.save()?;
+        fixture.sync()?;
+        assert_eq!(result, expect);
+        assert_eq!(config.to_string(), fixture.as_str());
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case::repo_config(RepoConfig)]
+    #[case::cmd_hook_config(CmdHookConfig)]
+    fn config_file_remove_return_err_toml(
+        config_dir: Result<FakeDir>,
+        #[case] config_kind: impl Config,
+    ) -> Result<()> {
+        let config_dir = config_dir?;
+        let fixture = config_dir.get_fixture("not_table.toml")?;
+        let mut locator = MockLocator::new();
+        locator.expect_repos_config().return_const(fixture.as_path().into());
+        locator.expect_hooks_config().return_const(fixture.as_path().into());
+
+        let mut config = ConfigFile::load(config_kind, &locator)?;
+        let result = config.remove("fail");
+        assert!(matches!(result.unwrap_err(), ConfigFileError::Toml { .. }));
+
+        Ok(())
     }
 }
