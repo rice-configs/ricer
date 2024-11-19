@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use log::{info, trace, debug};
+use log::{debug, info, trace};
 use std::{fmt, str::FromStr};
-use toml_edit::{DocumentMut, Table, Key, Item};
+use toml_edit::{DocumentMut, Item, Key, Table};
 
 /// TOML parser.
 ///
@@ -235,10 +235,10 @@ mod tests {
     use super::*;
 
     use anyhow::Result;
-    use pretty_assertions::assert_eq;
     use indoc::{formatdoc, indoc};
-    use toml_edit::Value;
+    use pretty_assertions::assert_eq;
     use rstest::{fixture, rstest};
+    use toml_edit::Value;
 
     #[fixture]
     fn toml_input() -> String {
@@ -252,7 +252,8 @@ mod tests {
 
     #[rstest]
     fn toml_parse_str_accept_good_toml_format(
-        #[values("this = 'will parse'", "[so_will_this]", "hello.world = 'from ricer!'")] input: &str,
+        #[values("this = 'will parse'", "[so_will_this]", "hello.world = 'from ricer!'")]
+        input: &str,
     ) -> Result<()> {
         let toml: Result<Toml, TomlError> = input.parse();
         assert!(toml.is_ok());
