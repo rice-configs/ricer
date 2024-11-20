@@ -17,7 +17,8 @@ impl GitRepo {
     ///
     /// - Return [`GitRepoError::LibGit2`] if repository cannot be created.
     pub fn init(path: impl AsRef<Path>) -> Result<Self, GitRepoError> {
-        todo!();
+        let repo = Repository::init(path.as_ref())?;
+        Ok(Self { repo })
     }
 
     pub fn is_fake_bare(&self) -> bool {
@@ -29,6 +30,12 @@ impl GitRepo {
 pub enum GitRepoError {
     #[error("Failed to perform libgit2 operation")]
     LibGit2 { source: Git2Error },
+}
+
+impl From<Git2Error> for GitRepoError {
+    fn from(err: Git2Error) -> Self {
+        GitRepoError::LibGit2 { source: err }
+    }
 }
 
 #[cfg(test)]
