@@ -21,6 +21,17 @@ impl GitRepo {
         Ok(Self { repo })
     }
 
+    /// Create new Git repository that uses fake bare technique at `path`.
+    ///
+    /// Will create any necessary directories to fake bare repository.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`GitRepoError::LibGit2`] if repository cannot be created.
+    pub fn init_fake_bare(path: impl AsRef<Path>) -> Result<Self, GitRepoError> {
+        todo!();
+    }
+
     pub fn is_fake_bare(&self) -> bool {
         !self.repo.is_bare() && !self.repo.path().to_string_lossy().into_owned().contains(".git")
     }
@@ -57,6 +68,14 @@ mod tests {
         let repo_dir = repo_dir?;
         let repo = GitRepo::init(repo_dir.as_path().join("foo"))?;
         assert!(!repo.is_fake_bare());
+        Ok(())
+    }
+
+    #[rstest]
+    fn git_repo_init_fake_bare_return_self(repo_dir: Result<FakeDir>) -> Result<()> {
+        let repo_dir = repo_dir?;
+        let repo = GitRepo::init(repo_dir.as_path().join("foo"))?;
+        assert!(repo.is_fake_bare());
         Ok(())
     }
 }
