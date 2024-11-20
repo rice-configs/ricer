@@ -55,6 +55,7 @@ pub mod config;
 pub mod context;
 pub mod hook;
 pub mod locate;
+pub mod vcs;
 
 #[cfg(test)]
 pub mod testenv;
