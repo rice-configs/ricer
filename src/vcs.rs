@@ -22,7 +22,7 @@ impl GitRepo {
     }
 
     pub fn is_fake_bare(&self) -> bool {
-        todo!();
+        !self.repo.is_bare() && !self.repo.path().to_string_lossy().into_owned().contains(".git")
     }
 }
 
