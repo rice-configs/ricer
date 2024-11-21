@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use git2::{Error as Git2Error, Repository};
+use git2::{Error as Git2Error, Repository, RepositoryInitOptions};
 use std::path::Path;
 
 pub struct GitRepo {
@@ -28,8 +28,17 @@ impl GitRepo {
     /// # Errors
     ///
     /// - Return [`GitRepoError::LibGit2`] if repository cannot be created.
-    pub fn init_fake_bare(path: impl AsRef<Path>) -> Result<Self, GitRepoError> {
-        todo!();
+    pub fn init_fake_bare(
+        gitdir: impl AsRef<Path>,
+        workdir: impl AsRef<Path>,
+    ) -> Result<Self, GitRepoError> {
+        let mut opts = RepositoryInitOptions::new();
+        opts.bare(false);
+        opts.no_dotgit_dir(true);
+        opts.workdir_path(workdir.as_ref());
+
+        let repo = Repository::init_opts(gitdir.as_ref(), &opts)?;
+        Ok(Self { repo })
     }
 
     pub fn is_fake_bare(&self) -> bool {
@@ -74,7 +83,7 @@ mod tests {
     #[rstest]
     fn git_repo_init_fake_bare_return_self(repo_dir: Result<FakeDir>) -> Result<()> {
         let repo_dir = repo_dir?;
-        let repo = GitRepo::init(repo_dir.as_path().join("foo"))?;
+        let repo = GitRepo::init_fake_bare(repo_dir.as_path().join("foo"), repo_dir.as_path())?;
         assert!(repo.is_fake_bare());
         Ok(())
     }
