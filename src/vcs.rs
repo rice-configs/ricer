@@ -41,6 +41,10 @@ impl GitRepo {
         Ok(Self { repo })
     }
 
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, GitRepoError> {
+        todo!();
+    }
+
     pub fn is_fake_bare(&self) -> bool {
         !self.repo.is_bare() && !self.repo.path().to_string_lossy().into_owned().contains(".git")
     }
@@ -61,15 +65,28 @@ impl From<Git2Error> for GitRepoError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testenv::FakeDir;
+    use crate::testenv::{FixtureKind, FakeDir};
 
     use anyhow::Result;
     use rstest::{fixture, rstest};
+    use indoc::indoc;
 
     #[fixture]
     fn repo_dir() -> Result<FakeDir> {
-        let fake = FakeDir::open()?;
-        Ok(fake)
+        let repo_dir = FakeDir::open()?
+            .with_repo("vim")?
+            .with_file(
+                "vim/vimrc",
+                indoc! {r#"
+                    # dotfile fixture!
+                    set textwidth=80
+                    set shiftwidth=4
+                    set magic
+                "#},
+                FixtureKind::NormalFile
+            )
+            .setup()?;
+        Ok(repo_dir)
     }
 
     #[rstest]
@@ -85,6 +102,15 @@ mod tests {
         let repo_dir = repo_dir?;
         let repo = GitRepo::init_fake_bare(repo_dir.as_path().join("foo"), repo_dir.as_path())?;
         assert!(repo.is_fake_bare());
+        Ok(())
+    }
+
+    #[rstest]
+    fn git_repo_open_return_self(repo_dir: Result<FakeDir>) -> Result<()> {
+        let repo_dir = repo_dir?;
+        let fixture = repo_dir.repo("vim")?;
+        let repo = GitRepo::open(fixture.path())?;
+        assert!(!repo.is_fake_bare());
         Ok(())
     }
 }
