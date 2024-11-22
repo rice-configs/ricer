@@ -4,6 +4,7 @@
 use anyhow::{anyhow, Result};
 use is_executable::IsExecutable;
 use mkdirp::mkdirp;
+use git2::{Repository, IndexAddOption};
 use std::{
     collections::HashMap,
     fs::{metadata, read_to_string, set_permissions, write},
@@ -17,10 +18,10 @@ use walkdir::WalkDir;
 /// Used to bundle collections of file fixtures under one temporary directory.
 /// Useful for creating a set of file fixtures that need to be stored in a
 /// singular temporary location for testing.
-#[derive(Debug)]
 pub struct FakeDir {
     dir: TempDir,
     fixtures: HashMap<PathBuf, Fixture>,
+    repos: HashMap<PathBuf, Repository>,
 }
 
 impl FakeDir {
@@ -31,7 +32,7 @@ impl FakeDir {
     /// - May fail if temporary directory cannot be created.
     pub fn open() -> Result<Self> {
         let dir = TempFileBuilder::new().tempdir()?;
-        Ok(Self { dir, fixtures: HashMap::new() })
+        Ok(Self { dir, fixtures: HashMap::new(), repos: HashMap::new() })
     }
 
     pub fn with_file(
@@ -47,19 +48,60 @@ impl FakeDir {
         self
     }
 
-    /// Write all file fixtures into directory fixture.
+    /// Add Git repository in fake directory.
+    ///
+    /// Will create any directories to the path given.
+    ///
+    /// # Errors
+    ///
+    /// - May fail if Git repository cannot be initialized at path.
+    pub fn with_repo(
+        mut self,
+        path: impl AsRef<Path>,
+    ) -> Result<Self> {
+        let full_path = self.dir.path().join(path.as_ref());
+        let repo = Repository::init(&full_path)?;
+        self.repos.insert(full_path, repo);
+        Ok(self)
+    }
+
+    /// Setup file and repository fixtures inside fake directory.
+    ///
+    /// Will write file fixtures at specified locations, and will stage and
+    /// commit files inside repository fixtures.
     ///
     /// # Errors
     ///
     /// - May fail if tracked fixture cannot be written for whatever reason.
+    /// - May fail if tracked repository cannot update its index and create an
+    ///   initial commit.
     ///
     /// # See also
     ///
     /// - [`FileFixture::write`]
-    pub fn write(self) -> Result<Self> {
+    pub fn setup(self) -> Result<Self> {
         for (_, fixture) in self.fixtures.iter() {
             fixture.write()?
         }
+
+        for (_, repo) in self.repos.iter() {
+            let mut index = repo.index()?;
+            index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
+            index.write()?;
+
+            let tree_id = index.write_tree()?;
+            let sig = repo.signature()?;
+
+            let mut parents = Vec::new();
+            if let Some(parent) = repo.head().ok().map(|h| h.target().unwrap()) {
+                parents.push(repo.find_commit(parent)?);
+            }
+            let parents = parents.iter().collect::<Vec<_>>();
+
+            let tree = repo.find_tree(tree_id)?;
+            repo.commit(Some("HEAD"), &sig, &sig, "initial commit\n\nbody", &tree, &parents)?;
+        }
+
         Ok(self)
     }
 
@@ -68,7 +110,7 @@ impl FakeDir {
     /// # Errors
     ///
     /// - May fail if file fixture is not being tracked.
-    pub fn get_fixture(&self, path: impl AsRef<Path>) -> Result<&Fixture> {
+    pub fn fixture(&self, path: impl AsRef<Path>) -> Result<&Fixture> {
         match self.fixtures.get(&self.dir.path().join(path.as_ref())) {
             Some(fixture) => Ok(fixture),
             None => Err(anyhow!("Fixture '{}' not being tracked", path.as_ref().display())),
@@ -80,10 +122,22 @@ impl FakeDir {
     /// # Errors
     ///
     /// - May fail if file fixture is not being tracked.
-    pub fn get_fixture_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut Fixture> {
+    pub fn fixture_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut Fixture> {
         match self.fixtures.get_mut(&self.dir.path().join(path.as_ref())) {
             Some(fixture) => Ok(fixture),
             None => Err(anyhow!("Fixture '{}' not being tracked", path.as_ref().display())),
+        }
+    }
+
+    /// Get tracked Git repository fixture.
+    ///
+    /// # Errors
+    ///
+    /// - May fail if repository is not being tracked.
+    pub fn repo(&self, path: impl AsRef<Path>) -> Result<&Repository> {
+        match self.repos.get(&self.dir.path().join(path.as_ref())) {
+            Some(repo) => Ok(repo),
+            None => Err(anyhow!("Git repository '{}' not being tracked", path.as_ref().display())),
         }
     }
 

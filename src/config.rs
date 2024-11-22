@@ -395,7 +395,7 @@ mod tests {
                 FixtureKind::NormalFile,
             )
             .with_file("bad_format.toml", "this 'will fail!", FixtureKind::NormalFile)
-            .write()?;
+            .setup()?;
         Ok(dir)
     }
 
@@ -407,7 +407,7 @@ mod tests {
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("config.toml")?;
+        let fixture = config_dir.fixture("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -444,7 +444,7 @@ mod tests {
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("bad_format.toml")?;
+        let fixture = config_dir.fixture("bad_format.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -474,7 +474,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let fixture = config_dir.fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -531,7 +531,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("config.toml")?;
+        let fixture = config_dir.fixture("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -551,7 +551,7 @@ mod tests {
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("config.toml")?;
+        let fixture = config_dir.fixture("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -582,7 +582,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let fixture = config_dir.fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -623,7 +623,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let fixture = config_dir.fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -646,7 +646,7 @@ mod tests {
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.get_fixture_mut("not_table.toml")?;
+        let fixture = config_dir.fixture_mut("not_table.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -684,7 +684,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let fixture = config_dir.fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -707,7 +707,7 @@ mod tests {
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("not_table.toml")?;
+        let fixture = config_dir.fixture("not_table.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -743,7 +743,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.get_fixture_mut("config.toml")?;
+        let fixture = config_dir.fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -766,7 +766,7 @@ mod tests {
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("not_table.toml")?;
+        let fixture = config_dir.fixture("not_table.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
