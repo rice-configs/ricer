@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::{anyhow, Result};
+use git2::{IndexAddOption, Repository, RepositoryInitOptions};
 use is_executable::IsExecutable;
 use mkdirp::mkdirp;
-use git2::{Repository, IndexAddOption, RepositoryInitOptions};
 use std::{
     collections::HashMap,
     fs::{metadata, read_to_string, set_permissions, write},
@@ -13,139 +13,45 @@ use std::{
 use tempfile::{Builder as TempFileBuilder, TempDir};
 use walkdir::WalkDir;
 
-/// Directory of file fixtures.
-///
-/// Used to bundle collections of file fixtures under one temporary directory.
-/// Useful for creating a set of file fixtures that need to be stored in a
-/// singular temporary location for testing.
-pub struct FakeDir {
+pub struct FixtureHarness {
     dir: TempDir,
-    fixtures: HashMap<PathBuf, Fixture>,
-    repos: HashMap<PathBuf, Repository>,
+    fixtures: FixtureClump,
 }
 
-impl FakeDir {
-    /// Open new directory fixture.
-    ///
-    /// # Errors
-    ///
-    /// - May fail if temporary directory cannot be created.
+impl FixtureHarness {
     pub fn open() -> Result<Self> {
         let dir = TempFileBuilder::new().tempdir()?;
-        Ok(Self { dir, fixtures: HashMap::new(), repos: HashMap::new() })
+        Ok(Self { dir, fixtures: FixtureClump::default() })
     }
 
-    pub fn with_file(
-        mut self,
-        path: impl AsRef<Path>,
-        data: impl AsRef<str>,
-        kind: FixtureKind,
-    ) -> Self {
-        let fixture = Fixture::new(self.dir.path().join(path.as_ref()))
-            .with_data(data.as_ref())
-            .with_kind(kind);
-        self.fixtures.insert(fixture.as_path().into(), fixture);
+    pub fn with_file_set<F>(mut self, callback: F) -> Self
+    where
+        F: FnOnce(FixtureClump) -> FixtureClump,
+    {
+        self.fixtures = callback(FixtureClump::new(self.dir.path()));
         self
     }
 
-    /// Setup file and repository fixtures inside fake directory.
-    ///
-    /// Will write file fixtures at specified locations, and will stage and
-    /// commit files inside repository fixtures.
-    ///
-    /// # Errors
-    ///
-    /// - May fail if tracked fixture cannot be written for whatever reason.
-    /// - May fail if tracked repository cannot update its index and create an
-    ///   initial commit.
-    ///
-    /// # See also
-    ///
-    /// - [`FileFixture::write`]
     pub fn setup(self) -> Result<Self> {
-        for (_, fixture) in self.fixtures.iter() {
-            fixture.write()?
-        }
-
-        for (_, repo) in self.repos.iter() {
-            let mut index = repo.index()?;
-            index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
-            index.write()?;
-
-            let tree_id = index.write_tree()?;
-            let sig = repo.signature()?;
-
-            let mut parents = Vec::new();
-            if let Some(parent) = repo.head().ok().map(|h| h.target().unwrap()) {
-                parents.push(repo.find_commit(parent)?);
-            }
-            let parents = parents.iter().collect::<Vec<_>>();
-
-            let tree = repo.find_tree(tree_id)?;
-            repo.commit(Some("HEAD"), &sig, &sig, "initial commit\n\nbody", &tree, &parents)?;
-        }
-
+        self.fixtures.write_all()?;
         Ok(self)
     }
 
-    /// Get tracked file fixture.
-    ///
-    /// # Errors
-    ///
-    /// - May fail if file fixture is not being tracked.
-    pub fn fixture(&self, path: impl AsRef<Path>) -> Result<&Fixture> {
-        match self.fixtures.get(&self.dir.path().join(path.as_ref())) {
-            Some(fixture) => Ok(fixture),
-            None => Err(anyhow!("Fixture '{}' not being tracked", path.as_ref().display())),
-        }
+    pub fn get_fixture(&self, name: impl AsRef<Path>) -> Result<&Fixture> {
+        self.fixtures.get(name.as_ref())
     }
 
-    /// Get tracked mutable file fixture.
-    ///
-    /// # Errors
-    ///
-    /// - May fail if file fixture is not being tracked.
-    pub fn fixture_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut Fixture> {
-        match self.fixtures.get_mut(&self.dir.path().join(path.as_ref())) {
-            Some(fixture) => Ok(fixture),
-            None => Err(anyhow!("Fixture '{}' not being tracked", path.as_ref().display())),
-        }
+    pub fn get_fixture_mut(&mut self, name: impl AsRef<Path>) -> Result<&mut Fixture> {
+        self.fixtures.get_mut(name.as_ref())
     }
 
-    /// Get tracked Git repository fixture.
-    ///
-    /// # Errors
-    ///
-    /// - May fail if repository is not being tracked.
-    pub fn repo(&self, path: impl AsRef<Path>) -> Result<&Repository> {
-        match self.repos.get(&self.dir.path().join(path.as_ref())) {
-            Some(repo) => Ok(repo),
-            None => Err(anyhow!("Git repository '{}' not being tracked", path.as_ref().display())),
-        }
-    }
-
-    /// Synchronize all file fixtures in directory fixture.
-    ///
-    /// Will track any files that were newly added into the temporary directory.
-    ///
-    /// # Errors
-    ///
-    /// - May fail if tracked file fixture cannot be syncronized for whatever
-    ///   reason.
-    /// - May fail if newly detected files in directory fixture cannot be tracked
-    ///   for whatever reason.
-    ///
-    /// # See also
-    ///
-    /// - [`FileFixture::sync`]
-    pub fn sync(&mut self) -> Result<()> {
-        for (_, fixture) in self.fixtures.iter_mut() {
-            fixture.sync()?;
-        }
+    pub fn sync_all(&mut self) -> Result<()> {
+        self.fixtures.sync_all()?;
 
         // Track any new files that were added by some external process(es)...
         for entry in WalkDir::new(self.dir.path()).into_iter().filter_map(Result::ok) {
-            if entry.file_type().is_file() && !self.fixtures.contains_key(entry.path()) {
+            // INVARIANT: only add in a _file_ that is not being tracked.
+            if entry.file_type().is_file() && !self.fixtures.is_tracked(entry.path()) {
                 let path = entry.path().to_path_buf();
                 let data = read_to_string(&path)?;
                 let kind = match path.is_executable() {
@@ -153,7 +59,7 @@ impl FakeDir {
                     false => FixtureKind::NormalFile,
                 };
                 let fixture = Fixture::new(path).with_data(data).with_kind(kind);
-                self.fixtures.insert(fixture.as_path().into(), fixture);
+                self.fixtures.insert(fixture);
             }
         }
 
@@ -167,12 +73,13 @@ impl FakeDir {
 
 #[derive(Debug, Default, Clone)]
 pub struct FixtureClump {
+    root: PathBuf,
     fixtures: HashMap<PathBuf, Fixture>,
 }
 
 impl FixtureClump {
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(path: impl Into<PathBuf>) -> Self {
+        Self { root: path.into(), fixtures: HashMap::new() }
     }
 
     pub fn with_fixture<F, P>(mut self, path: P, callback: F) -> Self
@@ -180,9 +87,25 @@ impl FixtureClump {
         F: FnOnce(Fixture) -> Fixture,
         P: AsRef<Path>,
     {
-        let fixture = callback(Fixture::new(path.as_ref()));
+        let fixture = callback(Fixture::new(self.root.join(path.as_ref())));
         self.fixtures.insert(fixture.as_path().into(), fixture);
         self
+    }
+
+    pub fn insert(&mut self, fixture: Fixture) {
+        self.fixtures.insert(fixture.as_path().into(), fixture);
+    }
+
+    pub fn get(&self, path: impl AsRef<Path>) -> Result<&Fixture> {
+        self.fixtures
+            .get(&self.root.join(path.as_ref()))
+            .ok_or(anyhow!("Fixture '{}' not in clump", path.as_ref().display()))
+    }
+
+    pub fn get_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut Fixture> {
+        self.fixtures
+            .get_mut(&self.root.join(path.as_ref()))
+            .ok_or(anyhow!("Fixture '{}' not in clump", path.as_ref().display()))
     }
 
     pub fn write_all(&self) -> Result<()> {
@@ -193,7 +116,7 @@ impl FixtureClump {
         Ok(())
     }
 
-    pub fn sync(&mut self) -> Result<()> {
+    pub fn sync_all(&mut self) -> Result<()> {
         for (_, fixture) in self.fixtures.iter_mut() {
             fixture.sync()?;
         }
@@ -201,31 +124,11 @@ impl FixtureClump {
         Ok(())
     }
 
-    pub fn get(&self, path: impl AsRef<Path>) -> Result<&Fixture> {
-        self.fixtures.get(path.as_ref())
-            .ok_or(anyhow!("Fixture '{}' not in clump", path.as_ref().display()))
-    }
-
-    pub fn get_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut Fixture> {
-        self.fixtures.get_mut(path.as_ref())
-            .ok_or(anyhow!("Fixture '{}' not in clump", path.as_ref().display()))
-    }
-
-    pub fn extend(&mut self, clump: FixtureClump) {
-        self.fixtures.extend(clump.fixtures.into_iter());
+    pub fn is_tracked(&self, path: impl AsRef<Path>) -> bool {
+        self.fixtures.contains_key(path.as_ref())
     }
 }
 
-/// Test file fixture.
-///
-/// Create and manage a file fixture for unit and integration testing.
-/// File fixtures can be made executable in order to crate basic repeatable
-/// scripts if needed.
-///
-/// Be warned, external processes can modify the file that this fixture keeps
-/// track of, which can cause it to contain desynced data. The caller is
-/// responsible for ensuring that data housed in a fixture remains synced with
-/// the file it is tracking.
 #[derive(Debug, Default, Clone)]
 pub struct Fixture {
     path: PathBuf,
@@ -248,16 +151,6 @@ impl Fixture {
         self
     }
 
-    /// Write file fixture at tracked path.
-    ///
-    /// Writes file fixture at tracked path with executable permissions set.
-    /// Will make parent directory if missing for a given path.
-    ///
-    /// # Errors
-    ///
-    /// - May fail if parent directory cannot be made if needed.
-    /// - May fail if flie cannot be written.
-    /// - May fail if executable permissions cannot be set.
     pub fn write(&self) -> Result<()> {
         mkdirp(self.path.parent().unwrap())?;
         write(&self.path, &self.data)?;
@@ -288,24 +181,16 @@ impl Fixture {
         self.kind == FixtureKind::ScriptFile
     }
 
-    /// Synchronize file fixture at tracked path.
-    ///
-    /// # Errors
-    ///
-    /// Will fail if file cannot be synced, i.e., read into string form.
     pub fn sync(&mut self) -> Result<()> {
         self.data = read_to_string(&self.path)?;
         Ok(())
     }
 }
 
-/// Determine file fixture to write.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum FixtureKind {
-    /// Normal file with read and write permissions.
     #[default]
     NormalFile,
 
-    /// Executable file with read and write permissions.
     ScriptFile,
 }

@@ -358,7 +358,7 @@ mod tests {
     use crate::cli::Cli;
     use crate::context::Context;
     use crate::locate::MockLocator;
-    use crate::testenv::{FakeDir, FixtureKind};
+    use crate::testenv::{FixtureHarness, FixtureKind};
 
     use anyhow::Result;
     use indoc::{formatdoc, indoc};
@@ -366,50 +366,55 @@ mod tests {
     use rstest::{fixture, rstest};
 
     #[fixture]
-    fn config_dir() -> Result<FakeDir> {
-        let fake_dir = FakeDir::open()?;
-        let top_level = fake_dir.as_path().to_path_buf();
-        let fake_dir = fake_dir
-            .with_file(
-                "hooks.toml",
-                indoc! {r#"
-                    [hooks]
-                    bootstrap = [
-                        { pre = "pre_hook.sh" },
-                        { post = "post_hook.sh" },
-                    ]
-                "#},
-                FixtureKind::NormalFile,
-            )
-            .with_file(
-                "hooks/pre_hook.sh",
-                formatdoc! {r#"
-                    #!/bin/sh
+    fn config_dir() -> Result<FixtureHarness> {
+        let harness = FixtureHarness::open()?;
+        let root = harness.as_path().to_path_buf();
+        let harness = harness
+            .with_file_set(|clump| {
+                clump
+                    .with_fixture("hooks.toml", |fixture| {
+                        fixture
+                            .with_data(indoc! {r#"
+                                [hooks]
+                                bootstrap = [
+                                    { pre = "pre_hook.sh" },
+                                    { post = "post_hook.sh" },
+                                ]
+                            "#})
+                            .with_kind(FixtureKind::NormalFile)
+                    })
+                    .with_fixture("hooks/pre_hook.sh", |fixture| {
+                        fixture
+                            .with_data(formatdoc! {r#"
+                                #!/bin/sh
 
-                    echo "hello from pre hook" > {}/out.txt
-                    exit 0
-                "#, top_level.display()},
-                FixtureKind::ScriptFile,
-            )
-            .with_file(
-                "hooks/post_hook.sh",
-                formatdoc! {r#"
-                    #!/usr/bin/env bash
+                                echo "hello from pre hook" > {}/out.txt
+                                exit 0
+                            "#, root.display()})
+                            .with_kind(FixtureKind::ScriptFile)
+                    })
+                    .with_fixture("hooks/post_hook.sh", |fixture| {
+                        fixture
+                            .with_data(formatdoc! {r#"
+                                #!/bin/sh
 
-                    echo "hello from post hook" > {}/out.txt
-                    exit 0
-                "#, top_level.display()},
-                FixtureKind::ScriptFile,
-            )
-            .with_file("bad_hooks.toml", "should 'fail'", FixtureKind::NormalFile)
+                                echo "hello from post hook" > {}/out.txt
+                                exit 0
+                            "#, root.display()})
+                            .with_kind(FixtureKind::ScriptFile)
+                    })
+                    .with_fixture("bad_hooks.toml", |fixture| {
+                        fixture.with_data("should 'fail'").with_kind(FixtureKind::NormalFile)
+                    })
+            })
             .setup()?;
-        Ok(fake_dir)
+        Ok(harness)
     }
 
     #[rstest]
-    fn cmd_hook_load_parses_config_file(config_dir: Result<FakeDir>) -> Result<()> {
+    fn cmd_hook_load_parses_config_file(config_dir: Result<FixtureHarness>) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("hooks.toml")?;
+        let fixture = config_dir.get_fixture("hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
@@ -421,9 +426,9 @@ mod tests {
     }
 
     #[rstest]
-    fn cmd_hook_load_return_err_config_file(config_dir: Result<FakeDir>) -> Result<()> {
+    fn cmd_hook_load_return_err_config_file(config_dir: Result<FixtureHarness>) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("bad_hooks.toml")?;
+        let fixture = config_dir.get_fixture("bad_hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
@@ -439,12 +444,12 @@ mod tests {
     #[case::pre_hooks(HookKind::Pre, "hello from pre hook\n")]
     #[case::post_hooks(HookKind::Post, "hello from post hook\n")]
     fn cmd_hook_run_hooks_execute_pre_and_post_hooks(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] hook_kind: HookKind,
         #[case] expect: &str,
     ) -> Result<()> {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.fixture("hooks.toml")?;
+        let fixture = config_dir.get_fixture("hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
@@ -452,8 +457,8 @@ mod tests {
         let ctx = Context::from(Cli::parse_args(["ricer", "--run-hook=always", "bootstrap"])?);
         let cmd_hook = CmdHook::load(&ctx, &locator)?;
         cmd_hook.run_hooks(hook_kind)?;
-        config_dir.sync()?;
-        let result = config_dir.fixture("out.txt")?;
+        config_dir.sync_all()?;
+        let result = config_dir.get_fixture("out.txt")?;
         assert_eq!(result.as_str(), expect);
 
         Ok(())
@@ -463,11 +468,11 @@ mod tests {
     #[case::pre_hooks(HookKind::Pre)]
     #[case::post_hooks(HookKind::Post)]
     fn cmd_hook_run_hooks_ignore_git_shortcut(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] hook_kind: HookKind,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("hooks.toml")?;
+        let fixture = config_dir.get_fixture("hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
@@ -483,11 +488,11 @@ mod tests {
     #[case::pre_hooks(HookKind::Pre)]
     #[case::post_hooks(HookKind::Post)]
     fn cmd_hook_run_hooks_ignore_no_entry_for_cmd(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] hook_kind: HookKind,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("hooks.toml")?;
+        let fixture = config_dir.get_fixture("hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
