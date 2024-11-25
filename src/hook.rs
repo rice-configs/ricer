@@ -358,7 +358,7 @@ mod tests {
     use crate::cli::Cli;
     use crate::context::Context;
     use crate::locate::MockLocator;
-    use crate::testenv::{FixtureHarness, FixtureKind};
+    use crate::testenv::{FixtureHarness, FileKind};
 
     use anyhow::Result;
     use indoc::{formatdoc, indoc};
@@ -370,42 +370,39 @@ mod tests {
         let harness = FixtureHarness::open()?;
         let root = harness.as_path().to_path_buf();
         let harness = harness
-            .with_file_set(|clump| {
-                clump
-                    .with_fixture("hooks.toml", |fixture| {
-                        fixture
-                            .with_data(indoc! {r#"
-                                [hooks]
-                                bootstrap = [
-                                    { pre = "pre_hook.sh" },
-                                    { post = "post_hook.sh" },
-                                ]
-                            "#})
-                            .with_kind(FixtureKind::NormalFile)
-                    })
-                    .with_fixture("hooks/pre_hook.sh", |fixture| {
-                        fixture
-                            .with_data(formatdoc! {r#"
-                                #!/bin/sh
+            .with_fixture("hooks.toml", |fixture| {
+                fixture
+                    .with_data(indoc! {r#"
+                        [hooks]
+                        bootstrap = [
+                            { pre = "pre_hook.sh" },
+                            { post = "post_hook.sh" },
+                        ]
+                    "#})
+                    .with_kind(FileKind::Normal)
+            })
+            .with_fixture("hooks/pre_hook.sh", |fixture| {
+                fixture
+                    .with_data(formatdoc! {r#"
+                        #!/bin/sh
 
-                                echo "hello from pre hook" > {}/out.txt
-                                exit 0
-                            "#, root.display()})
-                            .with_kind(FixtureKind::ScriptFile)
-                    })
-                    .with_fixture("hooks/post_hook.sh", |fixture| {
-                        fixture
-                            .with_data(formatdoc! {r#"
-                                #!/bin/sh
+                        echo "hello from pre hook" > {}/out.txt
+                        exit 0
+                    "#, root.display()})
+                    .with_kind(FileKind::Script)
+            })
+            .with_fixture("hooks/post_hook.sh", |fixture| {
+                fixture
+                    .with_data(formatdoc! {r#"
+                        #!/bin/sh
 
-                                echo "hello from post hook" > {}/out.txt
-                                exit 0
-                            "#, root.display()})
-                            .with_kind(FixtureKind::ScriptFile)
-                    })
-                    .with_fixture("bad_hooks.toml", |fixture| {
-                        fixture.with_data("should 'fail'").with_kind(FixtureKind::NormalFile)
-                    })
+                        echo "hello from post hook" > {}/out.txt
+                        exit 0
+                    "#, root.display()})
+                    .with_kind(FileKind::Script)
+            })
+            .with_fixture("bad_hooks.toml", |fixture| {
+                fixture.with_data("should 'fail'").with_kind(FileKind::Normal)
             })
             .setup()?;
         Ok(harness)

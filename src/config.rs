@@ -354,7 +354,7 @@ impl Config for CmdHookConfig {
 mod tests {
     use super::*;
     use crate::locate::MockLocator;
-    use crate::testenv::{FixtureHarness, FixtureKind};
+    use crate::testenv::{FixtureHarness, FileKind};
 
     use anyhow::Result;
     use indoc::indoc;
@@ -364,37 +364,34 @@ mod tests {
     #[fixture]
     fn config_dir() -> Result<FixtureHarness> {
         let harness = FixtureHarness::open()?
-            .with_file_set(|clump| {
-                clump
-                    .with_fixture("config.toml", |fixture| {
-                        fixture
-                            .with_data(indoc! {r#"
-                                # Formatting should remain the same!
+            .with_fixture("config.toml", |fixture| {
+                fixture
+                    .with_data(indoc! {r#"
+                        # Formatting should remain the same!
 
-                                [repos.vim]
-                                branch = "master"
-                                remote = "origin"
-                                workdir_home = true
+                        [repos.vim]
+                        branch = "master"
+                        remote = "origin"
+                        workdir_home = true
 
-                                [hooks]
-                                bootstrap = [
-                                    { pre = "hook.sh", post = "hook.sh", workdir = "/some/dir" },
-                                    { pre = "hook.sh" }
-                                ]
-                            "#})
-                            .with_kind(FixtureKind::NormalFile)
-                    })
-                    .with_fixture("not_table.toml", |fixture| {
-                        fixture
-                            .with_data(indoc! {r#"
-                                repos = 'not a table'
-                                hooks = 'not a table'
-                            "#})
-                            .with_kind(FixtureKind::NormalFile)
-                    })
-                    .with_fixture("bad_format.toml", |fixture| {
-                        fixture.with_data("this 'will fail!").with_kind(FixtureKind::NormalFile)
-                    })
+                        [hooks]
+                        bootstrap = [
+                            { pre = "hook.sh", post = "hook.sh", workdir = "/some/dir" },
+                            { pre = "hook.sh" }
+                        ]
+                    "#})
+                    .with_kind(FileKind::Normal)
+            })
+            .with_fixture("not_table.toml", |fixture| {
+                fixture
+                    .with_data(indoc! {r#"
+                        repos = 'not a table'
+                        hooks = 'not a table'
+                    "#})
+                    .with_kind(FileKind::Normal)
+            })
+            .with_fixture("bad_format.toml", |fixture| {
+                fixture.with_data("this 'will fail!").with_kind(FileKind::Normal)
             })
             .setup()?;
         Ok(harness)

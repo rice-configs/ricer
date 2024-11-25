@@ -73,7 +73,7 @@ impl From<Git2Error> for GitRepoError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testenv::{FixtureHarness, FixtureKind};
+    use crate::testenv::{FixtureHarness, FileKind};
 
     use anyhow::Result;
     use indoc::indoc;
