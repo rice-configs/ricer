@@ -4,7 +4,7 @@
 use anyhow::{anyhow, Result};
 use is_executable::IsExecutable;
 use mkdirp::mkdirp;
-use git2::{Repository, IndexAddOption};
+use git2::{Repository, IndexAddOption, RepositoryInitOptions};
 use std::{
     collections::HashMap,
     fs::{metadata, read_to_string, set_permissions, write},
@@ -46,23 +46,6 @@ impl FakeDir {
             .with_kind(kind);
         self.fixtures.insert(fixture.as_path().into(), fixture);
         self
-    }
-
-    /// Add Git repository in fake directory.
-    ///
-    /// Will create any directories to the path given.
-    ///
-    /// # Errors
-    ///
-    /// - May fail if Git repository cannot be initialized at path.
-    pub fn with_repo(
-        mut self,
-        path: impl AsRef<Path>,
-    ) -> Result<Self> {
-        let full_path = self.dir.path().join(path.as_ref());
-        let repo = Repository::init(&full_path)?;
-        self.repos.insert(full_path, repo);
-        Ok(self)
     }
 
     /// Setup file and repository fixtures inside fake directory.
@@ -179,6 +162,57 @@ impl FakeDir {
 
     pub fn as_path(&self) -> &Path {
         self.dir.path()
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct FixtureClump {
+    fixtures: HashMap<PathBuf, Fixture>,
+}
+
+impl FixtureClump {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn with_fixture<F, P>(mut self, path: P, callback: F) -> Self
+    where
+        F: FnOnce(Fixture) -> Fixture,
+        P: AsRef<Path>,
+    {
+        let fixture = callback(Fixture::new(path.as_ref()));
+        self.fixtures.insert(fixture.as_path().into(), fixture);
+        self
+    }
+
+    pub fn write_all(&self) -> Result<()> {
+        for (_, fixture) in self.fixtures.iter() {
+            fixture.write()?;
+        }
+
+        Ok(())
+    }
+
+    pub fn sync(&mut self) -> Result<()> {
+        for (_, fixture) in self.fixtures.iter_mut() {
+            fixture.sync()?;
+        }
+
+        Ok(())
+    }
+
+    pub fn get(&self, path: impl AsRef<Path>) -> Result<&Fixture> {
+        self.fixtures.get(path.as_ref())
+            .ok_or(anyhow!("Fixture '{}' not in clump", path.as_ref().display()))
+    }
+
+    pub fn get_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut Fixture> {
+        self.fixtures.get_mut(path.as_ref())
+            .ok_or(anyhow!("Fixture '{}' not in clump", path.as_ref().display()))
+    }
+
+    pub fn extend(&mut self, clump: FixtureClump) {
+        self.fixtures.extend(clump.fixtures.into_iter());
     }
 }
 
