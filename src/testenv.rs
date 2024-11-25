@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::{anyhow, Result};
-use git2::{IndexAddOption, Repository, RepositoryInitOptions};
+use git2::{RepositoryInitOptions, Repository};
 use is_executable::IsExecutable;
 use mkdirp::mkdirp;
 use std::{
@@ -16,41 +16,81 @@ use walkdir::WalkDir;
 pub struct FixtureHarness {
     root: TempDir,
     fixtures: HashMap<PathBuf, FileFixture>,
+    repos: HashMap<PathBuf, RepoFixture>,
 }
 
 impl FixtureHarness {
     pub fn open() -> Result<Self> {
         let root = TempFileBuilder::new().tempdir()?;
-        Ok(Self { root, fixtures: HashMap::new() })
+        Ok(Self { root, fixtures: HashMap::new(), repos: HashMap::new() })
     }
 
-    pub fn with_fixture(
+    pub fn with_file(
         mut self,
         path: impl AsRef<Path>,
-        callback: impl FnOnce(FileFixture) -> FileFixture
+        callback: impl FnOnce(FileFixture) -> FileFixture,
     ) -> Self {
         let fixture = callback(FileFixture::new(self.root.path().join(path.as_ref())));
         self.fixtures.insert(fixture.as_path().into(), fixture);
         self
     }
 
-    pub fn setup(self) -> Result<Self> {
-        for (_, fixture) in self.fixtures.iter() {
-            fixture.write()?;
-        }
+    pub fn with_repo(
+        mut self,
+        path: impl AsRef<Path>,
+        callback: impl FnOnce(RepoFixture) -> Result<RepoFixture>,
+    ) -> Result<Self> {
+        let fixture = callback(RepoFixture::init(self.root.path().join(path.as_ref()))?)?;
+        self.repos.insert(fixture.as_path().into(), fixture);
         Ok(self)
     }
 
-    pub fn get_fixture(&self, path: impl AsRef<Path>) -> Result<&FileFixture> {
+    pub fn with_fake_bare_repo(
+        mut self,
+        path: impl AsRef<Path>,
+        callback: impl FnOnce(RepoFixture) -> Result<RepoFixture>,
+    ) -> Result<Self> {
+        let fixture = callback(RepoFixture::init_fake_bare(
+            self.root.path().join(path.as_ref()), self.root.path()
+        )?)?;
+        self.repos.insert(fixture.as_path().into(), fixture);
+        Ok(self)
+    }
+
+    pub fn get_file(&self, path: impl AsRef<Path>) -> Result<&FileFixture> {
         self.fixtures
             .get(&self.root.path().join(path.as_ref()))
             .ok_or(anyhow!("Fixture '{}' not in fixture harness", path.as_ref().display()))
     }
 
-    pub fn get_fixture_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut FileFixture> {
+    pub fn get_file_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut FileFixture> {
         self.fixtures
             .get_mut(&self.root.path().join(path.as_ref()))
             .ok_or(anyhow!("Fixture '{}' not in fixture harness", path.as_ref().display()))
+    }
+
+    pub fn get_repo(&self, path: impl AsRef<Path>) -> Result<&RepoFixture> {
+        self.repos
+            .get(&self.root.path().join(path.as_ref()))
+            .ok_or(anyhow!("Fixture '{}' not in fixture harness", path.as_ref().display()))
+    }
+
+    pub fn get_repo_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut RepoFixture> {
+        self.repos
+            .get_mut(&self.root.path().join(path.as_ref()))
+            .ok_or(anyhow!("Fixture '{}' not in fixture harness", path.as_ref().display()))
+    }
+
+    pub fn setup(self) -> Result<Self> {
+        for (_, fixture) in self.fixtures.iter() {
+            fixture.write()?;
+        }
+
+        for (_, fixture) in self.repos.iter() {
+            fixture.commit("inital commit\n\nbody")?;
+        }
+
+        Ok(self)
     }
 
     pub fn sync_all(&mut self) -> Result<()> {
@@ -145,4 +185,67 @@ pub enum FileKind {
     Normal,
 
     Script,
+}
+
+pub struct RepoFixture {
+    root: PathBuf,
+    repo: Repository,
+}
+
+impl RepoFixture {
+    pub fn init(path: impl Into<PathBuf>) -> Result<Self> {
+        let root = path.into();
+        let repo = Repository::init(&root)?;
+        Ok(Self { root, repo })
+    }
+
+    pub fn init_fake_bare(gitdir: impl Into<PathBuf>, workdir: impl AsRef<Path>) -> Result<Self> {
+        let root = gitdir.into();
+        let mut opts = RepositoryInitOptions::new();
+        opts.bare(false);
+        opts.no_dotgit_dir(true);
+        opts.workdir_path(workdir.as_ref());
+
+        let repo = Repository::init_opts(&root, &opts)?;
+        Ok(Self { root, repo })
+    }
+
+    pub fn stage(self, path: impl AsRef<Path>, data: impl AsRef<str>) -> Result<Self> {
+        let full_path = self.repo.workdir().unwrap().join(path.as_ref());
+        mkdirp(full_path.parent().unwrap())?;
+        write(&full_path, data.as_ref())?;
+
+        let mut index = self.repo.index()?;
+        index.add_path(path.as_ref())?;
+        index.write()?;
+
+        Ok(self)
+    }
+
+    pub fn commit(&self, msg: impl AsRef<str>) -> Result<()> {
+        let mut index = self.repo.index()?;
+        let tree_id = index.write_tree()?;
+        let sig = self.repo.signature()?;
+        let mut parents = Vec::new();
+
+        if let Some(parent) = self.repo.head().ok().map(|h| h.target().unwrap()) {
+            parents.push(self.repo.find_commit(parent)?);
+        }
+        let parents = parents.iter().collect::<Vec<_>>();
+
+        self.repo.commit(
+            Some("HEAD"),
+            &sig,
+            &sig,
+            msg.as_ref(),
+            &self.repo.find_tree(tree_id).expect("Failed to find tree"),
+            &parents,
+        )?;
+
+        Ok(())
+    }
+
+    pub fn as_path(&self) -> &Path {
+        self.root.as_path()
+    }
 }
