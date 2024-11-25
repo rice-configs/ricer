@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::{anyhow, Result};
-use git2::{RepositoryInitOptions, Repository};
+use git2::{Repository, RepositoryInitOptions};
 use is_executable::IsExecutable;
 use mkdirp::mkdirp;
 use std::{
     collections::HashMap,
+    ffi::OsStr,
     fs::{metadata, read_to_string, set_permissions, write},
     path::{Path, PathBuf},
 };
@@ -40,7 +41,9 @@ impl FixtureHarness {
         path: impl AsRef<Path>,
         callback: impl FnOnce(RepoFixture) -> Result<RepoFixture>,
     ) -> Result<Self> {
-        let fixture = callback(RepoFixture::init(self.root.path().join(path.as_ref()))?)?;
+        let fixture = callback(RepoFixture::init(
+            self.root.path().join(format!("{}.git", path.as_ref().display())),
+        )?)?;
         self.repos.insert(fixture.as_path().into(), fixture);
         Ok(self)
     }
@@ -51,7 +54,8 @@ impl FixtureHarness {
         callback: impl FnOnce(RepoFixture) -> Result<RepoFixture>,
     ) -> Result<Self> {
         let fixture = callback(RepoFixture::init_fake_bare(
-            self.root.path().join(path.as_ref()), self.root.path()
+            self.root.path().join(format!("{}.git", path.as_ref().display())),
+            self.root.path(),
         )?)?;
         self.repos.insert(fixture.as_path().into(), fixture);
         Ok(self)
@@ -71,13 +75,13 @@ impl FixtureHarness {
 
     pub fn get_repo(&self, path: impl AsRef<Path>) -> Result<&RepoFixture> {
         self.repos
-            .get(&self.root.path().join(path.as_ref()))
+            .get(&self.root.path().join(format!("{}.git", path.as_ref().display())))
             .ok_or(anyhow!("Fixture '{}' not in fixture harness", path.as_ref().display()))
     }
 
     pub fn get_repo_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut RepoFixture> {
         self.repos
-            .get_mut(&self.root.path().join(path.as_ref()))
+            .get_mut(&self.root.path().join(format!("{}.git", path.as_ref().display())))
             .ok_or(anyhow!("Fixture '{}' not in fixture harness", path.as_ref().display()))
     }
 
@@ -86,21 +90,46 @@ impl FixtureHarness {
             fixture.write()?;
         }
 
-        for (_, fixture) in self.repos.iter() {
-            fixture.commit("inital commit\n\nbody")?;
+        for (_, repo) in self.repos.iter() {
+            repo.commit("Inital commit\n\nbody")?;
         }
 
         Ok(self)
     }
 
-    pub fn sync_all(&mut self) -> Result<()> {
+    pub fn sync_tracked(&mut self) -> Result<()> {
         for (_, fixture) in self.fixtures.iter_mut() {
             fixture.sync()?;
         }
 
-        // Track any new files that were added by some external process(es)...
-        for entry in WalkDir::new(self.root.path()).into_iter().filter_map(Result::ok) {
-            // INVARIANT: only add in a _file_ that is not being tracked.
+        for (_, repo) in self.repos.iter_mut() {
+            repo.sync()?;
+        }
+
+        Ok(())
+    }
+
+    pub fn sync_untracked(&mut self) -> Result<()> {
+        let mut iter = WalkDir::new(self.root.path()).into_iter();
+        loop {
+            let entry = match iter.next() {
+                None => break,
+                Some(Ok(entry)) => entry,
+                Some(Err(err)) => return Err(err.into()),
+            };
+
+            // Insert untracked repository fixture.
+            if entry.path().extension() == Some(&OsStr::new("git")) {
+                if entry.file_type().is_dir() && !self.repos.contains_key(entry.path()) {
+                    let repo = RepoFixture::open(entry.path())?;
+                    self.repos.insert(entry.path().to_path_buf(), repo);
+                    iter.skip_current_dir(); // Skip because repository is now tracked...
+                } else {
+                    iter.skip_current_dir(); // Skip to avoid loading Git blob data...
+                }
+            }
+
+            // Insert untracked file fixture.
             if entry.file_type().is_file() && !self.fixtures.contains_key(entry.path()) {
                 let path = entry.path().to_path_buf();
                 let data = read_to_string(&path)?;
@@ -112,7 +141,6 @@ impl FixtureHarness {
                 self.fixtures.insert(path, fixture);
             }
         }
-
         Ok(())
     }
 
@@ -210,6 +238,12 @@ impl RepoFixture {
         Ok(Self { root, repo })
     }
 
+    pub fn open(path: impl Into<PathBuf>) -> Result<Self> {
+        let root = path.into();
+        let repo = Repository::open(&root)?;
+        Ok(Self { root, repo })
+    }
+
     pub fn stage(self, path: impl AsRef<Path>, data: impl AsRef<str>) -> Result<Self> {
         let full_path = self.repo.workdir().unwrap().join(path.as_ref());
         mkdirp(full_path.parent().unwrap())?;
@@ -242,6 +276,12 @@ impl RepoFixture {
             &parents,
         )?;
 
+        Ok(())
+    }
+
+    pub fn sync(&mut self) -> Result<()> {
+        let repo = RepoFixture::open(self.as_path())?;
+        self.repo = repo.repo;
         Ok(())
     }
 
