@@ -354,7 +354,7 @@ impl Config for CmdHookConfig {
 mod tests {
     use super::*;
     use crate::locate::MockLocator;
-    use crate::testenv::{FakeDir, FixtureKind};
+    use crate::testenv::{FixtureHarness, FixtureKind};
 
     use anyhow::Result;
     use indoc::indoc;
@@ -362,52 +362,53 @@ mod tests {
     use rstest::{fixture, rstest};
 
     #[fixture]
-    fn config_dir() -> Result<FakeDir> {
-        let dir = FakeDir::open()?
-            .with_file(
-                "config.toml",
-                indoc! {r#"
-                    # Formatting should remain the same!
+    fn config_dir() -> Result<FixtureHarness> {
+        let harness = FixtureHarness::open()?
+            .with_file_set(|clump| {
+                clump
+                    .with_fixture("config.toml", |fixture| {
+                        fixture
+                            .with_data(indoc! {r#"
+                                # Formatting should remain the same!
 
-                    [repos.vim]
-                    branch = "master"
-                    remote = "origin"
-                    workdir_home = true
+                                [repos.vim]
+                                branch = "master"
+                                remote = "origin"
+                                workdir_home = true
 
-                    [hooks]
-                    bootstrap = [
-                        { pre = "hook.sh", post = "hook.sh", workdir = "/some/dir" },
-
-
-
-
-                        { pre = "hook.sh" }
-                    ]
-                "#},
-                FixtureKind::NormalFile,
-            )
-            .with_file(
-                "not_table.toml",
-                indoc! {r#"
-                    repos = 'not a table'
-                    hooks = 'not a table'
-                "#},
-                FixtureKind::NormalFile,
-            )
-            .with_file("bad_format.toml", "this 'will fail!", FixtureKind::NormalFile)
+                                [hooks]
+                                bootstrap = [
+                                    { pre = "hook.sh", post = "hook.sh", workdir = "/some/dir" },
+                                    { pre = "hook.sh" }
+                                ]
+                            "#})
+                            .with_kind(FixtureKind::NormalFile)
+                    })
+                    .with_fixture("not_table.toml", |fixture| {
+                        fixture
+                            .with_data(indoc! {r#"
+                                repos = 'not a table'
+                                hooks = 'not a table'
+                            "#})
+                            .with_kind(FixtureKind::NormalFile)
+                    })
+                    .with_fixture("bad_format.toml", |fixture| {
+                        fixture.with_data("this 'will fail!").with_kind(FixtureKind::NormalFile)
+                    })
+            })
             .setup()?;
-        Ok(dir)
+        Ok(harness)
     }
 
     #[rstest]
     #[case::repo_config(RepoConfig)]
     #[case::cmd_hook_config(CmdHookConfig)]
     fn config_file_load_parse_file(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("config.toml")?;
+        let fixture = config_dir.get_fixture("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -422,7 +423,7 @@ mod tests {
     #[case::repo_config(RepoConfig)]
     #[case::hook_cmd_config(CmdHookConfig)]
     fn config_file_load_create_new_file(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
@@ -440,11 +441,11 @@ mod tests {
     #[case::repo_config(RepoConfig)]
     #[case::cmd_hook_config(CmdHookConfig)]
     fn config_file_load_return_err_toml(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("bad_format.toml")?;
+        let fixture = config_dir.get_fixture("bad_format.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -465,7 +466,7 @@ mod tests {
         CmdHookSettings::new("commit").add_hook(HookSettings::new().post("hook.sh")),
     )]
     fn config_file_save_preserves_formatting<E, T>(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: T,
         #[case] expect: E,
     ) -> Result<()>
@@ -474,7 +475,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.fixture_mut("config.toml")?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -492,7 +493,7 @@ mod tests {
     #[case::repo_config(RepoConfig)]
     #[case::cmd_hook_config(CmdHookConfig)]
     fn config_file_save_create_new_file(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
@@ -521,7 +522,7 @@ mod tests {
             .add_hook(HookSettings::new().pre("hook.sh")),
     )]
     fn config_file_get_return_setting<E, T>(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: T,
         #[case] key: &str,
         #[case] expect: E,
@@ -531,7 +532,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("config.toml")?;
+        let fixture = config_dir.get_fixture("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -547,11 +548,11 @@ mod tests {
     #[case::repo_config(RepoConfig)]
     #[case::cmd_hook_config(CmdHookConfig)]
     fn config_file_get_return_err_toml(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("config.toml")?;
+        let fixture = config_dir.get_fixture("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -573,7 +574,7 @@ mod tests {
         CmdHookSettings::new("commit").add_hook(HookSettings::new().post("hook.sh")),
     )]
     fn config_file_new_return_none<E, T>(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: T,
         #[case] entry: E,
     ) -> Result<()>
@@ -582,7 +583,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.fixture_mut("config.toml")?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -613,7 +614,7 @@ mod tests {
             .add_hook(HookSettings::new().pre("hook.sh"))),
     )]
     fn config_file_new_return_some<E, T>(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: T,
         #[case] entry: E,
         #[case] expect: Option<E>,
@@ -623,7 +624,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.fixture_mut("config.toml")?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -642,11 +643,11 @@ mod tests {
     #[case::repo_config(RepoConfig)]
     #[case::cmd_hook_config(CmdHookConfig)]
     fn config_file_add_return_err_toml(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.fixture_mut("not_table.toml")?;
+        let fixture = config_dir.get_fixture_mut("not_table.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -673,7 +674,7 @@ mod tests {
             .add_hook(HookSettings::new().pre("hook.sh")),
     )]
     fn config_file_rename_return_old_setting<E, T>(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: T,
         #[case] from: &str,
         #[case] to: &str,
@@ -684,7 +685,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.fixture_mut("config.toml")?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -703,11 +704,11 @@ mod tests {
     #[case::repo_config(RepoConfig)]
     #[case::cmd_hook_config(CmdHookConfig)]
     fn config_file_rename_return_err_toml(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("not_table.toml")?;
+        let fixture = config_dir.get_fixture("not_table.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -733,7 +734,7 @@ mod tests {
             .add_hook(HookSettings::new().pre("hook.sh")),
     )]
     fn config_file_remove_return_deleted_setting<E, T>(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: T,
         #[case] key: &str,
         #[case] expect: E,
@@ -743,7 +744,7 @@ mod tests {
         T: Config<Entry = E>,
     {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.fixture_mut("config.toml")?;
+        let fixture = config_dir.get_fixture_mut("config.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
@@ -762,11 +763,11 @@ mod tests {
     #[case::repo_config(RepoConfig)]
     #[case::cmd_hook_config(CmdHookConfig)]
     fn config_file_remove_return_err_toml(
-        config_dir: Result<FakeDir>,
+        config_dir: Result<FixtureHarness>,
         #[case] config_kind: impl Config,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.fixture("not_table.toml")?;
+        let fixture = config_dir.get_fixture("not_table.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_repos_config().return_const(fixture.as_path().into());
         locator.expect_hooks_config().return_const(fixture.as_path().into());
