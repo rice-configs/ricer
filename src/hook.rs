@@ -355,10 +355,12 @@ impl HookPager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cli::Cli;
-    use crate::context::Context;
-    use crate::locate::MockLocator;
-    use crate::testenv::{FixtureHarness, FileKind};
+    use crate::{
+        cli::Cli,
+        context::Context,
+        locate::MockLocator,
+        testenv::{FixtureHarness, FileKind},
+    };
 
     use anyhow::Result;
     use indoc::{formatdoc, indoc};
@@ -370,7 +372,7 @@ mod tests {
         let harness = FixtureHarness::open()?;
         let root = harness.as_path().to_path_buf();
         let harness = harness
-            .with_fixture("hooks.toml", |fixture| {
+            .with_file("hooks.toml", |fixture| {
                 fixture
                     .with_data(indoc! {r#"
                         [hooks]
@@ -381,7 +383,7 @@ mod tests {
                     "#})
                     .with_kind(FileKind::Normal)
             })
-            .with_fixture("hooks/pre_hook.sh", |fixture| {
+            .with_file("hooks/pre_hook.sh", |fixture| {
                 fixture
                     .with_data(formatdoc! {r#"
                         #!/bin/sh
@@ -391,7 +393,7 @@ mod tests {
                     "#, root.display()})
                     .with_kind(FileKind::Script)
             })
-            .with_fixture("hooks/post_hook.sh", |fixture| {
+            .with_file("hooks/post_hook.sh", |fixture| {
                 fixture
                     .with_data(formatdoc! {r#"
                         #!/bin/sh
@@ -401,7 +403,7 @@ mod tests {
                     "#, root.display()})
                     .with_kind(FileKind::Script)
             })
-            .with_fixture("bad_hooks.toml", |fixture| {
+            .with_file("bad_hooks.toml", |fixture| {
                 fixture.with_data("should 'fail'").with_kind(FileKind::Normal)
             })
             .setup()?;
@@ -411,7 +413,7 @@ mod tests {
     #[rstest]
     fn cmd_hook_load_parses_config_file(config_dir: Result<FixtureHarness>) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("hooks.toml")?;
+        let fixture = config_dir.get_file("hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
@@ -425,7 +427,7 @@ mod tests {
     #[rstest]
     fn cmd_hook_load_return_err_config_file(config_dir: Result<FixtureHarness>) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("bad_hooks.toml")?;
+        let fixture = config_dir.get_file("bad_hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
@@ -446,7 +448,7 @@ mod tests {
         #[case] expect: &str,
     ) -> Result<()> {
         let mut config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("hooks.toml")?;
+        let fixture = config_dir.get_file("hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
@@ -455,7 +457,7 @@ mod tests {
         let cmd_hook = CmdHook::load(&ctx, &locator)?;
         cmd_hook.run_hooks(hook_kind)?;
         config_dir.sync_all()?;
-        let result = config_dir.get_fixture("out.txt")?;
+        let result = config_dir.get_file("out.txt")?;
         assert_eq!(result.as_str(), expect);
 
         Ok(())
@@ -469,7 +471,7 @@ mod tests {
         #[case] hook_kind: HookKind,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("hooks.toml")?;
+        let fixture = config_dir.get_file("hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
@@ -489,7 +491,7 @@ mod tests {
         #[case] hook_kind: HookKind,
     ) -> Result<()> {
         let config_dir = config_dir?;
-        let fixture = config_dir.get_fixture("hooks.toml")?;
+        let fixture = config_dir.get_file("hooks.toml")?;
         let mut locator = MockLocator::new();
         locator.expect_hooks_config().return_const(fixture.as_path().into());
         locator.expect_hooks_dir().return_const(config_dir.as_path().join("hooks"));
