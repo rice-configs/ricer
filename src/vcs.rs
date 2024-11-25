@@ -17,7 +17,7 @@ impl GitRepo {
     ///
     /// - Return [`GitRepoError::LibGit2`] if repository cannot be created.
     pub fn init(path: impl AsRef<Path>) -> Result<Self, GitRepoError> {
-        let repo = Repository::init(path.as_ref())?;
+        let repo = Repository::init(format!("{}.git", path.as_ref().display()))?;
         Ok(Self { repo })
     }
 
@@ -37,7 +37,7 @@ impl GitRepo {
         opts.no_dotgit_dir(true);
         opts.workdir_path(workdir.as_ref());
 
-        let repo = Repository::init_opts(gitdir.as_ref(), &opts)?;
+        let repo = Repository::init_opts(format!("{}.git", gitdir.as_ref().display()), &opts)?;
         Ok(Self { repo })
     }
 
@@ -51,6 +51,15 @@ impl GitRepo {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, GitRepoError> {
         let repo = Repository::open(path.as_ref())?;
         Ok(Self { repo })
+    }
+
+    /// Clone existing Git repository from `url` into `path`.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`GitRepoError::LibGit2`] if repository cannot be cloned.
+    pub fn clone(url: impl AsRef<str>, into: impl AsRef<Path>) -> Result<Self, GitRepoError> {
+        todo!();
     }
 
     pub fn is_fake_bare(&self) -> bool {
@@ -123,6 +132,19 @@ mod tests {
         let fixture = repo_dir.get_repo("vim")?;
         let repo = GitRepo::open(fixture.as_path())?;
         assert!(repo.is_fake_bare());
+
+        Ok(())
+    }
+
+    #[rstest]
+    fn git_repo_clone_return_self(repo_dir: Result<FixtureHarness>) -> Result<()> {
+        let mut repo_dir = repo_dir?;
+
+        let repo = GitRepo::clone("https://github.com/rice-configs/ricer.git", repo_dir.as_path())?;
+        repo_dir.sync_all()?;
+        let fixture = repo_dir.get_repo("ricer")?;
+        assert!(fixture.as_path().exists());
+        assert!(!repo.is_fake_bare());
 
         Ok(())
     }
