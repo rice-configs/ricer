@@ -59,7 +59,8 @@ impl GitRepo {
     ///
     /// - Return [`GitRepoError::LibGit2`] if repository cannot be cloned.
     pub fn clone(url: impl AsRef<str>, into: impl AsRef<Path>) -> Result<Self, GitRepoError> {
-        todo!();
+        let repo = Repository::clone(url.as_ref(), format!("{}.git", into.as_ref().display()))?;
+        Ok(Self { repo })
     }
 
     pub fn is_fake_bare(&self) -> bool {
@@ -91,14 +92,12 @@ mod tests {
     fn repo_dir() -> Result<FixtureHarness> {
         let harness = FixtureHarness::open()?
             .with_repo("dwm", |repo| {
-                repo
-                    .stage("config.h", "configure DWM settings here")?
+                repo.stage("config.h", "configure DWM settings here")?
                     .stage("dwm.c", "source code for DWM")?
                     .stage("Makefile", "build DWM binary")
             })?
             .with_fake_bare_repo("vim", |repo| {
-                repo
-                    .stage("vimrc", "config for vim!")?
+                repo.stage("vimrc", "config for vim!")?
                     .stage("indent/c.vim", "indentation settings for C code")
             })?
             .setup()?;
@@ -140,8 +139,11 @@ mod tests {
     fn git_repo_clone_return_self(repo_dir: Result<FixtureHarness>) -> Result<()> {
         let mut repo_dir = repo_dir?;
 
-        let repo = GitRepo::clone("https://github.com/rice-configs/ricer.git", repo_dir.as_path())?;
-        repo_dir.sync_all()?;
+        let repo = GitRepo::clone(
+            "https://github.com/rice-configs/ricer.git",
+            repo_dir.as_path().join("ricer"),
+        )?;
+        repo_dir.sync_untracked()?;
         let fixture = repo_dir.get_repo("ricer")?;
         assert!(fixture.as_path().exists());
         assert!(!repo.is_fake_bare());
