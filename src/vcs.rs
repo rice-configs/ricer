@@ -54,7 +54,7 @@ impl GitRepo {
     }
 
     pub fn is_fake_bare(&self) -> bool {
-        !self.repo.is_bare() && !self.repo.path().join(".git").exists()
+        !self.repo.is_bare() && !self.repo.path().ends_with(".git")
     }
 }
 
@@ -73,16 +73,27 @@ impl From<Git2Error> for GitRepoError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testenv::{FixtureHarness, FileKind};
+    use crate::testenv::FixtureHarness;
 
     use anyhow::Result;
-    use indoc::indoc;
     use rstest::{fixture, rstest};
 
     #[fixture]
     fn repo_dir() -> Result<FixtureHarness> {
-        let repo_dir = FixtureHarness::open()?;
-        Ok(repo_dir)
+        let harness = FixtureHarness::open()?
+            .with_repo("dwm", |repo| {
+                repo
+                    .stage("config.h", "configure DWM settings here")?
+                    .stage("dwm.c", "source code for DWM")?
+                    .stage("Makefile", "build DWM binary")
+            })?
+            .with_fake_bare_repo("vim", |repo| {
+                repo
+                    .stage("vimrc", "config for vim!")?
+                    .stage("indent/c.vim", "indentation settings for C code")
+            })?
+            .setup()?;
+        Ok(harness)
     }
 
     #[rstest]
@@ -101,18 +112,18 @@ mod tests {
         Ok(())
     }
 
-    // #[rstest]
-    // fn git_repo_open_return_self(repo_dir: Result<FixtureHarness>) -> Result<()> {
-    //     let repo_dir = repo_dir?;
+    #[rstest]
+    fn git_repo_open_return_self(repo_dir: Result<FixtureHarness>) -> Result<()> {
+        let repo_dir = repo_dir?;
 
-    //     let fixture = repo_dir.repo("dwm.git")?;
-    //     let repo = GitRepo::open(fixture.path())?;
-    //     assert!(!repo.is_fake_bare());
+        let fixture = repo_dir.get_repo("dwm")?;
+        let repo = GitRepo::open(fixture.as_path())?;
+        assert!(!repo.is_fake_bare());
 
-    //     let fixture = repo_dir.repo("vim.git")?;
-    //     let repo = GitRepo::open(fixture.path())?;
-    //     assert!(repo.is_fake_bare());
+        let fixture = repo_dir.get_repo("vim")?;
+        let repo = GitRepo::open(fixture.as_path())?;
+        assert!(repo.is_fake_bare());
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 }
