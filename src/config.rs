@@ -355,7 +355,7 @@ mod tests {
     use super::*;
     use crate::{
         locate::MockLocator,
-        testenv::{FixtureHarness, FileKind},
+        testenv::{FileKind, FixtureHarness},
     };
 
     use anyhow::Result;

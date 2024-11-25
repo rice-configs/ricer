@@ -359,7 +359,7 @@ mod tests {
         cli::Cli,
         context::Context,
         locate::MockLocator,
-        testenv::{FixtureHarness, FileKind},
+        testenv::{FileKind, FixtureHarness},
     };
 
     use anyhow::Result;
@@ -456,7 +456,7 @@ mod tests {
         let ctx = Context::from(Cli::parse_args(["ricer", "--run-hook=always", "bootstrap"])?);
         let cmd_hook = CmdHook::load(&ctx, &locator)?;
         cmd_hook.run_hooks(hook_kind)?;
-        config_dir.sync_all()?;
+        config_dir.sync_untracked()?;
         let result = config_dir.get_file("out.txt")?;
         assert_eq!(result.as_str(), expect);
 
