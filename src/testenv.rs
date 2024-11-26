@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::{anyhow, Result};
-use git2::{Repository, RepositoryInitOptions};
+use git2::{Commit, Oid, Repository, RepositoryInitOptions};
 use is_executable::IsExecutable;
 use mkdirp::mkdirp;
 use std::{
@@ -248,12 +248,16 @@ impl RepoFixture {
         let full_path = self.repo.workdir().unwrap().join(path.as_ref());
         mkdirp(full_path.parent().unwrap())?;
         write(&full_path, data.as_ref())?;
+        self.add(path.as_ref())?;
+        Ok(self)
+    }
 
+    pub fn add(&self, path: impl AsRef<Path>) -> Result<()> {
         let mut index = self.repo.index()?;
         index.add_path(path.as_ref())?;
         index.write()?;
-
-        Ok(self)
+        index.write_tree()?;
+        Ok(())
     }
 
     pub fn commit(&self, msg: impl AsRef<str>) -> Result<()> {
@@ -277,6 +281,11 @@ impl RepoFixture {
         )?;
 
         Ok(())
+    }
+
+    pub fn find_commit(&self, oid: Oid) -> Result<Commit<'_>> {
+        let commit = self.repo.find_commit(oid)?;
+        Ok(commit)
     }
 
     pub fn sync(&mut self) -> Result<()> {
