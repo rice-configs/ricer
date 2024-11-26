@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use git2::{Error as Git2Error, Repository, RepositoryInitOptions};
+use git2::{Commit, Error as Git2Error, Oid, Repository, RepositoryInitOptions};
 use std::path::Path;
 
 pub struct GitRepo {
@@ -63,6 +63,41 @@ impl GitRepo {
         Ok(Self { repo })
     }
 
+    /// Commit staged changes.
+    ///
+    /// Will return Git OID of commit.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`GitRepoError::LibGit2`] if commit cannot be created.
+    pub fn commit(&self, msg: impl AsRef<str>) -> Result<Oid, GitRepoError> {
+        let mut index = self.repo.index()?;
+        let tree_id = index.write_tree()?;
+        let sig = self.repo.signature()?;
+        let mut parents = Vec::new();
+
+        if let Some(parent) = self.repo.head().ok().map(|h| h.target().unwrap()) {
+            parents.push(self.repo.find_commit(parent)?);
+        }
+        let parents = parents.iter().collect::<Vec<_>>();
+
+        let oid = self.repo.commit(
+            Some("HEAD"),
+            &sig,
+            &sig,
+            msg.as_ref(),
+            &self.repo.find_tree(tree_id).expect("Failed to find tree"),
+            &parents,
+        )?;
+
+        Ok(oid)
+    }
+
+    pub fn find_commit(&self, oid: Oid) -> Result<Commit<'_>, GitRepoError> {
+        let commit = self.repo.find_commit(oid)?;
+        Ok(commit)
+    }
+
     pub fn is_fake_bare(&self) -> bool {
         !self.repo.is_bare() && !self.repo.path().ends_with(".git")
     }
@@ -83,9 +118,10 @@ impl From<Git2Error> for GitRepoError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testenv::FixtureHarness;
+    use crate::testenv::{FileFixture, FileKind, FixtureHarness};
 
     use anyhow::Result;
+    use pretty_assertions::assert_eq;
     use rstest::{fixture, rstest};
 
     #[fixture]
@@ -147,6 +183,26 @@ mod tests {
         let fixture = repo_dir.get_repo("ricer")?;
         assert!(fixture.as_path().exists());
         assert!(!repo.is_fake_bare());
+
+        Ok(())
+    }
+
+    #[rstest]
+    fn get_repo_commit_return_oid(repo_dir: Result<FixtureHarness>) -> Result<()> {
+        let mut repo_dir = repo_dir?;
+        let fixture = repo_dir.get_repo_mut("dwm")?;
+        let new_file = FileFixture::new(fixture.as_path().join("new.c"))
+            .with_data("some new data")
+            .with_kind(FileKind::Normal);
+        new_file.write()?;
+        fixture.add("new.c")?;
+
+        let repo = GitRepo::open(fixture.as_path())?;
+        let oid = repo.commit("Add new.c")?;
+        let result = repo.find_commit(oid)?;
+        fixture.sync()?;
+        let expect = fixture.find_commit(oid)?;
+        assert_eq!(result.message(), expect.message());
 
         Ok(())
     }
