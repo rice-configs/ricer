@@ -176,10 +176,10 @@ impl GitRepo {
         !self.repo.is_bare() && !self.repo.path().ends_with(".git")
     }
 
-    pub(crate) fn fetch<'git>(
+    pub(crate) fn fetch(
         &self,
         refs: &[&str],
-        remote: &'git mut Remote,
+        remote: &mut Remote,
     ) -> Result<AnnotatedCommit, GitRepoError> {
         let mut cb = RemoteCallbacks::new();
 
