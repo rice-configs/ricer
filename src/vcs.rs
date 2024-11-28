@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use git2::{Commit, Error as Git2Error, Oid, Repository, RepositoryInitOptions};
+use git2::{BranchType, Commit, Error as Git2Error, Oid, Repository, RepositoryInitOptions};
 use log::info;
 use std::{ffi::OsStr, io::Error as IoError, path::Path, process::Command};
 
@@ -99,6 +99,17 @@ impl GitRepo {
         Ok(commit)
     }
 
+    pub fn push(
+        &self,
+        remote: impl AsRef<str>,
+        branch: impl AsRef<str>,
+    ) -> Result<(), GitRepoError> {
+        let mut remote = self.repo.find_remote(remote.as_ref())?;
+        let branch = self.repo.find_branch(branch.as_ref(), BranchType::Local)?;
+        remote.push(&[branch.into_reference().name().unwrap_or("master")], None)?;
+        Ok(())
+    }
+
     pub fn syscall(
         &self,
         args: impl IntoIterator<Item = impl AsRef<OsStr>>,
@@ -174,7 +185,7 @@ mod tests {
                 repo.stage("vimrc", "config for vim!")?
                     .stage("indent/c.vim", "indentation settings for C code")
             })?
-            .with_bare_repo("fake")?
+            .with_bare_repo("github")?
             .setup()?;
         Ok(harness)
     }
@@ -246,6 +257,25 @@ mod tests {
         Ok(())
     }
 
+    #[rstest]
+    fn git_repo_push_return_ok(
+        repo_dir: Result<FixtureHarness>,
+        #[values("vim", "dwm")] repo: &str,
+    ) -> Result<()> {
+        let repo_dir = repo_dir?;
+        let remote = repo_dir.get_repo("github")?;
+        let local = repo_dir.get_repo(repo)?;
+        let repo = GitRepo::open(local.as_path())?;
+        repo.syscall([
+            "remote",
+            "add",
+            "origin",
+            format!("file://{}", remote.as_path().display()).as_str(),
+        ])?;
+        let result = repo.push("origin", "main");
+        assert!(result.is_ok());
+        Ok(())
+    }
 
     #[rstest]
     fn git_repo_syscall_return_ok(
