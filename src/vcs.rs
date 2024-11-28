@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 use git2::{Commit, Error as Git2Error, Oid, Repository, RepositoryInitOptions};
-use std::path::Path;
+use log::info;
+use std::{ffi::OsStr, io::Error as IoError, path::Path, process::Command};
 
 pub struct GitRepo {
     repo: Repository,
@@ -98,6 +99,31 @@ impl GitRepo {
         Ok(commit)
     }
 
+    pub fn syscall(
+        &self,
+        args: impl IntoIterator<Item = impl AsRef<OsStr>>,
+    ) -> Result<(), GitRepoError> {
+        let output = Command::new("git")
+            .args([
+                "--git-dir",
+                self.repo.path().to_str().unwrap(),
+                "--work-tree",
+                self.repo.workdir().unwrap().to_str().unwrap(),
+            ])
+            .args(args)
+            .output()?;
+
+        if !output.status.success() {
+            let msg = String::from_utf8_lossy(output.stderr.as_slice()).into_owned();
+            return Err(GitRepoError::GitBin { msg });
+        }
+
+        let msg = String::from_utf8_lossy(output.stdout.as_slice()).into_owned();
+        info!("Git binary success: {msg}");
+
+        Ok(())
+    }
+
     pub fn is_fake_bare(&self) -> bool {
         !self.repo.is_bare() && !self.repo.path().ends_with(".git")
     }
@@ -107,11 +133,23 @@ impl GitRepo {
 pub enum GitRepoError {
     #[error("Failed to perform libgit2 operation")]
     LibGit2 { source: Git2Error },
+
+    #[error("Failed to call Git binary")]
+    Syscall { source: IoError },
+
+    #[error("Git binary failure: {msg}")]
+    GitBin { msg: String },
 }
 
 impl From<Git2Error> for GitRepoError {
     fn from(err: Git2Error) -> Self {
         GitRepoError::LibGit2 { source: err }
+    }
+}
+
+impl From<IoError> for GitRepoError {
+    fn from(err: IoError) -> Self {
+        GitRepoError::Syscall { source: err }
     }
 }
 
@@ -136,6 +174,7 @@ mod tests {
                 repo.stage("vimrc", "config for vim!")?
                     .stage("indent/c.vim", "indentation settings for C code")
             })?
+            .with_bare_repo("fake")?
             .setup()?;
         Ok(harness)
     }
@@ -188,7 +227,7 @@ mod tests {
     }
 
     #[rstest]
-    fn get_repo_commit_return_oid(repo_dir: Result<FixtureHarness>) -> Result<()> {
+    fn git_repo_commit_return_oid(repo_dir: Result<FixtureHarness>) -> Result<()> {
         let mut repo_dir = repo_dir?;
         let fixture = repo_dir.get_repo_mut("dwm")?;
         let new_file = FileFixture::new(fixture.as_path().join("new.c"))
@@ -204,6 +243,33 @@ mod tests {
         let expect = fixture.find_commit(oid)?;
         assert_eq!(result.message(), expect.message());
 
+        Ok(())
+    }
+
+
+    #[rstest]
+    fn git_repo_syscall_return_ok(
+        repo_dir: Result<FixtureHarness>,
+        #[values("vim", "dwm")] repo: &str,
+    ) -> Result<()> {
+        let repo_dir = repo_dir?;
+        let fixture = repo_dir.get_repo(repo)?;
+        let repo = GitRepo::open(fixture.as_path())?;
+        let result = repo.syscall(["status"]);
+        assert!(result.is_ok());
+        Ok(())
+    }
+
+    #[rstest]
+    fn git_repo_syscall_return_err(
+        repo_dir: Result<FixtureHarness>,
+        #[values("vim", "dwm")] repo: &str,
+    ) -> Result<()> {
+        let repo_dir = repo_dir?;
+        let fixture = repo_dir.get_repo(repo)?;
+        let repo = GitRepo::open(fixture.as_path())?;
+        let result = repo.syscall(["non-existent-cmd"]);
+        assert!(result.is_err());
         Ok(())
     }
 }
