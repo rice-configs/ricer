@@ -48,6 +48,14 @@ impl FixtureHarness {
         Ok(self)
     }
 
+    pub fn with_bare_repo(mut self, path: impl AsRef<Path>) -> Result<Self> {
+        let fixture = RepoFixture::init_bare(
+            self.root.path().join(format!("{}.git", path.as_ref().display())),
+        )?;
+        self.repos.insert(fixture.as_path().to_path_buf(), fixture);
+        Ok(self)
+    }
+
     pub fn with_fake_bare_repo(
         mut self,
         path: impl AsRef<Path>,
@@ -91,7 +99,9 @@ impl FixtureHarness {
         }
 
         for (_, repo) in self.repos.iter() {
-            repo.commit("Inital commit\n\nbody")?;
+            if !repo.is_bare() {
+                repo.commit("Inital commit\n\nbody")?;
+            }
         }
 
         Ok(self)
@@ -223,18 +233,39 @@ pub struct RepoFixture {
 impl RepoFixture {
     pub fn init(path: impl Into<PathBuf>) -> Result<Self> {
         let root = path.into();
-        let repo = Repository::init(&root)?;
+        let mut opts = RepositoryInitOptions::new();
+        opts.initial_head("main");
+        let repo = Repository::init_opts(&root, &opts)?;
+        let mut config = repo.config()?;
+        config.set_str("user.name", "John Doe")?;
+        config.set_str("user.email", "john@doe.com")?;
+        Ok(Self { root, repo })
+    }
+
+    pub fn init_bare(path: impl Into<PathBuf>) -> Result<Self> {
+        let root = path.into();
+        let mut opts = RepositoryInitOptions::new();
+        opts.bare(true);
+        opts.initial_head("main");
+        let repo = Repository::init_opts(&root, &opts)?;
+        let mut config = repo.config()?;
+        config.set_str("user.name", "John Doe")?;
+        config.set_str("user.email", "john@doe.com")?;
         Ok(Self { root, repo })
     }
 
     pub fn init_fake_bare(gitdir: impl Into<PathBuf>, workdir: impl AsRef<Path>) -> Result<Self> {
         let root = gitdir.into();
         let mut opts = RepositoryInitOptions::new();
+        opts.initial_head("main");
         opts.bare(false);
         opts.no_dotgit_dir(true);
         opts.workdir_path(workdir.as_ref());
 
         let repo = Repository::init_opts(&root, &opts)?;
+        let mut config = repo.config()?;
+        config.set_str("user.name", "John Doe")?;
+        config.set_str("user.email", "john@doe.com")?;
         Ok(Self { root, repo })
     }
 
@@ -292,6 +323,10 @@ impl RepoFixture {
         let repo = RepoFixture::open(self.as_path())?;
         self.repo = repo.repo;
         Ok(())
+    }
+
+    pub fn is_bare(&self) -> bool {
+        self.repo.is_bare()
     }
 
     pub fn as_path(&self) -> &Path {
