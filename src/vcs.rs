@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2024 Jason Pena <jasonpena@awkless.com>
 // SPDX-License-Identifier: MIT
 
-use git2::{BranchType, Commit, Error as Git2Error, Oid, Repository, RepositoryInitOptions};
+use git2::{
+    build::CheckoutBuilder, AnnotatedCommit, AutotagOption, BranchType, Commit, Error as Git2Error,
+    FetchOptions, Oid, Reference, Remote, RemoteCallbacks, Repository, RepositoryInitOptions,
+};
 use log::info;
 use std::{ffi::OsStr, io::Error as IoError, path::Path, process::Command};
 
@@ -94,9 +97,34 @@ impl GitRepo {
         Ok(oid)
     }
 
+    /// Find a commit from object ID.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`GitRepoError::LibGit2`] if commit cannot be found from OID.
     pub fn find_commit(&self, oid: Oid) -> Result<Commit<'_>, GitRepoError> {
         let commit = self.repo.find_commit(oid)?;
         Ok(commit)
+    }
+
+    /// Pull changes from Git repository remote and branch.
+    ///
+    /// Performs a fetch and then merges any changes. Will perform a fast-forward
+    /// merge if `branch` has not diverged from `remote`. Will perform a commit
+    /// merge is `branch` does diverge from `remote`.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`GitRepoError::LibGit2`] if pull cannot be performed.
+    pub fn pull(
+        &self,
+        remote: impl AsRef<str>,
+        branch: impl AsRef<str>,
+    ) -> Result<(), GitRepoError> {
+        let mut remote = self.repo.find_remote(remote.as_ref())?;
+        let fetch = self.fetch(&[branch.as_ref()], &mut remote)?;
+        self.full_merge(branch.as_ref(), fetch)?;
+        Ok(())
     }
 
     pub fn push(
@@ -110,6 +138,15 @@ impl GitRepo {
         Ok(())
     }
 
+    /// Use Git binary directly on this repository.
+    ///
+    /// Useful to gain access to full Git binary for functionality not offered
+    /// by libgit2.
+    ///
+    /// # Errors
+    ///
+    /// - Return [`GitRepoError::Syscall`] if system call to Git binary failed.
+    /// - Return [`GitRepoError::GitBin`] if Git binary itself fails.
     pub fn syscall(
         &self,
         args: impl IntoIterator<Item = impl AsRef<OsStr>>,
@@ -137,6 +174,150 @@ impl GitRepo {
 
     pub fn is_fake_bare(&self) -> bool {
         !self.repo.is_bare() && !self.repo.path().ends_with(".git")
+    }
+
+    pub(crate) fn fetch<'git>(
+        &self,
+        refs: &[&str],
+        remote: &'git mut Remote,
+    ) -> Result<AnnotatedCommit, GitRepoError> {
+        let mut cb = RemoteCallbacks::new();
+
+        // Print transfer progress...
+        cb.transfer_progress(|stats| {
+            if stats.received_objects() == stats.total_objects() {
+                info!("Resolving deltas {}/{}", stats.indexed_deltas(), stats.total_deltas(),);
+            } else if stats.total_objects() > 0 {
+                info!(
+                    "Received {}/{} objects ({}) in {} bytes",
+                    stats.received_objects(),
+                    stats.total_objects(),
+                    stats.indexed_objects(),
+                    stats.received_bytes(),
+                );
+            }
+            true
+        });
+
+        let mut opts = FetchOptions::new();
+        opts.remote_callbacks(cb);
+        opts.download_tags(AutotagOption::All);
+        info!("Fetching {} for repo", remote.name().unwrap_or("origin"));
+        remote.fetch(refs, Some(&mut opts), None)?;
+
+        let stats = remote.stats();
+        if stats.local_objects() > 0 {
+            info!(
+                "Received {}/{} objects in {} bytes (used {} local objects)",
+                stats.indexed_objects(),
+                stats.total_objects(),
+                stats.received_bytes(),
+                stats.local_objects(),
+            );
+        } else {
+            info!(
+                "Received {}/{} objects in {} bytes",
+                stats.indexed_objects(),
+                stats.total_objects(),
+                stats.received_bytes(),
+            );
+        }
+
+        let head = self.repo.find_reference("FETCH_HEAD")?;
+        let commit = self.repo.reference_to_annotated_commit(&head)?;
+        Ok(commit)
+    }
+
+    pub(crate) fn fast_forward(
+        &self,
+        lb: &mut Reference,
+        rc: &AnnotatedCommit,
+    ) -> Result<(), GitRepoError> {
+        let name = match lb.name() {
+            Some(s) => s.to_string(),
+            None => String::from_utf8_lossy(lb.name_bytes()).to_string(),
+        };
+
+        let msg = format!("Fast-forward: settings {} to id: {}", name, rc.id());
+        info!("{msg}");
+        lb.set_target(rc.id(), &msg)?;
+        self.repo.set_head(&name)?;
+        self.repo.checkout_head(Some(CheckoutBuilder::default().force()))?;
+        Ok(())
+    }
+
+    pub(crate) fn normal_merge(
+        &self,
+        local: &AnnotatedCommit,
+        remote: &AnnotatedCommit,
+    ) -> Result<(), GitRepoError> {
+        let local_tree = self.repo.find_commit(local.id())?.tree()?;
+        let remote_tree = self.repo.find_commit(remote.id())?.tree()?;
+        let ancestor =
+            self.repo.find_commit(self.repo.merge_base(local.id(), remote.id())?)?.tree()?;
+        let mut idx = self.repo.merge_trees(&ancestor, &local_tree, &remote_tree, None)?;
+
+        if idx.has_conflicts() {
+            info!("Merge conflicts detected...");
+            self.repo.checkout_index(Some(&mut idx), None)?;
+            return Ok(());
+        }
+
+        let result_tree = self.repo.find_tree(idx.write_tree_to(&self.repo)?)?;
+        let msg = format!("Merge: {} into {}", remote.id(), local.id());
+        let sig = self.repo.signature()?;
+        let local_commit = self.repo.find_commit(local.id())?;
+        let remote_commit = self.repo.find_commit(remote.id())?;
+        self.repo.commit(
+            Some("HEAD"),
+            &sig,
+            &sig,
+            &msg,
+            &result_tree,
+            &[&local_commit, &remote_commit],
+        )?;
+
+        self.repo.checkout_head(None)?;
+        Ok(())
+    }
+
+    pub(crate) fn full_merge(
+        &self,
+        branch: &str,
+        fetch: AnnotatedCommit,
+    ) -> Result<(), GitRepoError> {
+        let analysis = self.repo.merge_analysis(&[&fetch])?;
+
+        if analysis.0.is_fast_forward() {
+            info!("Doing a fast-forward");
+            let refname = format!("refs/heads/{}", branch);
+            match self.repo.find_reference(&refname) {
+                Ok(mut rc) => {
+                    self.fast_forward(&mut rc, &fetch)?;
+                }
+                Err(_) => {
+                    self.repo.reference(
+                        &refname,
+                        fetch.id(),
+                        true,
+                        &format!("Setting {} to {}", branch, fetch.id()),
+                    )?;
+                    self.repo.set_head(&refname)?;
+                    self.repo.checkout_head(Some(
+                        CheckoutBuilder::default()
+                            .allow_conflicts(true)
+                            .conflict_style_merge(true)
+                            .force(),
+                    ))?;
+                }
+            };
+        } else if analysis.0.is_normal() {
+            let head = self.repo.reference_to_annotated_commit(&self.repo.head()?)?;
+            self.normal_merge(&head, &fetch)?;
+        } else {
+            info!("Nothing to do!");
+        }
+        Ok(())
     }
 }
 
